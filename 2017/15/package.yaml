@@ -1,0 +1,10 @@
+name:                solution
+
+dependencies:
+  - base >= 4.7 && < 5
+  - composition
+
+executables:
+  solution:
+    source-dirs:      src
+    main:             Main.hs
