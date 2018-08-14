@@ -1,0 +1,12 @@
+name:                solution
+version:             0.1.0.0
+
+dependencies:
+  - base >= 4.7 && < 5
+  - split
+  - au
+
+executables:
+  solution:
+    source-dirs:      src
+    main:             Main.hs
