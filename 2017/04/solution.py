@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 def main():
     with open("input") as lines:
         lines = list(lines)

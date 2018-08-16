@@ -1,3 +1,5 @@
+#!/usr/bin/env pypy3
+
 from itertools import chain, count
 import sys
 sys.path.insert(0, "../10")

@@ -1,3 +1,5 @@
+#!/usr/bin/env pypy3
+
 from functools import partial
 from itertools import permutations, tee
 import re

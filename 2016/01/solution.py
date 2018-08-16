@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 def parse_direction(direction):
     return direction[0], int(direction[1:])
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from operator import and_, or_, lshift, rshift, invert
 from functools import partial
 import re

@@ -1,3 +1,5 @@
+#!/usr/bin/env pypy3
+
 from numbers import Number
 from collections import UserList
 from itertools import islice, cycle, count, repeat, chain
