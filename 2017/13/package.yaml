@@ -5,6 +5,12 @@ dependencies:
   - containers
   - au
 
+ghc-options:
+  -Wall
+  -Wextra
+  -O2
+  -fllvm
+
 executables:
   solution:
     source-dirs:      src

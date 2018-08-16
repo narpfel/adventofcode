@@ -1,15 +1,15 @@
 module Main where
 
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 
 import Au.Parser
 
-type Time = Integer
-type Position = Integer
+type Time = Int
+type Position = Int
 
-data Firewall = Firewall [Layer] deriving Show
+newtype Firewall = Firewall [Layer] deriving Show
 
-data Layer = Layer { depth :: Integer } deriving Show
+newtype Layer = Layer { depth :: Int } deriving Show
 
 position :: Layer -> Time -> Position
 position layer t
@@ -21,7 +21,7 @@ position layer t
 isCaught :: Layer -> Time -> Bool
 isCaught l t = position l t == 0
 
-severity :: Time -> Firewall -> Integer
+severity :: Time -> Firewall -> Int
 severity delay (Firewall layers) =
   sum
     [ p * depth l
