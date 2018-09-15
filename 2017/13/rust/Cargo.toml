@@ -1,0 +1,11 @@
+cargo-features = ["edition"]
+
+[package]
+name = "solution"
+version = "0.1.0"
+authors = ["narpfel <narpfel@gmx.de>"]
+edition = "2018"
+
+[dependencies]
+num = "0.2"
+failure = "0.1"
