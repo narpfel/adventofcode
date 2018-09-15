@@ -4,6 +4,7 @@ import argparse
 import subprocess
 import sys
 import time
+from contextlib import suppress
 from pathlib import Path
 from itertools import count
 
@@ -25,7 +26,7 @@ def run_rust(path):
     execute(["cargo", "run", "--release"], cwd=path.parent)
 
 
-LANGUAGES = {
+RUNNERS = {
     "solution.py": run_executable,
     "package.yaml": run_haskell,
     "Cargo.toml": run_rust,
@@ -48,15 +49,25 @@ def run_all():
 
 
 def run_solution(solution_dir):
-    for language_indicator, runner in LANGUAGES.items():
+    for language_indicator, runner in RUNNERS.items():
         path = solution_dir / language_indicator
         if path.exists():
             print(f"\n\nExecuting `{path}`...\n")
             start_time = time.perf_counter()
             runner(path)
             print(f"\nElapsed: {time.perf_counter() - start_time} s.")
-            return
-    raise FileNotFoundError(f"`{solution_dir}` does not contain a solution.")
+            return 1
+
+    # See if multiple solutions are present
+    solutions_executed = 0
+    for sub_solution in solution_dir.iterdir():
+        if sub_solution.is_dir():
+            with suppress(FileNotFoundError):
+                solutions_executed += run_solution(sub_solution)
+
+    if not solutions_executed:
+        raise FileNotFoundError(f"`{solution_dir}` does not contain a solution.")
+    return solutions_executed
 
 
 def main(argv):
@@ -69,9 +80,9 @@ def main(argv):
     if args.all:
         solution_count = run_all()
     else:
+        solution_count = 0
         for solution in args.solutions:
-            run_solution(solution)
-        solution_count = len(args.solutions)
+            solution_count += run_solution(solution)
     print(f"Found {solution_count} solutions in {time.perf_counter() - start_time} s.")
 
 
