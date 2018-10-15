@@ -44,13 +44,13 @@ hasLost = (<= 0) . health
 
 fight :: Fighter -> Fighter -> Winner
 fight p b =
-  let b' = p `attack` b
-   in if hasLost b'
-         then Player
-         else let p' = b' `attack` p
-               in if hasLost p'
-                     then Boss
-                     else fight p' b'
+  if
+    | hasLost b' -> Player
+    | hasLost p' -> Boss
+    | otherwise -> fight p' b'
+  where
+    b' = p `attack` b
+    p' = b' `attack` p
 
 playerWins :: Winner -> Bool
 playerWins Player = True

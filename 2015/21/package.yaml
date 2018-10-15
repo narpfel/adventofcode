@@ -3,6 +3,9 @@ name: solution
 dependencies:
   - base >= 4.7 && < 5
 
+default-extensions:
+  - MultiWayIf
+
 ghc-options:
   -Wall
   -Wextra
