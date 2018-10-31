@@ -1,8 +1,6 @@
 module Main where
 
-powerset :: [a] -> [[a]]
-powerset [] = [[]]
-powerset (x:xs) = powerset xs ++ map (x:) (powerset xs)
+import Data.List (subsequences)
 
 weight :: Num a => [a] -> a
 weight = sum
@@ -15,7 +13,7 @@ solve targetWeight
   = minimum
   . map quantumEntanglement
   . filter ((== targetWeight) . weight)
-  . powerset
+  . subsequences
 
 main :: IO ()
 main = do
