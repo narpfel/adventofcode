@@ -10,10 +10,9 @@ weight = sum
 quantumEntanglement :: Num a => [a] -> a
 quantumEntanglement = product
 
-solve :: Int -> [Int] -> Int
+solve :: Integer -> [Integer] -> Integer
 solve targetWeight
   = minimum
-  . filter (>= 0)
   . map quantumEntanglement
   . filter ((== targetWeight) . weight)
   . powerset
