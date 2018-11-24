@@ -1,0 +1,24 @@
+name: solution
+
+dependencies:
+  - base >= 4.7 && < 5
+  - mtl
+  - bimap
+  - au
+
+default-extensions:
+  - LambdaCase
+  - ParallelListComp
+  - DeriveFunctor
+  - NumericUnderscores
+
+ghc-options:
+  -Wall
+  -Wextra
+  -O2
+  -fllvm
+
+executables:
+  solution:
+    source-dirs:      src
+    main:             Main.hs
