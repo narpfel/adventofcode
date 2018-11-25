@@ -7,20 +7,27 @@ import Data.Maybe (fromJust)
 
 import Au.Parser
 
-decompress :: Parser Char Integer
-decompress = sum <$> (some $ choice [decompressMarker, anything $> 1])
+data Recursiveness = Flat | DecompressInner
 
-decompressMarker :: Parser Char Integer
-decompressMarker = do
+decompress :: Recursiveness -> Parser Char Integer
+decompress recursiveness =
+  sum <$> some (choice [decompressMarker recursiveness, anything $> 1])
+
+decompressMarker :: Recursiveness -> Parser Char Integer
+decompressMarker recursiveness = do
   word "("
   length' <- integer
   word "x"
   repeat' <- integer
   word ")"
-  exactly length' anything
-  pure $ length' * repeat'
+  string <- exactly length' anything
+  let Just innerLength = parse (decompress recursiveness) string
+  pure $ repeat' * case recursiveness of
+                     Flat -> length'
+                     DecompressInner -> innerLength
 
 main :: IO ()
 main = do
   input <- filter (not . isSpace) <$> readFile "input"
-  print . fromJust . parse decompress $ input
+  print . fromJust . parse (decompress Flat) $ input
+  print . fromJust . parse (decompress DecompressInner) $ input
