@@ -2,24 +2,25 @@ module Main where
 
 import Control.Applicative (some)
 import Data.Char (isSpace)
+import Data.Functor (($>))
 import Data.Maybe (fromJust)
 
 import Au.Parser
 
-decompress :: Parser Char String
-decompress = concat <$> (some $ choice [decompressMarker, pure <$> anything])
+decompress :: Parser Char Integer
+decompress = sum <$> (some $ choice [decompressMarker, anything $> 1])
 
-decompressMarker :: Parser Char String
+decompressMarker :: Parser Char Integer
 decompressMarker = do
   word "("
   length' <- integer
   word "x"
   repeat' <- integer
   word ")"
-  string <- exactly length' anything
-  pure . concat . replicate repeat' $ string
+  exactly length' anything
+  pure $ length' * repeat'
 
 main :: IO ()
 main = do
   input <- filter (not . isSpace) <$> readFile "input"
-  print . length . fromJust . parse decompress $ input
+  print . fromJust . parse decompress $ input
