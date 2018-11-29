@@ -1,0 +1,25 @@
+name: solution
+
+dependencies:
+  - base >= 4.7 && < 5
+  - mtl
+  - containers
+  - lens
+  - au
+
+default-extensions:
+  - LambdaCase
+  - ParallelListComp
+  - DeriveFunctor
+  - TemplateHaskell
+  - ScopedTypeVariables
+
+ghc-options:
+  -Wall
+  -Wextra
+  -O2
+
+executables:
+  solution:
+    source-dirs:      src
+    main:             Main.hs
