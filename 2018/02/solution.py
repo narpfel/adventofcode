@@ -5,10 +5,10 @@ from itertools import combinations
 
 
 def part1(lines):
-    letter_counts = [Counter(line) for line in lines]
+    letter_counts = [set(Counter(line).values()) for line in lines]
     return (
-        sum(2 in c.values() for c in letter_counts)
-        * sum(3 in c.values() for c in letter_counts)
+        sum(2 in c for c in letter_counts)
+        * sum(3 in c for c in letter_counts)
     )
 
 
