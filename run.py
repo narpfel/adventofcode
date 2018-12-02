@@ -60,7 +60,7 @@ def run_solution(solution_dir):
 
     # See if multiple solutions are present
     solutions_executed = 0
-    for sub_solution in solution_dir.iterdir():
+    for sub_solution in sorted(solution_dir.iterdir()):
         if sub_solution.is_dir():
             with suppress(FileNotFoundError):
                 solutions_executed += run_solution(sub_solution)
