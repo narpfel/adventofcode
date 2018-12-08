@@ -1,0 +1,8 @@
+resolver: lts-12.21
+
+packages:
+- .
+
+extra-deps:
+  - github: narpfel/au
+    commit: 55a7e7226505359758dde1ee12363087e4a34a1b
