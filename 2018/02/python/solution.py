@@ -17,6 +17,7 @@ def hamming_distance(word1, word2):
 
 
 def part2(lines):
+    """TODO: This only works if the differing character occurs only once in the string."""
     for word1, word2 in combinations(lines, 2):
         if hamming_distance(word1, word2) == 1:
             difference = next(iter(set(word1).difference(word2)))
