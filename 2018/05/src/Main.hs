@@ -1,18 +1,17 @@
 module Main where
 
 import Data.Char (toLower, isSpace)
-import Data.List (dropWhileEnd)
+import Data.List (dropWhileEnd, foldl')
 import qualified Data.Set as Set
 import Criterion.Main
 
 annihilate :: String -> String
-annihilate = go ""
+annihilate = foldl' f ""
   where
-    go (x:xs) (y:ys)
-      | x /= y && toLower x == toLower y = go xs ys
-      | otherwise = go (y:x:xs) ys
-    go xs "" = xs
-    go "" (y:ys) = go (y:"") ys
+    f "" y = y:""
+    f (x:xs) y
+      | x /= y && toLower x == toLower y = xs
+      | otherwise = y:x:xs
 
 part1 :: String -> Int
 part1 = length . annihilate
