@@ -36,13 +36,17 @@ class Runner:
                     print(f"{solution_dir}: ", end="", flush=True)
                 else:
                     print(f"\n\nExecuting `{path}`...\n")
-                start_time = time.perf_counter()
                 try:
-                    getattr(self, runner_name)(path)
+                    build_time, execution_time = getattr(self, runner_name)(path)
                 except subprocess.CalledProcessError:
                     return 0
                 else:
-                    print(f"{execution_time_output_prefix}{time.perf_counter() - start_time} s.")
+                    build_time_output = (
+                        f" (And {build_time} s of build time.)"
+                        if build_time > 1
+                        else ""
+                    )
+                    print(f"{execution_time_output_prefix}{execution_time} s.{build_time_output}")
                     return 1
 
         # See if multiple solutions are present
@@ -57,21 +61,28 @@ class Runner:
         return solutions_executed
 
     def execute(self, command, cwd):
+        start_time = time.perf_counter()
         subprocess.run(command, cwd=cwd, check=True, stdout=self.output, stderr=self.output)
+        return time.perf_counter() - start_time
 
     def run_executable(self, path):
-        self.execute([path.absolute()], cwd=path.parent)
+        execution_time = self.execute([path.absolute()], cwd=path.parent)
+        return 0, execution_time
 
     def run_haskell(self, path):
-        self.execute(["stack", "build", "solution"], cwd=path.parent)
-        self.execute(["stack", "exec", "solution"], cwd=path.parent)
+        build_time = self.execute(["stack", "build", "solution"], cwd=path.parent)
+        exection_time = self.execute(["stack", "exec", "solution"], cwd=path.parent)
+        return build_time, execution_time
 
     def run_rust(self, path):
-        self.execute(["cargo", "run", "--release"], cwd=path.parent)
+        build_time = self.execute(["cargo", "build", "--release"], cwd=path.parent)
+        execution_time = self.execute(["cargo", "run", "--release"], cwd=path.parent)
+        return build_time, execution_time
 
     def run_makefile(self, path):
-        self.execute(["make", "build"], cwd=path.parent)
-        self.execute(["make", "run"], cwd=path.parent)
+        build_time = self.execute(["make", "build"], cwd=path.parent)
+        execution_time = self.execute(["make", "run"], cwd=path.parent)
+        return build_time, execution_time
 
     RUNNERS = {
         "solution.py": "run_executable",
