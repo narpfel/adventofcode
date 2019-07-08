@@ -60,29 +60,42 @@ class Runner:
             raise FileNotFoundError(f"`{solution_dir}` does not contain a solution.")
         return solutions_executed
 
-    def execute(self, command, cwd):
+    def timed_run(self, command, cwd):
         start_time = time.perf_counter()
         subprocess.run(command, cwd=cwd, check=True, stdout=self.output, stderr=self.output)
         return time.perf_counter() - start_time
 
+    def execute(self, build_command, exection_command, cwd):
+        if build_command is not None:
+            build_time = self.timed_run(build_command, cwd)
+        else:
+            build_time = 0
+        execution_time = self.timed_run(exection_command, cwd)
+        return build_time, execution_time
+
     def run_executable(self, path):
-        execution_time = self.execute([path.absolute()], cwd=path.parent)
-        return 0, execution_time
+        return self.execute(None, [path.absolute()], cwd=path.parent)
 
     def run_haskell(self, path):
-        build_time = self.execute(["stack", "build", "solution"], cwd=path.parent)
-        exection_time = self.execute(["stack", "exec", "solution"], cwd=path.parent)
-        return build_time, execution_time
+        return self.execute(
+            ["stack", "build", "solution"],
+            ["stack", "exec", "solution"],
+            cwd=path.parent,
+        )
 
     def run_rust(self, path):
-        build_time = self.execute(["cargo", "build", "--release"], cwd=path.parent)
-        execution_time = self.execute(["cargo", "run", "--release"], cwd=path.parent)
-        return build_time, execution_time
+        return self.execute(
+            ["cargo", "build", "--release"],
+            ["cargo", "run", "--release"],
+            cwd=path.parent,
+        )
 
     def run_makefile(self, path):
-        build_time = self.execute(["make", "build"], cwd=path.parent)
-        execution_time = self.execute(["make", "run"], cwd=path.parent)
-        return build_time, execution_time
+        return self.execute(
+            ["make", "build"],
+            ["make", "run"],
+            cwd=path.parent,
+        )
 
     RUNNERS = {
         "solution.py": "run_executable",
