@@ -140,3 +140,8 @@ Cargo.lock
 
 # Use `hpack`
 *.cabal
+
+stack.yaml.lock
+
+# Solution executable compiled from source -- interpreted solution executables have extensions
+solution
