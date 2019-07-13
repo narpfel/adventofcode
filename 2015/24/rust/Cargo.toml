@@ -1,0 +1,12 @@
+[package]
+name = "solution"
+version = "0.1.0"
+authors = ["narpfel <narpfel@gmx.de>"]
+edition = "2018"
+
+[profile.release]
+# lto = true
+
+[dependencies]
+failure = "0.1"
+itertools = "0.8"
