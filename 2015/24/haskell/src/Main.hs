@@ -1,6 +1,7 @@
 module Main where
 
 import Data.List (subsequences)
+import Data.Word (Word64)
 
 weight :: Num a => [a] -> a
 weight = sum
@@ -8,7 +9,7 @@ weight = sum
 quantumEntanglement :: Num a => [a] -> a
 quantumEntanglement = product
 
-solve :: Integer -> [Integer] -> Integer
+solve :: Word64 -> [Word64] -> Word64
 solve targetWeight
   = minimum
   . map quantumEntanglement
