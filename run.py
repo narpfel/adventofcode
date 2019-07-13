@@ -42,11 +42,11 @@ class Runner:
                     return 0
                 else:
                     build_time_output = (
-                        f" (And {build_time} s of build time.)"
+                        f" (and {build_time} s of build time)."
                         if build_time > 1
-                        else ""
+                        else "."
                     )
-                    print(f"{execution_time_output_prefix}{execution_time} s.{build_time_output}")
+                    print(f"{execution_time_output_prefix}{execution_time} s{build_time_output}")
                     return 1
 
         # See if multiple solutions are present
