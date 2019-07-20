@@ -10,6 +10,9 @@ default-extensions:
   - ParallelListComp
   - DeriveFunctor
   - MultiWayIf
+  - RecordWildCards
+  - OverloadedLists
+  - TupleSections
 
 ghc-options:
   -Wall
