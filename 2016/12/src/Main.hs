@@ -3,11 +3,13 @@ module Main (main) where
 import Control.Lens hiding (op)
 import Control.Monad.State.Strict
 import Data.Functor (($>))
+import Data.Vector (Vector)
+import qualified Data.Vector as Vector
 
 import Au.Parser
 
 type Register = Integer
-type Offset = Integer
+type Offset = Int
 
 type Condition = RegisterFile -> Bool
 type RegisterOp = RegisterFile -> RegisterFile
@@ -18,14 +20,14 @@ data Instruction
   = Op RegisterOp
   | Jmp Condition Offset
 
-type Rom = [Instruction]
+type Rom = Vector Instruction
 
 data RegisterFile = RegisterFile
   { _a :: Register
   , _b :: Register
   , _c :: Register
   , _d :: Register
-  , _pc :: Register
+  , _pc :: Int
   }
 
 data Cpu = Cpu
@@ -87,15 +89,15 @@ execute (Jmp condition offset) = do
 runProgram :: State Cpu ()
 runProgram = do
   cpu <- get
-  case cpu ^? rom . element (cpu ^. registerFile . pc . to fromInteger) of
+  case (cpu ^. rom) Vector.!? (cpu ^. registerFile . pc) of
     Just instr -> execute instr >> runProgram
     Nothing -> return ()
 
-solve :: Integer -> [Instruction] -> Integer
+solve :: Integer -> Rom -> Integer
 solve n = view (registerFile . a) . execState runProgram . Cpu (RegisterFile 0 0 n 0 0)
 
 main :: IO ()
 main = do
-  Just p <- parse program <$> readFile "input"
+  Just p <- fmap Vector.fromList . parse program <$> readFile "input"
   print $ solve 0 p
   print $ solve 1 p
