@@ -1,0 +1,18 @@
+[package]
+name = "solution"
+version = "0.1.0"
+authors = ["narpfel <narpfel@gmx.de>"]
+edition = "2018"
+
+[dependencies]
+byteorder = "1"
+memmap = "0.7"
+generic-array = "0.12"
+
+[dependencies.arraydeque]
+version = "0.4"
+features = ["use_generic_array"]
+
+[profile.release]
+lto = true
+codegen-units = 1
