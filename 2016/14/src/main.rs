@@ -112,9 +112,8 @@ fn md5(bytes: &[u8]) -> [u8; DIGEST_BYTE_COUNT] {
 
         let mut buffer = [Wrapping(0u32); CHUNKSIZE / 4];
         let mut cursor = Cursor::new(chunk);
-        for i in 0..CHUNKSIZE / 4 {
-            buffer[i]
-                = Wrapping(cursor.read_u32::<LittleEndian>().unwrap_or_else(|_| unreachable!()));
+        for word in buffer.iter_mut() {
+            *word = Wrapping(cursor.read_u32::<LittleEndian>().unwrap_or_else(|_| unreachable!()));
         }
 
         let md5_rounds: [(fn(Word, Word, Word) -> Word, _, [usize; 4]); 4] = [
@@ -141,22 +140,31 @@ fn md5(bytes: &[u8]) -> [u8; DIGEST_BYTE_COUNT] {
         d += dd;
     }
 
-    let mut res = Vec::with_capacity(CHUNKSIZE / 4);
+    let mut result = [0; DIGEST_BYTE_COUNT];
+    let mut cursor = Cursor::new(&mut result[..]);
     for x in &[a, b, c, d] {
-        res.write_u32::<LittleEndian>(x.0).unwrap_or_else(|_| unreachable!());
+        cursor.write_u32::<LittleEndian>(x.0).unwrap_or_else(|_| unreachable!());
     }
-    let mut r = [0; CHUNKSIZE / 4];
-    r.copy_from_slice(&res);
-    r
+    result
 }
 
-fn format_digest(digest: [u8; DIGEST_BYTE_COUNT]) -> String {
-    digest.iter().map(|c| format!("{:02x}", c)).collect()
+fn format_digest(digest: [u8; DIGEST_BYTE_COUNT]) -> [u8; DIGEST_CHAR_LENGTH] {
+    const HEX_DIGITS: &[u8] = b"0123456789abcdef";
+
+    let mut result = [0; DIGEST_CHAR_LENGTH];
+    digest.iter()
+        .enumerate()
+        .for_each(|(i, byte)| {
+            let upper_nibble = byte >> 4;
+            let lower_nibble = byte & 0xf;
+            result[2 * i] = HEX_DIGITS[upper_nibble as usize];
+            result[2 * i + 1] = HEX_DIGITS[lower_nibble as usize];
+        });
+    result
 }
 
-fn has_byte_repetition(s: &str, length: usize) -> Option<u8> {
+fn has_byte_repetition(s: &[u8], length: usize) -> Option<u8> {
     s
-        .as_bytes()
         .windows(length)
         .filter_map(|window| {
             let first_char = window[0];
@@ -170,12 +178,14 @@ fn has_byte_repetition(s: &str, length: usize) -> Option<u8> {
         .nth(0)
 }
 
-fn key_stretched(s: &str, count: usize) -> String {
-    let mut s = s.to_owned();
+fn key_stretched(s: &str, count: usize) -> [u8; DIGEST_CHAR_LENGTH] {
+    let mut s = s.as_bytes();
+    let mut buffer = [0; DIGEST_CHAR_LENGTH];
     for _ in 0..count {
-        s = format_digest(md5(s.as_bytes()));
+        buffer = format_digest(md5(s));
+        s = &buffer[..];
     }
-    s
+    buffer
 }
 
 fn otp_indices<'a>(salt: &'a str, key_stretching_count: usize) -> impl Iterator<Item=usize> + 'a {
