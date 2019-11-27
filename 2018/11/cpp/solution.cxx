@@ -1,13 +1,12 @@
 #include <cstdint>
 
+#include <array>
+#include <algorithm>
 #include <iostream>
 #include <iterator>
-#include <list>
-#include <type_traits>
-#include <vector>
-#include <algorithm>
-#include <array>
 #include <numeric>
+#include <optional>
+#include <vector>
 
 
 constexpr auto GRID_SIZE = size_t{300};
@@ -16,9 +15,6 @@ constexpr auto INPUT = int64_t{7672};
 using Grid = std::vector<std::vector<int64_t>>;
 
 struct Window {
-    Window(size_t const x, size_t const y, size_t const window_size, int64_t const total_power)
-        : x{x}, y{y}, window_size{window_size}, total_power{total_power} {}
-
     size_t x;
     size_t y;
     size_t window_size;
@@ -54,7 +50,8 @@ auto precompute_sums(Grid& grid) -> void {
     }
 }
 
-auto windowed(Grid const& grid, size_t window_size, std::vector<Window>& result) -> void {
+template<typename OutputIt>
+auto windowed(Grid const& grid, size_t window_size, OutputIt out) -> void {
     auto const y = grid.size();
     auto const x = grid.at(0).size();
     for (auto i = size_t{1}; i < x - window_size; ++i) {
@@ -64,22 +61,35 @@ auto windowed(Grid const& grid, size_t window_size, std::vector<Window>& result)
             auto const c = grid[j + window_size][i + window_size];
             auto const d = grid[j + window_size][i];
             auto const power_level = c + a - d - b;
-            result.emplace_back(i + 1, j + 1, window_size, int64_t{power_level});
+            *out++ = Window{i + 1, j + 1, window_size, int64_t{power_level}};
         }
     }
 }
 
+template<typename T, auto compare = std::less<T>{}>
+struct Maximum {
+    using value_type = T;
+
+    std::optional<T> maximum;
+
+    auto push_back(T&& t) -> void {
+        if (not maximum or compare(*maximum, t)) {
+            maximum.emplace(std::forward<T>(t));
+        }
+    }
+};
+
 template<typename It>
 auto solve(Grid const& grid, It const first, It const last) -> Window {
-    auto windows = std::vector<Window>{};
-    for (auto it = first; it < last; ++it) {
-        windowed(grid, *it, windows);
-    }
-    return *std::max_element(
-        begin(windows),
-        end(windows),
-        [](auto const& lhs, auto const& rhs) { return lhs.total_power < rhs.total_power; }
-    );
+    auto solution = Maximum<
+        Window,
+        [](auto const& lhs, auto const& rhs) { return lhs.total_power <= rhs.total_power; }
+    >{};
+    auto inserter = std::back_inserter(solution);
+    std::for_each(first, last, [&](auto const& window_size) {
+        windowed(grid, window_size, inserter);
+    });
+    return *solution.maximum;
 }
 
 auto main() -> int {
