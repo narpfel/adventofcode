@@ -48,10 +48,10 @@ fn windowed<'a>(grid: &'a Grid, window_size: usize) -> impl Iterator<Item=Window
         .flat_map(move |i|
             (1..y - window_size)
             .map(move |j| {
-                let a = grid[j][i] as i64;
-                let b = grid[j][i + window_size] as i64;
-                let c = grid[j + window_size][i + window_size] as i64;
-                let d = grid[j + window_size][i] as i64;
+                let a = grid[j][i];
+                let b = grid[j][i + window_size];
+                let c = grid[j + window_size][i + window_size];
+                let d = grid[j + window_size][i];
                 let power_level = c + a - d - b;
                 Window { x: i + 1, y: j + 1, window_size, total_power: power_level }
             })
