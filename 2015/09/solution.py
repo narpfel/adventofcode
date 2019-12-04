@@ -29,10 +29,7 @@ def pairwise(iterable):
 
 
 def pathlen(path, distances):
-    distance = 0
-    for start, end in pairwise(path):
-        distance += distances[start][end]
-    return distance
+    return sum(distances[start][end] for start, end in pairwise(path))
 
 
 def main():
