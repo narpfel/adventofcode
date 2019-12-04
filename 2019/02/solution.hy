@@ -62,10 +62,13 @@
       (+ (* 100 noun) verb))))
 
 
-(with-decorator (mark.parametrize "initial, expected" [(, "1,0,0,0,99" "2,0,0,0,99")
-                                                      (, "2,3,0,3,99" "2,3,0,6,99")
-                                                      (, "2,4,4,5,99,0" "2,4,4,5,99,9801")
-                                                      (, "1,1,1,4,99,5,6,0,99" "30,1,1,4,2,5,6,0,99")])
+(with-decorator
+  (mark.parametrize
+    "initial, expected"
+    [(, "1,0,0,0,99" "2,0,0,0,99")
+     (, "2,3,0,3,99" "2,3,0,6,99")
+     (, "2,4,4,5,99,0" "2,4,4,5,99,9801")
+     (, "1,1,1,4,99,5,6,0,99" "30,1,1,4,2,5,6,0,99")])
   (defn test-examples [initial expected]
     (setv memory (parse initial))
     (run-program memory)
@@ -77,7 +80,7 @@
     (read-input "input_test")
     (setv memory))
   (run-program memory)
-  (assert (= 3500 (get memory 0) )))
+  (assert (= 3500 (get memory 0))))
 
 
 (defmain [&rest _]
