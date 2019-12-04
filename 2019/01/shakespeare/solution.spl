@@ -5,6 +5,7 @@ Juliet, doesn't know how to read numbers, so she needs Romeo's help.
 Ophelia, the zero.
 The Ghost, the ten.
 Cicero, the accumulator.
+Pompeius, the accumulator for part 2.
 
 
 
@@ -47,7 +48,7 @@ Romeo:
 [Enter Ophelia]
 
 Ophelia:
-    Thou art as beautiful as the sum of the difference between Juliet
+    Thou art as happy as the sum of the difference between Juliet
     and myself and the product of the Ghost and thyself.
 
 [Exit Ophelia]
@@ -60,16 +61,33 @@ Romeo:
 
 [Enter Cicero]
 
-Romeo:
-    You are as beautiful as the sum of the quotient between myself
-    and the sum of a fair rose and a summer's day and the sum of thyself and a fat pig.
-
 Cicero:
-    You are nothing.
+    You are as handsome as the sum of the quotient between yourself and the sum of
+    a fair rose and a summer's day and a fat pig.
+
+Romeo:
+    You are as cute as the sum of thyself and myself.
 
 [Exit Cicero]
 
+
+                Scene IV: The Hoping and Wishing.
+
+[Enter Pompeius]
+
 Romeo:
+    You are as sweet as the sum of thyself and myself.
+
+Pompeius:
+    You are as charming as the sum of the quotient between yourself and the sum of
+    a blossoming rose and a pony and a cowardly coward.
+    Are you punier than nothing? If so, you are nothing.
+    Are you better than nothing?
+
+[Exit Pompeius]
+
+Romeo:
+    If so, we must return to scene IV.
     We must return to scene II.
 
 
@@ -85,5 +103,12 @@ Romeo:
 The Ghost: Open your heart.
 
 Cicero: Speak your mind.
+
+[Exit Cicero]
+[Enter Pompeius]
+
+The Ghost: Open your heart.
+
+Pompeius: Speak your mind.
 
 [Exeunt]
