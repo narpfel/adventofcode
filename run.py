@@ -99,6 +99,7 @@ class Runner:
 
     RUNNERS = {
         "solution.py": "run_executable",
+        "solution.hy": "run_executable",
         "package.yaml": "run_haskell",
         "Cargo.toml": "run_rust",
         "solution.pl": "run_executable",
