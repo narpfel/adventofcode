@@ -112,7 +112,7 @@ def main():
         two elements to the molecule. The correct EBNF is
         molecule ::= element*;
         element ::= (element element)
-                  | (element "Rn" element ("Y" element)+ "Ar");
+                  | (element "Rn" element ("Y" element)* "Ar");
     """.format(steps(medicine))))
 
 
