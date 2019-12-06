@@ -148,3 +148,6 @@ solution
 
 perf.data
 perf.data.old
+
+*.class
+META-INF/
