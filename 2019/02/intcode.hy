@@ -119,14 +119,30 @@
 
   (defn read-input [self]
     (debug "read-input")
-    (.write self 1))
+    (.write self self.input))
 
   (defn write-output [self value]
     (debug "output value %s" value)
     (setv self.output value))
 
+  (defn jump-if-true [self value target]
+    (debug "jump-if-true from %s on value %s to %s" self.instruction-pointer value target)
+    (if value (setv self.instruction-pointer target)))
+
+  (defn jump-if-false [self value target]
+    (debug "jump-if-false from %s on value %s to %s" self.instruction-pointer value target)
+    (if (not value) (setv self.instruction-pointer target)))
+
+  (defn less-than [self lhs rhs]
+    (.write self (int (< lhs rhs))))
+
+  (defn equals [self lhs rhs]
+    (.write self (int (= lhs rhs))))
+
+
+
   (setv OPERATION-FUNCTIONS
-        [add multiply read-input write-output])
+        [add multiply read-input write-output jump-if-true jump-if-false less-than equals])
 
   (setv OPERATIONS
         (dfor
