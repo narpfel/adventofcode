@@ -1,42 +1,51 @@
 use std::io;
 use std::fs::read_to_string;
 use std::collections::{HashSet, HashMap};
-use std::cell::RefCell;
-use std::rc::Rc;
 
 type Point = (i64, i64);
-type Direction = char;
 
-fn parse_direction(s: &str) -> Result<(Direction, i64), std::num::ParseIntError> {
-    let (c, number) = s.split_at(1);
-    Ok((c.chars().next().unwrap(), number.parse()?))
+#[derive(Copy, Clone, Debug)]
+enum Direction { R, L, U, D }
+
+use Direction::*;
+
+impl Direction {
+    fn from_char(c: char) -> Direction {
+        match c {
+            'R' => R,
+            'L' => L,
+            'U' => U,
+            'D' => D,
+            _ => unreachable!(),
+        }
+    }
 }
 
-fn move_(mut p: Point, direction: Direction) -> Point {
+fn parse_direction(s: &str) -> Result<(Direction, usize), std::num::ParseIntError> {
+    let (c, number) = s.split_at(1);
+    Ok((Direction::from_char(c.chars().next().unwrap()), number.parse()?))
+}
+
+fn move_(p: &mut Point, direction: Direction) {
     match direction {
-        'R' => p.0 += 1,
-        'L' => p.0 -= 1,
-        'U' => p.1 += 1,
-        'D' => p.1 -= 1,
-        _ => panic!(),
+        R => p.0 += 1,
+        L => p.0 -= 1,
+        U => p.1 += 1,
+        D => p.1 -= 1,
     };
-    p
 }
 
 fn manhattan_distance(p: Point) -> u64 {
     p.0.abs() as u64 + p.1.abs() as u64
 }
 
-fn track(steps: impl Iterator<Item = (Direction, i64)>) -> HashMap<Point, (u64, usize)> {
-    let point = Rc::new(RefCell::new((0, 0)));
-    steps.flat_map(|(direction, length)| {
-        let direction = direction;
-        let point = Rc::clone(&point);
-        (0..length).map(move |_| {
-            point.replace_with(|p| move_(*p, direction));
-            *point.borrow()
+fn track(steps: impl Iterator<Item = (Direction, usize)>) -> HashMap<Point, (u64, usize)> {
+    steps
+        .flat_map(|(direction, length)| std::iter::repeat(direction).take(length))
+        .scan((0, 0), |point, direction| {
+            move_(point, direction);
+            Some(*point)
         })
-    })
         .enumerate()
         .map(|(index, p)| (p, (manhattan_distance(p), index + 1)))
         .skip(1)
