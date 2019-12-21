@@ -3,10 +3,12 @@
 (import [inspect [signature]])
 (import logging)
 (import [logging [debug]])
-(import [os [environ]])
 
 
-(logging.basicConfig :style "{" :level logging.DEBUG)
+(logging.basicConfig
+  :style "{"
+  :level logging.DEBUG
+  :format "{threadName} {levelname}:{name}:{message}")
 
 ; Remove `debug` calls at compile time for performance reasons: Even no-op function
 ; calls take a significant amount of time if they are in a hot loop. PyPy helps a bit,
@@ -53,11 +55,14 @@
 
 (defclass IntcodeComputer []
 
-  (defn --init-- [self memory &optional [input 0]]
-    (setv self.memory (list memory))
-    (setv self.instruction-pointer 0)
-    (setv self.input input)
-    (setv self.output 0))
+  (setv OUTPUTS-TYPE list)
+
+  (defn --init-- [self memory &optional [input 0] outputs]
+    (setv self.inputs (if-not (iterable? input) (iter [input])
+                              (iter input))
+          self.memory (list memory)
+          self.instruction-pointer 0
+          self.outputs (lif outputs outputs (self.OUTPUTS-TYPE))))
 
   (with-decorator classmethod
     (defn from-string [cls string &rest args &kwargs kwargs]
@@ -67,6 +72,14 @@
     (defn from-file [cls path &rest args &kwargs kwargs]
       (with [f (open path)]
         (.from-string cls (.read f) #* args #** kwargs))))
+
+  (with-decorator property
+    (defn output [self]
+      (last self.outputs)))
+
+  (with-decorator output.setter
+    (defn output [self value]
+      (.append self.outputs value)))
 
   (defn lookup [self address]
     (get self.memory address))
@@ -91,11 +104,11 @@
 
   (defn run-program [self]
     (while True
-           (debug "run-program: %s\t%s" self.instruction-pointer self.memory)
+           (debug "%s -- run-program: %s\t%s" self.name self.instruction-pointer self.memory)
            (setv opcode (.read self Mode.IMMEDIATE))
            (setv command (% opcode 100))
+           (debug "instruction: %s (%s)" command opcode)
            (if (= command 99) (break))
-           (if (!= self.output 0) (raise Exception))
            (setv operation (get self.OPERATIONS command))
            (setv parameter-modes
                  (if
@@ -112,14 +125,17 @@
       (.read self mode)))
 
   (defn add [self a b]
+    (debug "add %s to %s" a b)
     (.write self (+ a b)))
 
   (defn multiply [self a b]
+    (debug "multiply %s with %s" a b)
     (.write self (* a b)))
 
   (defn read-input [self]
-    (debug "read-input")
-    (.write self self.input))
+    (setv input (next self.inputs))
+    (debug "read-input %s" input)
+    (.write self input))
 
   (defn write-output [self value]
     (debug "output value %s" value)
@@ -138,8 +154,6 @@
 
   (defn equals [self lhs rhs]
     (.write self (int (= lhs rhs))))
-
-
 
   (setv OPERATION-FUNCTIONS
         [add multiply read-input write-output jump-if-true jump-if-false less-than equals])

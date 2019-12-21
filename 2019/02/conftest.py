@@ -1,7 +1,13 @@
 import hy
-from _pytest.python import Module
+import pytest
+
+
+@pytest.fixture()
+def tmpchdir(tmpdir):
+    with tmpdir.as_cwd():
+        yield tmpdir
 
 
 def pytest_collect_file(path, parent):
     if path.ext == ".hy":
-        return Module(path, parent)
+        return pytest.Module(path, parent)
