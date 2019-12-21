@@ -1,0 +1,10 @@
+[package]
+name = "intcode"
+version = "0.1.0"
+authors = ["narpfel <narpfel@gmx.de>"]
+edition = "2018"
+
+[dependencies]
+failure = "0"
+num-traits = "0"
+num-derive = "0"
