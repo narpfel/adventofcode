@@ -1,0 +1,12 @@
+[package]
+name = "solution"
+version = "0.1.0"
+authors = ["narpfel <narpfel@gmx.de>"]
+edition = "2018"
+
+[dependencies]
+failure = "0"
+itertools = "0"
+
+[dependencies.intcode]
+path = "../11/intcode"
