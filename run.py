@@ -12,6 +12,7 @@ from itertools import count
 class Runner:
     def __init__(self, output):
         self.output = output
+        self.failed_solutions = 0
 
     def run_all(self):
         solution_count = count()
@@ -39,6 +40,8 @@ class Runner:
                 try:
                     build_time, execution_time = getattr(self, runner_name)(path)
                 except subprocess.CalledProcessError:
+                    print()
+                    self.failed_solutions += 1
                     return 0
                 else:
                     build_time_output = (
@@ -129,10 +132,14 @@ def main(argv):
         for solution in args.solutions:
             solution_count += runner.run_solution(solution)
     print(f"Found {solution_count} solutions in {time.perf_counter() - start_time} s.")
+    if runner.failed_solutions:
+        print(f"{runner.failed_solutions} solutions failed executing.")
+
+    return runner.failed_solutions
 
 
 if __name__ == "__main__":
     try:
-        main(sys.argv[1:])
+        sys.exit(main(sys.argv[1:]))
     except KeyboardInterrupt:
         print("\nAborted.")
