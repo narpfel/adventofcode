@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 
+from bisect import bisect
 from collections import defaultdict
+from functools import partial
 from math import ceil
 
 from pytest import mark
+
+
+ONE_TRILLION = 10 ** 12
 
 
 def batch_count(amount, batchsize):
@@ -50,17 +55,42 @@ def solve(reactions, target_amount):
     return stuff["ORE"]
 
 
+class FakeContainer:
+    def __init__(self, f):
+        self.f = f
+
+    def __getitem__(self, index):
+        return self.f(index)
+
+
+def part1(reactions):
+    return solve(reactions, 1)
+
+
+def part2(reactions):
+    return bisect(FakeContainer(partial(solve, reactions)), ONE_TRILLION, 0, ONE_TRILLION) - 1
+
+
 @mark.parametrize(
     "number, expected",
     [(0, 165), (1, 13312), (2, 180697), (3, 2210736)]
 )
 def test_part1(number, expected):
-    assert solve(read_input(f"input_test{number}"), 1) == expected
+    assert part1(read_input(f"input_test{number}")) == expected
+
+
+@mark.parametrize(
+    "number, expected",
+    [(1, 82892753), (2, 5586022), (3, 460664)]
+)
+def test_part2(number, expected):
+    assert part2(read_input(f"input_test{number}")) == expected
 
 
 def main():
     reactions = read_input("input")
-    print(solve(reactions, 1))
+    print(part1(reactions))
+    print(part2(reactions))
 
 
 if __name__ == "__main__":
