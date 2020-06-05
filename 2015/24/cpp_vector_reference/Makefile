@@ -16,9 +16,8 @@ solution: solution.cxx
 		-march=native \
 		-mtune=native \
 		-o solution \
-		solution.cxx \
-		-lstdc++fs
+		solution.cxx
 
 .PHONY: clean
 clean:
-	rm solution
+	rm -f solution

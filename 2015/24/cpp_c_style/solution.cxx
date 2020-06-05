@@ -7,8 +7,10 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <numeric>
 #include <utility>
+#include <vector>
 
 
 using Value = uint8_t;
@@ -92,12 +94,14 @@ uint64_t solve(uint64_t const target_weight, Span<Value> const weights) {
     return min_quantum_entanglement;
 }
 
-auto read_input(std::filesystem::path const &path) {
+std::vector<Value> read_input(std::filesystem::path const &path) {
     auto numbers = std::vector<Value>{};
     auto input_file = std::ifstream{path};
-    for (std::string line; std::getline(input_file, line);) {
-        numbers.emplace_back(std::stoull(line));
-    }
+    std::copy(
+        std::istream_iterator<uint64_t>{input_file},
+        std::istream_iterator<uint64_t>{},
+        std::back_inserter(numbers)
+    );
     return numbers;
 }
 

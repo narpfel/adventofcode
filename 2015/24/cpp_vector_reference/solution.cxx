@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <numeric>
 #include <string>
@@ -81,9 +82,11 @@ auto solve(uint64_t const target_weight, std::vector<Value> const &weights) -> u
 auto read_input(std::filesystem::path const &path) {
     auto numbers = std::vector<Value>{};
     auto input_file = std::ifstream{path};
-    for (std::string line; std::getline(input_file, line);) {
-        numbers.emplace_back(std::stoull(line));
-    }
+    std::copy(
+        std::istream_iterator<uint64_t>{input_file},
+        std::istream_iterator<uint64_t>{},
+        std::back_inserter(numbers)
+    );
     return numbers;
 }
 
