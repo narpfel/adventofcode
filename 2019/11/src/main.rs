@@ -1,12 +1,9 @@
 use std::collections::HashMap;
-use std::sync::mpsc::channel;
-use std::iter::{once, from_fn};
 use std::convert::TryInto;
 
-use failure::{Fallible, ensure};
+use failure::{ensure, Fallible};
 
-use intcode::Computer;
-
+use intcode::{Cell, Computer, IO};
 
 #[derive(Debug, Copy, Clone)]
 enum Direction {
@@ -44,29 +41,59 @@ fn move_((mut x, mut y): (i64, i64), direction: Direction) -> (i64, i64) {
     (x, y)
 }
 
-fn solve(tiles: &mut HashMap<(i64, i64), Colour>) -> Fallible<()> {
-    let mut position = (0, 0);
-    macro_rules! lookup_colour {
-        () => {{
-            tiles.get(&position).map(|colour| match colour { Black => 0, White => 1 }).unwrap_or(0)
-        }}
-    }
-    let (tx, rx) = channel();
-    let mut direction = Direction::Up;
-    let robot = once(lookup_colour!()).chain(from_fn(|| {
-        let colour = rx.recv().ok()?;
-        let turn = rx.recv().ok()?;
-        tiles.insert(position, match colour {
-            0 => Black,
-            1 => White,
-            _ => None?,
-        });
-        direction = next_direction(direction, turn)?;
-        position = move_(position, direction);
-        Some(lookup_colour!())
-    }));
+struct State<'a> {
+    tiles: &'a mut HashMap<(i64, i64), Colour>,
+    position: (i64, i64),
+    direction: Direction,
+    colour: Option<Cell>,
+}
 
-    let mut c = Computer::from_file("input", robot, tx)?;
+impl<'a> State<'a> {
+    fn new(tiles: &mut HashMap<(i64, i64), Colour>) -> State {
+        State {
+            tiles,
+            position: (0, 0),
+            direction: Direction::Up,
+            colour: None,
+        }
+    }
+}
+
+impl<'a> IO for State<'a> {
+    fn next_input(&mut self) -> Option<Cell> {
+        Some(
+            self.tiles
+                .get(&self.position)
+                .map(|colour| match colour {
+                    Black => 0,
+                    White => 1,
+                })
+                .unwrap_or(0),
+        )
+    }
+
+    fn output(&mut self, value: Cell) {
+        if let Some(colour) = self.colour.take() {
+            self.tiles.insert(
+                self.position,
+                match colour {
+                    0 => Black,
+                    1 => White,
+                    _ => panic!(),
+                },
+            );
+            self.direction = next_direction(self.direction, value).unwrap();
+            self.position = move_(self.position, self.direction);
+        } else {
+            self.colour = Some(value);
+            return;
+        }
+    }
+}
+
+fn solve(tiles: &mut HashMap<(i64, i64), Colour>) -> Fallible<()> {
+    let mut state = State::new(tiles);
+    let mut c = Computer::from_file("input", &mut state)?;
     ensure!(c.run().is_some(), "error while executing program");
     Ok(())
 }

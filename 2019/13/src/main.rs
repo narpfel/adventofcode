@@ -1,12 +1,10 @@
 use std::cmp::Ordering;
 use std::io::{Write, stdout};
-use std::iter::from_fn;
-use std::sync::mpsc::channel;
 
 use failure::{Fallible, ensure};
 use itertools::Itertools;
 
-use intcode::Computer;
+use intcode::{Cell, Computer, IO};
 
 fn render(tile: i64) -> char {
     match tile {
@@ -19,48 +17,83 @@ fn render(tile: i64) -> char {
     }
 }
 
+struct State {
+    outputs: Vec<Cell>,
+    tiles: Vec<((i64, i64), i64)>,
+    paddle_position: i64,
+    ball_position: i64,
+}
+
+impl State {
+    fn new() -> Self {
+        State {
+            outputs: Vec::new(),
+            tiles: Vec::new(),
+            paddle_position: 0,
+            ball_position: 0,
+        }
+    }
+
+    fn handle_outputs(&mut self) {
+        for (x, y, tile) in std::mem::replace(&mut self.outputs, Vec::new()).into_iter().tuples() {
+            self.tiles.push(((x, y), tile));
+            if tile == 3 {
+                self.paddle_position = x;
+            }
+            else if tile == 4 {
+                self.ball_position = x;
+            }
+        }
+    }
+}
+
+impl IO for State {
+    fn next_input(&mut self) -> Option<Cell> {
+        self.handle_outputs();
+        Some(match self.paddle_position.cmp(&self.ball_position) {
+            Ordering::Less => 1,
+            Ordering::Equal => 0,
+            Ordering::Greater => -1,
+        })
+    }
+
+    fn output(&mut self, value: Cell) {
+        self.outputs.push(value);
+    }
+}
+
 fn part1() -> Fallible<usize> {
-    let (tx, rx) = channel();
-    let mut c = Computer::from_file("input", vec![].into_iter(), tx)?;
+    let mut state = State::new();
+    let mut c = Computer::from_file("input", &mut state)?;
     ensure!(c.run().is_some(), "error while running program");
-    Ok(rx.try_iter()
-        .tuples()
-        .filter(|&(_, _, tile)| tile == 2)
-        .count())
+    state.handle_outputs();
+    Ok(
+        state.tiles.into_iter()
+            .filter(|&(_, tile)| tile == 2)
+            .count()
+    )
+}
+
+fn part2() -> Fallible<(i64, Vec<((i64, i64), i64)>)> {
+    let mut state = State::new();
+    let mut c = Computer::from_file("input", &mut state)?;
+    c.memory[0] = 2;
+    ensure!(c.run().is_some(), "error while running program");
+    state.handle_outputs();
+    Ok((
+        state.tiles.iter().rev()
+            .filter_map(|&((x, y), tile)| if (x, y) == (-1, 0) { Some(tile) } else { None })
+            .next().ok_or_else(|| failure::format_err!("Could not find score in program output"))?,
+        state.tiles,
+    ))
 }
 
 fn main() -> Fallible<()> {
-    let (tx, rx) = channel();
-    let mut outputs = Vec::new();
-
-    let mut paddle_position = 0;
-    let mut ball_position = 0;
-    let input_iterator = from_fn(|| {
-        for (x, y, tile) in rx.try_iter().tuples() {
-            outputs.push(((x, y), tile));
-            if tile == 3 {
-                paddle_position = x;
-            }
-            else if tile == 4 {
-                ball_position = x;
-            }
-        }
-        match paddle_position.cmp(&ball_position) {
-            Ordering::Less => Some(1),
-            Ordering::Equal => Some(0),
-            Ordering::Greater => Some(-1),
-        }
-    });
-
-    let mut c = Computer::from_file("input", input_iterator, tx)?;
-    c.memory[0] = 2;
-    ensure!(c.run().is_some(), "error while running program");
-
-    outputs.extend(rx.try_iter().tuples().map(|(x, y, tile)| ((x, y), tile)));
+    let (part2_solution, tiles) = part2()?;
 
     if std::env::args().nth(1) == Some("--visualise".to_owned()) {
         print!("\x1B[?25l\x1B[2J");
-        outputs.iter()
+        tiles.iter()
             .for_each(|&((x, y), tile)| {
                 if x == -1 && y == 0 {
                     print!("\x1B[H{}", tile);
@@ -75,11 +108,6 @@ fn main() -> Fallible<()> {
     }
 
     println!("{}", part1()?);
-    println!(
-        "{}",
-        outputs.iter().rev()
-        .filter_map(|&((x, y), tile)| if (x, y) == (-1, 0) { Some(tile) } else { None })
-        .next().unwrap()
-    );
+    println!("{}", part2_solution);
     Ok(())
 }

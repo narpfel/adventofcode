@@ -1,14 +1,13 @@
-use std::path::Path;
+use std::convert::TryInto;
 use std::fs::read_to_string;
 use std::num::ParseIntError;
-use std::convert::TryInto;
-use std::sync::mpsc::Sender;
+use std::path::Path;
 
 use failure::Fallible;
-use num_traits::FromPrimitive;
 use num_derive::FromPrimitive;
+use num_traits::FromPrimitive;
 
-type Cell = i64;
+pub type Cell = i64;
 type Memory = Vec<Cell>;
 
 #[derive(Debug, Copy, Clone, FromPrimitive)]
@@ -45,30 +44,26 @@ pub fn parse(s: &str) -> Result<Memory, ParseIntError> {
         .collect()
 }
 
-pub struct Computer<Inputs: Iterator<Item = Cell>> {
+pub struct Computer<'a, T: IO> {
     pub memory: Memory,
-    inputs: Inputs,
-    pub outputs: Sender<Cell>,
+    io: &'a mut T,
     ip: usize,
     rb: Cell,
 }
 
-impl<Inputs: Iterator<Item = Cell>> Computer<Inputs> {
-    pub fn from_str(
-        s: &str,
-        inputs: Inputs,
-        outputs: Sender<Cell>
-    ) -> Result<Computer<Inputs>, ParseIntError> {
+impl<'a, T: IO> Computer<'a, T> {
+    pub fn from_str(s: &str, io: &'a mut T) -> Result<Self, ParseIntError> {
         let memory = parse(s)?;
-        Ok(Computer { memory, inputs, outputs, ip: 0, rb: 0, })
+        Ok(Computer {
+            memory,
+            io,
+            ip: 0,
+            rb: 0,
+        })
     }
 
-    pub fn from_file(
-        path: impl AsRef<Path>,
-        inputs: Inputs,
-        outputs: Sender<Cell>
-    ) -> Fallible<Computer<Inputs>> {
-        Ok(Computer::from_str(&read_to_string(path)?, inputs, outputs)?)
+    pub fn from_file(path: impl AsRef<Path>, io: &'a mut T) -> Fallible<Self> {
+        Ok(Computer::from_str(&read_to_string(path)?, io)?)
     }
 
     fn lookup(&mut self, address: usize) -> Option<&mut Cell> {
@@ -130,12 +125,10 @@ impl<Inputs: Iterator<Item = Cell>> Computer<Inputs> {
                 Add => operation!(2, store_result, |a, b| a + b),
                 Multiply => operation!(2, store_result, |a, b| a * b),
                 ReadInput => {
-                    let input = self.inputs.next()?;
+                    let input = self.io.next_input()?;
                     operation!(0, store_result, || input);
-                },
-                WriteOutput => operation!(1, |output|
-                    self.outputs.send(output).expect("Could not write value to output")
-                ),
+                }
+                WriteOutput => operation!(1, |output| self.io.output(output)),
                 JumpIfTrue => operation!(2, |condition, target| {
                     if condition != 0 {
                         self.ip = target as usize
@@ -160,4 +153,9 @@ fn next_mode(modes: &mut Cell) -> Option<Mode> {
     let mode = *modes % 10;
     *modes /= 10;
     Mode::from_i64(mode)
+}
+
+pub trait IO {
+    fn next_input(&mut self) -> Option<Cell>;
+    fn output(&mut self, value: Cell);
 }
