@@ -151,3 +151,8 @@ perf.data.old
 
 *.class
 META-INF/
+
+node_modules/
+
+# C#
+*.exe
