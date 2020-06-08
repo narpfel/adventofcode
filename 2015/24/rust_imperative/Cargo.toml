@@ -6,6 +6,3 @@ edition = "2018"
 
 [profile.release]
 lto = true
-
-[dependencies]
-failure = "0.1"

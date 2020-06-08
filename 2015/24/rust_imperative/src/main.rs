@@ -2,8 +2,6 @@ use std::fs::read_to_string;
 
 use std::num::Wrapping;
 
-use failure::Fallible;
-
 type Value = u8;
 
 fn weight(xs: &[Value]) -> u64 {
@@ -69,7 +67,7 @@ fn solve(target_weight: u64, weights: &[Value]) -> u64 {
     min_quantum_entanglement
 }
 
-fn main() -> Fallible<()> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input: Vec<Value> = read_to_string("input")?
         .lines()
         .map(str::parse)
