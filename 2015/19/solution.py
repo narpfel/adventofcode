@@ -19,7 +19,7 @@ def next_block(file):
 def parse_replacement_line(line):
     match = REPLACEMENT.match(line)
     if match is None:
-        raise ValueError("Not a valid replacement spec: `{!r}`".format(line))
+        raise ValueError(f"Not a valid replacement spec: `{line!r}`")
     return match.group("element", "replacement")
 
 
@@ -70,7 +70,7 @@ def steps(result):
 def main():
     with open("input") as lines:
         replacements = {
-            key: set(replacement for _, replacement in group)
+            key: {replacement for _, replacement in group}
             for key, group in groupby(
                 read_replacements(next_block(lines)),
                 key=itemgetter(0)

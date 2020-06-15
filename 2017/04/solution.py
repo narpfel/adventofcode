@@ -13,9 +13,9 @@ def main():
 
     print(
         sum(
-            len(set(
+            len({
                 "".join(sorted(word)) for word in line.split()
-            )) == len(line.split())
+            }) == len(line.split())
             for line in lines
         )
     )

@@ -47,7 +47,7 @@ def find_best_arrangement(people, pair2happiness):
 
 def main():
     pair2happiness = dict(read_input("input"))
-    people = set(pair[0] for pair in pair2happiness)
+    people = {pair[0] for pair in pair2happiness}
     best_arrangement = find_best_arrangement(people, pair2happiness)
     print(happiness(best_arrangement, pair2happiness))
 
