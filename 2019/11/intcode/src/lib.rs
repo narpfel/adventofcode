@@ -1,16 +1,13 @@
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
+use std::error::Error;
 use std::fs::read_to_string;
 use std::num::ParseIntError;
 use std::path::Path;
 
-use failure::Fallible;
-use num_derive::FromPrimitive;
-use num_traits::FromPrimitive;
-
 pub type Cell = i64;
 type Memory = Vec<Cell>;
 
-#[derive(Debug, Copy, Clone, FromPrimitive)]
+#[derive(Debug, Copy, Clone)]
 enum Mode {
     Position = 0,
     Immediate = 1,
@@ -18,7 +15,25 @@ enum Mode {
 }
 use Mode::*;
 
-#[derive(Debug, Copy, Clone, FromPrimitive)]
+#[derive(Copy, Clone, Debug)]
+pub struct InvalidMode(Cell);
+
+impl TryFrom<Cell> for Mode {
+    type Error = InvalidMode;
+
+    fn try_from(cell: Cell) -> Result<Self, InvalidMode> {
+        let result = Ok(match cell {
+            0 => Position,
+            1 => Immediate,
+            2 => Relative,
+            _ => return Err(InvalidMode(cell)),
+        });
+        debug_assert_eq!(cell, result.unwrap() as Cell);
+        result
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
 enum Opcode {
     Add = 1,
     Multiply = 2,
@@ -32,7 +47,32 @@ enum Opcode {
     Halt = 99,
 }
 
-pub fn read_puzzle_input(path: impl AsRef<Path>) -> Fallible<Memory> {
+#[derive(Copy, Clone, Debug)]
+pub struct InvalidOpcode(Cell);
+
+impl TryFrom<Cell> for Opcode {
+    type Error = InvalidOpcode;
+
+    fn try_from(cell: Cell) -> Result<Self, InvalidOpcode> {
+        use Opcode::*;
+        let result = Ok(match cell {
+            1 => Add,
+            2 => Multiply,
+            3 => ReadInput,
+            4 => WriteOutput,
+            5 => JumpIfTrue,
+            6 => JumpIfFalse,
+            7 => LessThan,
+            8 => Equals,
+            9 => AdjustRelativeBase,
+            99 => Halt,
+            _ => return Err(InvalidOpcode(cell)),
+        });
+        debug_assert_eq!(cell, result.unwrap() as Cell);
+        result
+    }
+}
+pub fn read_puzzle_input(path: impl AsRef<Path>) -> Result<Memory, Box<dyn Error>> {
     Ok(parse(&read_to_string(path)?)?)
 }
 
@@ -62,7 +102,7 @@ impl<'a, T: IO> Computer<'a, T> {
         })
     }
 
-    pub fn from_file(path: impl AsRef<Path>, io: &'a mut T) -> Fallible<Self> {
+    pub fn from_file(path: impl AsRef<Path>, io: &'a mut T) -> Result<Self, Box<dyn Error>> {
         Ok(Computer::from_str(&read_to_string(path)?, io)?)
     }
 
@@ -121,7 +161,7 @@ impl<'a, T: IO> Computer<'a, T> {
             }
 
             use Opcode::*;
-            match Opcode::from_i64(command)? {
+            match Opcode::try_from(command).ok()? {
                 Add => operation!(2, store_result, |a, b| a + b),
                 Multiply => operation!(2, store_result, |a, b| a * b),
                 ReadInput => {
@@ -152,7 +192,7 @@ impl<'a, T: IO> Computer<'a, T> {
 fn next_mode(modes: &mut Cell) -> Option<Mode> {
     let mode = *modes % 10;
     *modes /= 10;
-    Mode::from_i64(mode)
+    Mode::try_from(mode).ok()
 }
 
 pub trait IO {

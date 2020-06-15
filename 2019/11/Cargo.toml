@@ -5,7 +5,6 @@ authors = ["narpfel <narpfel@gmx.de>"]
 edition = "2018"
 
 [dependencies]
-"failure" = "0"
 
 [dependencies.intcode]
 path = "intcode"

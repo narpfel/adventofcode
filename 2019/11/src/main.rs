@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
-
-use failure::{ensure, Fallible};
+use std::error::Error;
 
 use intcode::{Cell, Computer, IO};
 
@@ -91,20 +90,20 @@ impl<'a> IO for State<'a> {
     }
 }
 
-fn solve(tiles: &mut HashMap<(i64, i64), Colour>) -> Fallible<()> {
+fn solve(tiles: &mut HashMap<(i64, i64), Colour>) -> Result<(), Box<dyn Error>> {
     let mut state = State::new(tiles);
     let mut c = Computer::from_file("input", &mut state)?;
-    ensure!(c.run().is_some(), "error while executing program");
+    c.run().ok_or("error while executing program")?;
     Ok(())
 }
 
-fn part1() -> Fallible<usize> {
+fn part1() -> Result<usize, Box<dyn Error>> {
     let mut tiles = HashMap::new();
     solve(&mut tiles)?;
     Ok(tiles.len())
 }
 
-fn part2() -> Fallible<String> {
+fn part2() -> Result<String, Box<dyn Error>> {
     let mut tiles = HashMap::new();
     tiles.insert((0, 0), White);
     solve(&mut tiles)?;
@@ -125,7 +124,7 @@ fn part2() -> Fallible<String> {
     Ok(lines.iter().rev().map(|line| line.iter().collect()).collect::<Vec<String>>().join("\n"))
 }
 
-fn main() -> Fallible<()> {
+fn main() -> Result<(), Box<dyn Error>> {
     println!("{}", part1()?);
     println!("{}", part2()?);
     Ok(())

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
+use std::error::Error;
 use std::iter::once;
 
 use intcode::{Cell, Computer, IO};
@@ -108,7 +109,7 @@ fn neighbours(Point { x, y }: Point) -> impl Iterator<Item = Point> {
         .chain(once(Point { x, y: y + 1 }))
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     let mut state = State::new();
     let mut computer = Computer::from_file("input", &mut state)?;
 

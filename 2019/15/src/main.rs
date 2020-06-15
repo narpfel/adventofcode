@@ -2,9 +2,9 @@
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::convert::{TryFrom, TryInto};
+use std::error::Error;
 use std::io::{stdout, Write};
 
-use failure::Fallible;
 #[cfg(feature = "interactive")]
 use itertools::Itertools;
 #[cfg(not(feature = "interactive"))]
@@ -36,6 +36,7 @@ impl Direction {
     }
 }
 
+#[cfg(feature = "interactive")]
 impl TryFrom<console::Key> for Direction {
     type Error = NotAnArrowKey;
 
@@ -51,6 +52,7 @@ impl TryFrom<console::Key> for Direction {
     }
 }
 
+#[cfg(feature = "interactive")]
 struct NotAnArrowKey;
 
 #[cfg(feature = "interactive")]
@@ -251,7 +253,7 @@ fn neighbours((x, y): (i64, i64)) -> impl Iterator<Item = (i64, i64)> {
         .chain(once((x, y + 1)))
 }
 
-fn main() -> Fallible<()> {
+fn main() -> Result<(), Box<dyn Error>> {
     let mut state = State::new();
     let mut computer = Computer::from_file("input", &mut state)?;
 
@@ -259,12 +261,12 @@ fn main() -> Fallible<()> {
     print!("\x1B[2J\x1B[?25l\x1B[;Ho");
     stdout().flush()?;
     computer.run();
-    #[cfg(feature = "interac;tive")]
+    #[cfg(feature = "interactive")]
     println!("\x1B[9999;1H\x1B[4F\x1B[?25hGoodbye.");
     if let Some((part1, part2)) = state.solve() {
         println!("{}\n{}", part1, part2);
-        Ok(())
     } else {
-        failure::bail!("Failed to find solution");
+        Err("Failed to find solution")?;
     }
+    Ok(())
 }

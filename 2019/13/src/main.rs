@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
+use std::error::Error;
 use std::io::{Write, stdout};
 
-use failure::{Fallible, ensure};
 use itertools::Itertools;
 
 use intcode::{Cell, Computer, IO};
@@ -62,10 +62,10 @@ impl IO for State {
     }
 }
 
-fn part1() -> Fallible<usize> {
+fn part1() -> Result<usize, Box<dyn Error>> {
     let mut state = State::new();
     let mut c = Computer::from_file("input", &mut state)?;
-    ensure!(c.run().is_some(), "error while running program");
+    c.run().ok_or("error while running program")?;
     state.handle_outputs();
     Ok(
         state.tiles.into_iter()
@@ -74,21 +74,21 @@ fn part1() -> Fallible<usize> {
     )
 }
 
-fn part2() -> Fallible<(i64, Vec<((i64, i64), i64)>)> {
+fn part2() -> Result<(i64, Vec<((i64, i64), i64)>), Box<dyn Error>> {
     let mut state = State::new();
     let mut c = Computer::from_file("input", &mut state)?;
     c.memory[0] = 2;
-    ensure!(c.run().is_some(), "error while running program");
+    c.run().ok_or("error while running program")?;
     state.handle_outputs();
     Ok((
         state.tiles.iter().rev()
             .filter_map(|&((x, y), tile)| if (x, y) == (-1, 0) { Some(tile) } else { None })
-            .next().ok_or_else(|| failure::format_err!("Could not find score in program output"))?,
+            .next().ok_or("Could not find score in program output")?,
         state.tiles,
     ))
 }
 
-fn main() -> Fallible<()> {
+fn main() -> Result<(), Box<dyn Error>> {
     let (part2_solution, tiles) = part2()?;
 
     if std::env::args().nth(1) == Some("--visualise".to_owned()) {
