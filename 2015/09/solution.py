@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-
 import re
 from collections import defaultdict
 from itertools import tee
-
 
 DISTANCE_SPEC = re.compile(r"(?P<start>\w*) to (?P<end>\w*) = (?P<distance>\d*)")
 

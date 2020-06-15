@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-
 from collections import defaultdict
-from itertools import count, islice
-
+from itertools import count
+from itertools import islice
 
 INPUT = 265149
 

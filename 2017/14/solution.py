@@ -1,13 +1,12 @@
 #!/usr/bin/env pypy3
-
-from itertools import chain, count
 import sys
+from itertools import chain
+from itertools import count
 
 # isort: split
 
 sys.path.insert(0, "../10")
 from solution import knot_hash  # noqa: E402 (import from modified `sys.path`)
-
 
 INPUT = "jzgqcdpd"
 

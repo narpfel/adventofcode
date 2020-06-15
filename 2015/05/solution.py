@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-
 import re
-
 
 DOUBLE_CHARACTER = re.compile(r".*(?P<c>[a-z])(?P=c)")
 

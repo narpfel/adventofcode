@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-
 import re
 
 import numpy as np
-
 
 COMMAND_FORMAT = re.compile(r"(.*) (\d*),(\d*) through (\d*),(\d*)")
 

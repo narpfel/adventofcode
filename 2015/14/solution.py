@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-
-from collections import defaultdict
 import re
+from collections import defaultdict
 
 
 class Reindeer:

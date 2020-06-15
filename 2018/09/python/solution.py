@@ -1,7 +1,5 @@
 #!/usr/bin/env pypy3
-
 from itertools import cycle
-
 
 INPUT = "493 players; last marble is worth 71863 points"
 

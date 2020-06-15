@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-
-from itertools import cycle, islice, count
-
+from itertools import count
+from itertools import cycle
+from itertools import islice
 
 INPUT = [
     int(s)

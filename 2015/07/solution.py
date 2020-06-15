@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-
-from operator import and_, or_, lshift, rshift, invert
-from functools import partial
 import re
 from functools import lru_cache
+from functools import partial
+from operator import and_
+from operator import invert
+from operator import lshift
+from operator import or_
+from operator import rshift
 
 
 class Wire:

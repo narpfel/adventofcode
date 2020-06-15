@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-
-import re
 import json
+import re
 
 
 def sum_numbers(string):

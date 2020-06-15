@@ -1,7 +1,6 @@
 #!/usr/bin/env pypy3
-
-from itertools import groupby, tee
-
+from itertools import groupby
+from itertools import tee
 
 INPUT = "246515-739105"
 

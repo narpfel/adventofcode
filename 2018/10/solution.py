@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-
 import re
 
 import numpy as np
-
 
 COORDINATE_RE = re.compile("<(.*?)>")
 

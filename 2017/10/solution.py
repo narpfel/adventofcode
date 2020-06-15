@@ -1,12 +1,14 @@
 #!/usr/bin/env pypy3
-
-from numbers import Number
-from collections import UserList
-from itertools import islice, cycle, count, repeat, chain
-from functools import reduce
-from operator import xor
 from binascii import hexlify
-
+from collections import UserList
+from functools import reduce
+from itertools import chain
+from itertools import count
+from itertools import cycle
+from itertools import islice
+from itertools import repeat
+from numbers import Number
+from operator import xor
 
 INPUT = "106,16,254,226,55,2,1,166,177,247,93,0,255,228,60,36"
 

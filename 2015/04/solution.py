@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-
 from hashlib import md5
 from itertools import count
-
 
 INPUT = b"iwrupvqb"
 

@@ -1,7 +1,5 @@
 #!/usr/bin/env pypy3
-
 from itertools import groupby
-
 
 INPUT = "1113222113"
 

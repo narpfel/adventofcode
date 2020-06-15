@@ -1,9 +1,7 @@
 #!/usr/bin/env pypy3
-
 from collections import namedtuple
 from itertools import chain
 from operator import attrgetter
-
 
 GRID_SIZE = 300
 

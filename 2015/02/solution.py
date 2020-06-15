@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-
-from itertools import combinations
 from functools import reduce
+from itertools import combinations
 from operator import mul
 
 

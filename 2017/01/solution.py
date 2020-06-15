@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-
 from functools import partial
-from itertools import tee, cycle, islice
+from itertools import cycle
+from itertools import islice
+from itertools import tee
 
 
 def pairs(xs, selector):

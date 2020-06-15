@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-
 from bisect import bisect
 from collections import defaultdict
 from functools import partial
 from math import ceil
 
 from pytest import mark
-
 
 ONE_TRILLION = 10 ** 12
 

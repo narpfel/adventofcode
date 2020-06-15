@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-
 from hashlib import md5
-from itertools import count, islice
-
+from itertools import count
+from itertools import islice
 
 INPUT = b"reyedfim"
 

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-
 import re
 from itertools import chain
-
 
 HYPERNET_SEQUENCE = re.compile(r"\[.*?\]")
 ABBA_SEQUENCE = re.compile(r"(?P<a>[a-z])(?!(?P=a))(?P<b>[a-z])(?P=b)(?P=a)")

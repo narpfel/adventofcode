@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-
 import re
-from itertools import groupby, chain
+from itertools import chain
+from itertools import groupby
 from operator import itemgetter
 from textwrap import dedent
-
 
 REPLACEMENT = re.compile(
     r"(?P<element>[A-Z]?[a-z]?) => (?P<replacement>[A-Za-z]*)"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-
-from itertools import chain, combinations
+from itertools import chain
+from itertools import combinations
 
 
 def main():
