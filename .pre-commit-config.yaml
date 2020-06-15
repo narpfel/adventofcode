@@ -1,0 +1,55 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.1.0
+    hooks:
+      - id: check-byte-order-marker
+      - id: check-docstring-first
+      - id: check-executables-have-shebangs
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: debug-statements
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: name-tests-test
+      - id: requirements-txt-fixer
+      - id: trailing-whitespace
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.2
+    hooks:
+      - id: flake8
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.5.0
+    hooks:
+      - id: pyupgrade
+        args: [--py36-plus]
+  - repo: https://github.com/timothycrosley/isort
+    rev: develop
+    hooks:
+      - id: isort
+  - repo: local
+    hooks:
+      - id: cargo-clippy
+        name: cargo-clippy
+        entry: |
+          .ci/xargify.py
+            -q
+            -f warning
+            --
+            cargo clippy -Z unstable-options --manifest-path {} --color=always
+            ---
+        require_serial: true
+        language: script
+        files: "Cargo.toml$"
+      - id: cargo-fmt
+        name: cargo-fmt
+        entry: |
+          .ci/xargify.py
+            --
+            cargo fmt --manifest-path {} -- -l ---
+        require_serial: true
+        language: script
+        files: "Cargo.toml$"
+
+exclude: "input(_test)?$"

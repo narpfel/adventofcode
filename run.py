@@ -5,8 +5,8 @@ import subprocess
 import sys
 import time
 from contextlib import suppress
-from pathlib import Path
 from itertools import count
+from pathlib import Path
 
 
 class Runner:
