@@ -15,6 +15,10 @@ repos:
       - id: name-tests-test
       - id: requirements-txt-fixer
       - id: trailing-whitespace
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.5.1
+    hooks:
+      - id: python-check-blanket-noqa
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.2
     hooks:
