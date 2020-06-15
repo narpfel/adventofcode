@@ -7,7 +7,6 @@ def main():
     with open("input") as lines:
         messages = [line.strip() for line in lines]
 
-
     abundances = [Counter(column) for column in zip(*messages)]
 
     print(

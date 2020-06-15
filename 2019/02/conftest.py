@@ -1,4 +1,4 @@
-import hy
+import hy  # noqa: F401 (needed for `pytest` to find Hy modules)
 import pytest
 
 

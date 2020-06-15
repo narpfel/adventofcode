@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import re
-#!/usr/bin/env python3
-
 from itertools import chain
 
 

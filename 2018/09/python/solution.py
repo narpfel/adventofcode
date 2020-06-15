@@ -1,6 +1,5 @@
 #!/usr/bin/env pypy3
 
-from collections import UserList
 from itertools import cycle
 
 

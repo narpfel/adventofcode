@@ -13,9 +13,10 @@ def read_input(filename):
     with open(filename) as input:
         for line in input:
             match = line_format.match(line.strip())
+            gain_or_lose = -1 if match.group("gain_or_lose") == "lose" else 1
             yield (
                 (match.group("name"), match.group("other")),
-                int(match.group("happiness")) * (-1 if match.group("gain_or_lose") == "lose" else 1)
+                int(match.group("happiness")) * gain_or_lose
             )
 
 
