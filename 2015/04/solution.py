@@ -18,5 +18,5 @@ def main():
     print(lowest_with_n_zeroes(6))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

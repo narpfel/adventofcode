@@ -67,5 +67,5 @@ def main():
     print(max(seconds_in_lead.values()))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

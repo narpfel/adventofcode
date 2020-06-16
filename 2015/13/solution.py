@@ -60,5 +60,5 @@ def main():
     print(happiness(best_arrangement, pair2happiness))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

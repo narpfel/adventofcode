@@ -66,7 +66,7 @@ def main(argv=None):
     parser.add_argument("-p", "--placeholder", default="{}")
     parser.add_argument("-s", "--separator", default="---")
     parser.add_argument("-f", "--fail-on", default=[], nargs="*", type=str.encode)
-    parser.add_argument("command", nargs='+')
+    parser.add_argument("command", nargs="+")
     args = parser.parse_args(argv)
     command, params = split(args.command, on=args.separator)
     any_failed = False

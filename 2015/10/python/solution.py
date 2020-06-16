@@ -21,5 +21,5 @@ def main():
     print(len(look_and_say_recursively(INPUT, 50)))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

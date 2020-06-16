@@ -42,5 +42,5 @@ def main():
         print(sum(is_nice_part_two(line.strip()) for line in lines))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

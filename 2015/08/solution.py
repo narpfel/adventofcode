@@ -17,5 +17,5 @@ def main():
     print(repr_repr_length - repr_length)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

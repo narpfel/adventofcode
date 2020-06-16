@@ -71,5 +71,5 @@ def main():
     print(next_password(new_password))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

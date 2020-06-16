@@ -23,5 +23,5 @@ def main():
     print(iterate_instructions(instructions, lambda x: -1 if x >= 3 else 1))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -59,5 +59,5 @@ def main():
     print(solve_for(COMMANDS_PART2, int))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
