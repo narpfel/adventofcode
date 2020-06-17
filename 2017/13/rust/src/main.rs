@@ -41,10 +41,7 @@ fn severity(delay: Time, firewall: &Firewall) -> u64 {
 }
 
 fn find_delay(firewall: &Firewall) -> Time {
-    (0..)
-        .filter(|&t| severity(t, firewall) == 0)
-        .next()
-        .unwrap()
+    (0..).find(|&t| severity(t, firewall) == 0).unwrap()
 }
 
 fn read_input(path: impl AsRef<Path>) -> Fallible<Firewall> {

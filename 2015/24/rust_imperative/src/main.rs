@@ -5,7 +5,7 @@ use std::num::Wrapping;
 type Value = u8;
 
 fn weight(xs: &[Value]) -> u64 {
-    xs.into_iter().map(|&v| v as u64).sum()
+    xs.iter().map(|&v| v as u64).sum()
 }
 
 fn calculate_weight_and_quantum_entanglement(indices: &[usize], weights: &[Value]) -> (u64, u64) {
@@ -25,9 +25,9 @@ fn find_best_solution_of_length(target_weight: u64, weights: &[Value], r: usize)
     let mut min_quantum_entanglement = std::u64::MAX;
 
     // Moving this to the top of the loop increases run time by ~1.7 s (17 %).
-    let (w, q) = calculate_weight_and_quantum_entanglement(&indices, weights);
-    if w == target_weight && min_quantum_entanglement > q {
-        min_quantum_entanglement = q;
+    let (weight, entanglement) = calculate_weight_and_quantum_entanglement(&indices, weights);
+    if weight == target_weight && min_quantum_entanglement > entanglement {
+        min_quantum_entanglement = entanglement;
     }
 
     loop {
@@ -49,9 +49,9 @@ fn find_best_solution_of_length(target_weight: u64, weights: &[Value], r: usize)
             j += 1;
         }
 
-        let (w, q) = calculate_weight_and_quantum_entanglement(&indices, weights);
-        if w == target_weight && min_quantum_entanglement > q {
-            min_quantum_entanglement = q;
+        let (weight, entanglement) = calculate_weight_and_quantum_entanglement(&indices, weights);
+        if weight == target_weight && min_quantum_entanglement > entanglement {
+            min_quantum_entanglement = entanglement;
         }
     }
 }

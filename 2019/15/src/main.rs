@@ -103,7 +103,7 @@ impl TryFrom<Cell> for Tile {
             1 => Empty,
             2 => Target,
             3 => Myself,
-            _ => Err(InvalidTile(value))?,
+            _ => return Err(InvalidTile(value)),
         })
     }
 }
@@ -296,7 +296,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("{}\n{}", part1, part2);
     }
     else {
-        Err("Failed to find solution")?;
+        return Err("Failed to find solution".into());
     }
     Ok(())
 }

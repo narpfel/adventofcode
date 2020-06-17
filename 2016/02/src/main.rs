@@ -15,7 +15,7 @@ fn read_instructions() -> io::Result<Vec<String>> {
     BufReader::new(File::open("input")?).lines().collect()
 }
 
-fn follow_instructions<F>(position: &mut [i8; 2], instructions: &str, validate: F) -> [i8; 2]
+fn follow_instructions<F>(position: &mut [i8; 2], instructions: &str, validate: F)
 where
     F: Fn(&mut [i8; 2], char),
 {
@@ -29,7 +29,6 @@ where
         }
         validate(position, c);
     }
-    position.clone()
 }
 
 fn solve<F>(keypad: &[Vec<&str>], validate: F) -> io::Result<String>
@@ -40,7 +39,8 @@ where
     Ok(read_instructions()?
         .iter()
         .map(|instructions| {
-            let [x, y] = follow_instructions(&mut position, &instructions, &validate);
+            follow_instructions(&mut position, &instructions, &validate);
+            let [x, y] = position;
             keypad[y as usize][x as usize]
         })
         .collect())

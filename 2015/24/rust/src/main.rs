@@ -10,11 +10,11 @@ fn subsequences<T: Clone, I: Into<Vec<T>>>(xs: I) -> impl Iterator<Item = Vec<T>
 }
 
 fn weight(xs: &[Value]) -> u64 {
-    xs.into_iter().map(|&v| v as u64).sum()
+    xs.iter().map(|&v| v as u64).sum()
 }
 
 fn quantum_entanglement(xs: &[Value]) -> u64 {
-    xs.into_iter().map(|&v| v as u64).product()
+    xs.iter().map(|&v| v as u64).product()
 }
 
 fn solve(target_weight: u64, weights: &[Value]) -> u64 {

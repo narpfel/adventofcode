@@ -1,4 +1,3 @@
-#![feature(option_flattening)]
 #![feature(core_intrinsics)]
 
 use std::intrinsics::assume;
@@ -101,6 +100,10 @@ fn read_word(buffer: &[u8]) -> Word {
 }
 
 fn md5(bytes: &[u8]) -> [u8; DIGEST_BYTE_COUNT] {
+    // Single-letter variable names match the names given in the MD5 RFC (RFC 1321),
+    // see https://www.ietf.org/rfc/rfc1321.txt
+    #![allow(clippy::many_single_char_names)]
+
     let mut a = read_word(&[0x01, 0x23, 0x45, 0x67]);
     let mut b = read_word(&[0x89, 0xab, 0xcd, 0xef]);
     let mut c = read_word(&[0xfe, 0xdc, 0xba, 0x98]);
@@ -134,19 +137,46 @@ fn md5(bytes: &[u8]) -> [u8; DIGEST_BYTE_COUNT] {
             );
         }
 
-        let md5_rounds: [(fn(Word, Word, Word) -> Word, _, [usize; 4]); 4] = [
-            (f, index(1, 0), [7, 12, 17, 22]),
-            (g, index(5, 1), [5, 9, 14, 20]),
-            (h, index(3, 5), [4, 11, 16, 23]),
-            (i, index(7, 0), [6, 10, 15, 21]),
+        struct Round<Index: Fn(usize) -> usize> {
+            round: fn(Word, Word, Word) -> Word,
+            index: Index,
+            s_cycle: [usize; 4],
+        }
+
+        let md5_rounds: [Round<_>; 4] = [
+            Round {
+                round: f,
+                index: index(1, 0),
+                s_cycle: [7, 12, 17, 22],
+            },
+            Round {
+                round: g,
+                index: index(5, 1),
+                s_cycle: [5, 9, 14, 20],
+            },
+            Round {
+                round: h,
+                index: index(3, 5),
+                s_cycle: [4, 11, 16, 23],
+            },
+            Round {
+                round: i,
+                index: index(7, 0),
+                s_cycle: [6, 10, 15, 21],
+            },
         ];
 
-        for (f, index, s_cycle) in &md5_rounds {
+        for Round {
+            round,
+            index,
+            s_cycle,
+        } in &md5_rounds
+        {
             for (k, &s) in (0..CHUNKSIZE / 4).map(index).zip(s_cycle.iter().cycle()) {
                 let tmp = d;
                 d = c;
                 c = b;
-                b = b + rotate(a + f(c, d, tmp) + buffer[k] + T[t_index], s);
+                b += rotate(a + round(c, d, tmp) + buffer[k] + T[t_index], s);
                 a = tmp;
                 t_index += 1;
             }
@@ -192,7 +222,7 @@ fn has_byte_repetition(s: &[u8], length: usize) -> Option<u8> {
                 None
             }
         })
-        .nth(0)
+        .next()
 }
 
 fn key_stretched(s: &str, count: usize) -> [u8; DIGEST_CHAR_LENGTH] {

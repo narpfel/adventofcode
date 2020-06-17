@@ -15,6 +15,13 @@ use intcode::{
     IO,
 };
 
+type Point = (i64, i64);
+
+struct Tile {
+    position: Point,
+    tile: Cell,
+}
+
 fn render(tile: i64) -> char {
     match tile {
         0 => ' ',
@@ -28,7 +35,7 @@ fn render(tile: i64) -> char {
 
 struct State {
     outputs: Vec<Cell>,
-    tiles: Vec<((i64, i64), i64)>,
+    tiles: Vec<Tile>,
     paddle_position: i64,
     ball_position: i64,
 }
@@ -48,7 +55,7 @@ impl State {
             .into_iter()
             .tuples()
         {
-            self.tiles.push(((x, y), tile));
+            self.tiles.push(Tile { position: (x, y), tile });
             if tile == 3 {
                 self.paddle_position = x;
             }
@@ -82,11 +89,11 @@ fn part1() -> Result<usize, Box<dyn Error>> {
     Ok(state
         .tiles
         .into_iter()
-        .filter(|&(_, tile)| tile == 2)
+        .filter(|tile| tile.tile == 2)
         .count())
 }
 
-fn part2() -> Result<(i64, Vec<((i64, i64), i64)>), Box<dyn Error>> {
+fn part2() -> Result<(i64, Vec<Tile>), Box<dyn Error>> {
     let mut state = State::new();
     let mut c = Computer::from_file("input", &mut state)?;
     c.memory[0] = 2;
@@ -97,8 +104,8 @@ fn part2() -> Result<(i64, Vec<((i64, i64), i64)>), Box<dyn Error>> {
             .tiles
             .iter()
             .rev()
-            .filter_map(|&((x, y), tile)| {
-                if (x, y) == (-1, 0) {
+            .filter_map(|&Tile { position, tile }| {
+                if position == (-1, 0) {
                     Some(tile)
                 }
                 else {
@@ -116,7 +123,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if std::env::args().nth(1) == Some("--visualise".to_owned()) {
         print!("\x1B[?25l\x1B[2J");
-        tiles.iter().for_each(|&((x, y), tile)| {
+        tiles.iter().for_each(|&Tile { position: (x, y), tile }| {
             if x == -1 && y == 0 {
                 print!("\x1B[H{}", tile);
             }

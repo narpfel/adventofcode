@@ -96,7 +96,6 @@ impl<'a> IO for State<'a> {
         }
         else {
             self.colour = Some(value);
-            return;
         }
     }
 }
