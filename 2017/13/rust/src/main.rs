@@ -1,6 +1,8 @@
-use std::collections::HashMap;
-use std::fs::read_to_string;
-use std::path::Path;
+use std::{
+    collections::HashMap,
+    fs::read_to_string,
+    path::Path,
+};
 
 use failure::Fallible;
 use num::Integer;
@@ -11,7 +13,6 @@ type Time = u64;
 
 type Firewall = HashMap<Position, Depth>;
 
-
 fn position(depth: Depth, time: Time) -> Position {
     if depth == 0 {
         return 0;
@@ -19,7 +20,12 @@ fn position(depth: Depth, time: Time) -> Position {
 
     let (d, m) = time.div_mod_floor(&(depth - 1));
 
-    if d.is_even() { m } else { depth - m - 1 }
+    if d.is_even() {
+        m
+    }
+    else {
+        depth - m - 1
+    }
 }
 
 fn is_caught(depth: Depth, time: Time) -> bool {
@@ -42,18 +48,15 @@ fn find_delay(firewall: &Firewall) -> Time {
 }
 
 fn read_input(path: impl AsRef<Path>) -> Fallible<Firewall> {
-    Ok(
-        read_to_string(path)?
+    Ok(read_to_string(path)?
         .lines()
-        .flat_map(|line|
-            line
-                .split(": ")
+        .flat_map(|line| {
+            line.split(": ")
                 .map(str::parse)
                 .collect::<Result<Vec<u64>, _>>()
                 .map(|numbers| (numbers[0], numbers[1]))
-        )
-        .collect()
-    )
+        })
+        .collect())
 }
 
 fn main() -> Fallible<()> {

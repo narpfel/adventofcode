@@ -1,10 +1,19 @@
-use std::cmp::Ordering;
-use std::error::Error;
-use std::io::{Write, stdout};
+use std::{
+    cmp::Ordering,
+    error::Error,
+    io::{
+        stdout,
+        Write,
+    },
+};
 
 use itertools::Itertools;
 
-use intcode::{Cell, Computer, IO};
+use intcode::{
+    Cell,
+    Computer,
+    IO,
+};
 
 fn render(tile: i64) -> char {
     match tile {
@@ -35,7 +44,10 @@ impl State {
     }
 
     fn handle_outputs(&mut self) {
-        for (x, y, tile) in std::mem::replace(&mut self.outputs, Vec::new()).into_iter().tuples() {
+        for (x, y, tile) in std::mem::replace(&mut self.outputs, Vec::new())
+            .into_iter()
+            .tuples()
+        {
             self.tiles.push(((x, y), tile));
             if tile == 3 {
                 self.paddle_position = x;
@@ -67,11 +79,11 @@ fn part1() -> Result<usize, Box<dyn Error>> {
     let mut c = Computer::from_file("input", &mut state)?;
     c.run().ok_or("error while running program")?;
     state.handle_outputs();
-    Ok(
-        state.tiles.into_iter()
-            .filter(|&(_, tile)| tile == 2)
-            .count()
-    )
+    Ok(state
+        .tiles
+        .into_iter()
+        .filter(|&(_, tile)| tile == 2)
+        .count())
 }
 
 fn part2() -> Result<(i64, Vec<((i64, i64), i64)>), Box<dyn Error>> {
@@ -81,9 +93,20 @@ fn part2() -> Result<(i64, Vec<((i64, i64), i64)>), Box<dyn Error>> {
     c.run().ok_or("error while running program")?;
     state.handle_outputs();
     Ok((
-        state.tiles.iter().rev()
-            .filter_map(|&((x, y), tile)| if (x, y) == (-1, 0) { Some(tile) } else { None })
-            .next().ok_or("Could not find score in program output")?,
+        state
+            .tiles
+            .iter()
+            .rev()
+            .filter_map(|&((x, y), tile)| {
+                if (x, y) == (-1, 0) {
+                    Some(tile)
+                }
+                else {
+                    None
+                }
+            })
+            .next()
+            .ok_or("Could not find score in program output")?,
         state.tiles,
     ))
 }
@@ -93,17 +116,16 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if std::env::args().nth(1) == Some("--visualise".to_owned()) {
         print!("\x1B[?25l\x1B[2J");
-        tiles.iter()
-            .for_each(|&((x, y), tile)| {
-                if x == -1 && y == 0 {
-                    print!("\x1B[H{}", tile);
-                }
-                else {
-                    print!("\x1B[{};{}H{}", y + 2, x + 1, render(tile));
-                }
-                stdout().flush().unwrap();
-                std::thread::sleep(std::time::Duration::from_millis(10));
-            });
+        tiles.iter().for_each(|&((x, y), tile)| {
+            if x == -1 && y == 0 {
+                print!("\x1B[H{}", tile);
+            }
+            else {
+                print!("\x1B[{};{}H{}", y + 2, x + 1, render(tile));
+            }
+            stdout().flush().unwrap();
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        });
         print!("\x1B[?25h\x1B[30E");
     }
 

@@ -1,9 +1,18 @@
-use std::collections::HashMap;
-use std::convert::{TryFrom, TryInto};
-use std::error::Error;
-use std::iter::once;
+use std::{
+    collections::HashMap,
+    convert::{
+        TryFrom,
+        TryInto,
+    },
+    error::Error,
+    iter::once,
+};
 
-use intcode::{Cell, Computer, IO};
+use intcode::{
+    Cell,
+    Computer,
+    IO,
+};
 
 type Scaffolding = HashMap<Point, Tile>;
 
@@ -88,7 +97,8 @@ impl IO for State {
                 x: 0,
                 y: self.position.y + 1,
             };
-        } else if let Ok(tile) = cell.try_into() {
+        }
+        else if let Ok(tile) = cell.try_into() {
             self.scaffolding.insert(self.position, tile);
             self.position = Point {
                 x: self.position.x + 1,

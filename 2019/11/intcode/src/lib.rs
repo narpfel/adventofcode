@@ -1,8 +1,13 @@
-use std::convert::{TryFrom, TryInto};
-use std::error::Error;
-use std::fs::read_to_string;
-use std::num::ParseIntError;
-use std::path::Path;
+use std::{
+    convert::{
+        TryFrom,
+        TryInto,
+    },
+    error::Error,
+    fs::read_to_string,
+    num::ParseIntError,
+    path::Path,
+};
 
 pub type Cell = i64;
 type Memory = Vec<Cell>;
@@ -77,8 +82,7 @@ pub fn read_puzzle_input(path: impl AsRef<Path>) -> Result<Memory, Box<dyn Error
 }
 
 pub fn parse(s: &str) -> Result<Memory, ParseIntError> {
-    s
-        .trim()
+    s.trim()
         .split(',')
         .map(|number| number.parse().map_err(Into::into))
         .collect()
@@ -129,7 +133,8 @@ impl<'a, T: IO> Computer<'a, T> {
             Immediate => None?,
             Relative => address + self.rb,
         };
-        self.lookup(address.try_into().ok()?).map(|cell| *cell = value)
+        self.lookup(address.try_into().ok()?)
+            .map(|cell| *cell = value)
     }
 
     pub fn run(&mut self) -> Option<()> {
@@ -184,7 +189,6 @@ impl<'a, T: IO> Computer<'a, T> {
                 AdjustRelativeBase => operation!(1, |offset| self.rb += offset),
                 Halt => return Some(()),
             }
-
         }
     }
 }

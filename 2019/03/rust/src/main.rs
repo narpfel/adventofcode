@@ -1,11 +1,21 @@
-use std::io;
-use std::fs::read_to_string;
-use std::collections::{HashSet, HashMap};
+use std::{
+    collections::{
+        HashMap,
+        HashSet,
+    },
+    fs::read_to_string,
+    io,
+};
 
 type Point = (i64, i64);
 
 #[derive(Copy, Clone, Debug)]
-enum Direction { R, L, U, D }
+enum Direction {
+    R,
+    L,
+    U,
+    D,
+}
 
 use Direction::*;
 
@@ -23,7 +33,10 @@ impl Direction {
 
 fn parse_direction(s: &str) -> Result<(Direction, usize), std::num::ParseIntError> {
     let (c, number) = s.split_at(1);
-    Ok((Direction::from_char(c.chars().next().unwrap()), number.parse()?))
+    Ok((
+        Direction::from_char(c.chars().next().unwrap()),
+        number.parse()?,
+    ))
 }
 
 fn move_(p: &mut Point, direction: Direction) {
@@ -58,18 +71,27 @@ fn main() -> io::Result<()> {
         .map(|line| track(line.split(',').map(parse_direction).filter_map(Result::ok)))
         .collect::<Vec<_>>();
 
-    let keys = paths.iter()
+    let keys = paths
+        .iter()
         .map(|m| m.keys().cloned().collect::<HashSet<Point>>())
         .collect::<Vec<_>>();
 
     let crossings = keys[0].intersection(&keys[1]).collect::<HashSet<_>>();
     println!(
         "{}",
-        crossings.iter().map(|crossing| paths[0][crossing].0).min().unwrap()
+        crossings
+            .iter()
+            .map(|crossing| paths[0][crossing].0)
+            .min()
+            .unwrap()
     );
     println!(
         "{}",
-        crossings.iter().map(|crossing| paths[0][crossing].1 + paths[1][crossing].1).min().unwrap()
+        crossings
+            .iter()
+            .map(|crossing| paths[0][crossing].1 + paths[1][crossing].1)
+            .min()
+            .unwrap()
     );
     Ok(())
 }

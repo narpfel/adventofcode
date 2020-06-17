@@ -1,17 +1,36 @@
 #![feature(or_patterns)]
 
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::convert::{TryFrom, TryInto};
-use std::error::Error;
-use std::io::{stdout, Write};
+use std::{
+    collections::{
+        HashMap,
+        HashSet,
+        VecDeque,
+    },
+    convert::{
+        TryFrom,
+        TryInto,
+    },
+    error::Error,
+    io::{
+        stdout,
+        Write,
+    },
+};
 
 #[cfg(feature = "interactive")]
 use itertools::Itertools;
 #[cfg(not(feature = "interactive"))]
-use rand::{seq::SliceRandom, thread_rng};
+use rand::{
+    seq::SliceRandom,
+    thread_rng,
+};
 use std::iter::once;
 
-use intcode::{Cell, Computer, IO};
+use intcode::{
+    Cell,
+    Computer,
+    IO,
+};
 
 type Point = (i64, i64);
 type Hull = HashMap<Point, Tile>;
@@ -161,14 +180,22 @@ impl State {
 
     #[cfg(not(feature = "interactive"))]
     fn read_input(&mut self) -> Option<Direction> {
-        // TODO: Optimise by systematically exploring the maze instead of performing a random walk.
+        // TODO: Optimise by systematically exploring the maze instead of performing a
+        // random walk.
         [Up, Down, Right, Left].choose(&mut self.rng).copied()
     }
 
     fn has_unexplored_cells(&self) -> bool {
         self.hull
             .iter()
-            .filter_map(|(position, &tile)| if tile == Wall { None } else { Some(position) })
+            .filter_map(|(position, &tile)| {
+                if tile == Wall {
+                    None
+                }
+                else {
+                    Some(position)
+                }
+            })
             .flat_map(|&p| neighbours(p))
             .any(|p| !self.hull.contains_key(&p))
     }
@@ -190,7 +217,8 @@ impl State {
                 self.hull.get(&p).and_then(|&tile| {
                     if tile == Wall || seen.contains(&p) {
                         None
-                    } else {
+                    }
+                    else {
                         Some((p, distance + 1))
                     }
                 })
@@ -233,7 +261,8 @@ impl IO for State {
                 _ => unreachable!(),
             };
             self.hull.insert((x, y), state);
-        } else {
+        }
+        else {
             self.hull.insert((self.x, self.y), state);
         }
 
@@ -265,7 +294,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("\x1B[9999;1H\x1B[4F\x1B[?25hGoodbye.");
     if let Some((part1, part2)) = state.solve() {
         println!("{}\n{}", part1, part2);
-    } else {
+    }
+    else {
         Err("Failed to find solution")?;
     }
     Ok(())

@@ -3,15 +3,25 @@
 
 use std::intrinsics::assume;
 
-use std::io::Cursor;
-use std::num::Wrapping;
+use std::{
+    io::Cursor,
+    num::Wrapping,
+};
 
 use std::borrow::Cow;
 
 use arraydeque::ArrayDeque;
-use generic_array::{GenericArray, typenum::U1000};
+use generic_array::{
+    typenum::U1000,
+    GenericArray,
+};
 
-use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt, ByteOrder};
+use byteorder::{
+    ByteOrder,
+    LittleEndian,
+    ReadBytesExt,
+    WriteBytesExt,
+};
 
 mod constants;
 use constants::*;
@@ -29,7 +39,9 @@ fn pad(bytes: &[u8], total_length: Wrapping<u64>) -> Vec<u8> {
     buffer.extend_from_slice(bytes);
     buffer.push(0b1000_0000);
     buffer.resize(number_of_chunks * CHUNKSIZE - 8, 0);
-    buffer.write_u64::<LittleEndian>((total_length * Wrapping(8)).0).unwrap_or_else(|_| unreachable!());
+    buffer
+        .write_u64::<LittleEndian>((total_length * Wrapping(8)).0)
+        .unwrap_or_else(|_| unreachable!());
     buffer
 }
 
@@ -68,7 +80,9 @@ fn chunks(bytes: &[u8]) -> Chunks {
         let mut padded_empty_bytes = Vec::with_capacity(CHUNKSIZE);
         padded_empty_bytes.push(0b1000_0000);
         padded_empty_bytes.resize(CHUNKSIZE - 8, 0);
-        padded_empty_bytes.write_u64::<LittleEndian>(0).unwrap_or_else(|_| unreachable!());
+        padded_empty_bytes
+            .write_u64::<LittleEndian>(0)
+            .unwrap_or_else(|_| unreachable!());
         Some(padded_empty_bytes.into())
     }
     else {
@@ -113,7 +127,11 @@ fn md5(bytes: &[u8]) -> [u8; DIGEST_BYTE_COUNT] {
         let mut buffer = [Wrapping(0u32); CHUNKSIZE / 4];
         let mut cursor = Cursor::new(chunk);
         for word in buffer.iter_mut() {
-            *word = Wrapping(cursor.read_u32::<LittleEndian>().unwrap_or_else(|_| unreachable!()));
+            *word = Wrapping(
+                cursor
+                    .read_u32::<LittleEndian>()
+                    .unwrap_or_else(|_| unreachable!()),
+            );
         }
 
         let md5_rounds: [(fn(Word, Word, Word) -> Word, _, [usize; 4]); 4] = [
@@ -143,7 +161,9 @@ fn md5(bytes: &[u8]) -> [u8; DIGEST_BYTE_COUNT] {
     let mut result = [0; DIGEST_BYTE_COUNT];
     let mut cursor = Cursor::new(&mut result[..]);
     for x in &[a, b, c, d] {
-        cursor.write_u32::<LittleEndian>(x.0).unwrap_or_else(|_| unreachable!());
+        cursor
+            .write_u32::<LittleEndian>(x.0)
+            .unwrap_or_else(|_| unreachable!());
     }
     result
 }
@@ -152,20 +172,17 @@ fn format_digest(digest: [u8; DIGEST_BYTE_COUNT]) -> [u8; DIGEST_CHAR_LENGTH] {
     const HEX_DIGITS: &[u8] = b"0123456789abcdef";
 
     let mut result = [0; DIGEST_CHAR_LENGTH];
-    digest.iter()
-        .enumerate()
-        .for_each(|(i, byte)| {
-            let upper_nibble = byte >> 4;
-            let lower_nibble = byte & 0xf;
-            result[2 * i] = HEX_DIGITS[upper_nibble as usize];
-            result[2 * i + 1] = HEX_DIGITS[lower_nibble as usize];
-        });
+    digest.iter().enumerate().for_each(|(i, byte)| {
+        let upper_nibble = byte >> 4;
+        let lower_nibble = byte & 0xf;
+        result[2 * i] = HEX_DIGITS[upper_nibble as usize];
+        result[2 * i + 1] = HEX_DIGITS[lower_nibble as usize];
+    });
     result
 }
 
 fn has_byte_repetition(s: &[u8], length: usize) -> Option<u8> {
-    s
-        .windows(length)
+    s.windows(length)
         .filter_map(|window| {
             let first_char = window[0];
             if window.iter().all(|&c| c == first_char) {
@@ -188,7 +205,7 @@ fn key_stretched(s: &str, count: usize) -> [u8; DIGEST_CHAR_LENGTH] {
     buffer
 }
 
-fn otp_indices<'a>(salt: &'a str, key_stretching_count: usize) -> impl Iterator<Item=usize> + 'a {
+fn otp_indices<'a>(salt: &'a str, key_stretching_count: usize) -> impl Iterator<Item = usize> + 'a {
     type Deque = ArrayDeque<GenericArray<Option<u8>, U1000>, arraydeque::Wrapping>;
     let mut triple_repetitions = Deque::new();
     let mut quintuple_repetitions = Deque::new();
@@ -199,14 +216,17 @@ fn otp_indices<'a>(salt: &'a str, key_stretching_count: usize) -> impl Iterator<
         .enumerate()
         .filter_map(move |(i, digest)| {
             quintuple_repetitions.push_back(has_byte_repetition(&digest, 5));
-            triple_repetitions.push_back(has_byte_repetition(&digest, 3)).flatten().and_then(|c| {
-                if quintuple_repetitions.contains(&Some(c)) {
-                    Some(i - 1000)
-                }
-                else {
-                    None
-                }
-            })
+            triple_repetitions
+                .push_back(has_byte_repetition(&digest, 3))
+                .flatten()
+                .and_then(|c| {
+                    if quintuple_repetitions.contains(&Some(c)) {
+                        Some(i - 1000)
+                    }
+                    else {
+                        None
+                    }
+                })
         })
 }
 

@@ -1,18 +1,28 @@
-use std::collections::HashMap;
-use std::convert::TryInto;
-use std::error::Error;
+use std::{
+    collections::HashMap,
+    convert::TryInto,
+    error::Error,
+};
 
-use intcode::{Cell, Computer, IO};
+use intcode::{
+    Cell,
+    Computer,
+    IO,
+};
 
 #[derive(Debug, Copy, Clone)]
 enum Direction {
-    Up, Down, Left, Right
+    Up,
+    Down,
+    Left,
+    Right,
 }
 use Direction::*;
 
 #[derive(Debug, Copy, Clone)]
 enum Colour {
-    Black, White
+    Black,
+    White,
 }
 use Colour::*;
 
@@ -83,7 +93,8 @@ impl<'a> IO for State<'a> {
             );
             self.direction = next_direction(self.direction, value).unwrap();
             self.position = move_(self.position, self.direction);
-        } else {
+        }
+        else {
             self.colour = Some(value);
             return;
         }
@@ -108,8 +119,9 @@ fn part2() -> Result<String, Box<dyn Error>> {
     tiles.insert((0, 0), White);
     solve(&mut tiles)?;
 
-    let (min_x, min_y) =
-        tiles.keys().fold((1, 0), |(min_x, min_y), (x, y)| (*x.min(&min_x), *y.min(&min_y)));
+    let (min_x, min_y) = tiles.keys().fold((1, 0), |(min_x, min_y), (x, y)| {
+        (*x.min(&min_x), *y.min(&min_y))
+    });
     let mut lines: Vec<Vec<char>> = Vec::new();
     for ((x, y), ref colour) in tiles {
         if y - min_y >= lines.len() as i64 {
@@ -119,9 +131,17 @@ fn part2() -> Result<String, Box<dyn Error>> {
         if x - min_x >= line.len() as i64 {
             line.resize((x - min_x + 1).try_into()?, ' ');
         }
-        line[(x - min_x) as usize] = match colour { White => '#', Black => ' ' };
+        line[(x - min_x) as usize] = match colour {
+            White => '#',
+            Black => ' ',
+        };
     }
-    Ok(lines.iter().rev().map(|line| line.iter().collect()).collect::<Vec<String>>().join("\n"))
+    Ok(lines
+        .iter()
+        .rev()
+        .map(|line| line.iter().collect())
+        .collect::<Vec<String>>()
+        .join("\n"))
 }
 
 fn main() -> Result<(), Box<dyn Error>> {

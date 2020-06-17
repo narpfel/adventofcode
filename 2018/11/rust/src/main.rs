@@ -41,24 +41,27 @@ fn precompute_sums(grid: &mut Grid) {
     }
 }
 
-fn windowed<'a>(grid: &'a Grid, window_size: usize) -> impl Iterator<Item=Window> + 'a {
+fn windowed<'a>(grid: &'a Grid, window_size: usize) -> impl Iterator<Item = Window> + 'a {
     let y = grid.len();
     let x = grid[0].len();
-    (1..x - window_size)
-        .flat_map(move |i|
-            (1..y - window_size)
-            .map(move |j| {
-                let a = grid[j][i];
-                let b = grid[j][i + window_size];
-                let c = grid[j + window_size][i + window_size];
-                let d = grid[j + window_size][i];
-                let power_level = c + a - d - b;
-                Window { x: i + 1, y: j + 1, window_size, total_power: power_level }
-            })
-        )
+    (1..x - window_size).flat_map(move |i| {
+        (1..y - window_size).map(move |j| {
+            let a = grid[j][i];
+            let b = grid[j][i + window_size];
+            let c = grid[j + window_size][i + window_size];
+            let d = grid[j + window_size][i];
+            let power_level = c + a - d - b;
+            Window {
+                x: i + 1,
+                y: j + 1,
+                window_size,
+                total_power: power_level,
+            }
+        })
+    })
 }
 
-fn solve(power_levels: &Grid, window_sizes: impl Iterator<Item=usize>) -> Window {
+fn solve(power_levels: &Grid, window_sizes: impl Iterator<Item = usize>) -> Window {
     window_sizes
         .flat_map(|window_size| windowed(power_levels, window_size))
         .max_by_key(|window| window.total_power)

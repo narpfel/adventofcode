@@ -6,8 +6,7 @@ type Value = u8;
 
 fn subsequences<T: Clone, I: Into<Vec<T>>>(xs: I) -> impl Iterator<Item = Vec<T>> {
     let xs = xs.into();
-    (0..xs.len() + 1)
-        .flat_map(move |l| xs.clone().into_iter().combinations(l))
+    (0..xs.len() + 1).flat_map(move |l| xs.clone().into_iter().combinations(l))
 }
 
 fn weight(xs: &[Value]) -> u64 {
