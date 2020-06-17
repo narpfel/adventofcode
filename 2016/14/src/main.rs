@@ -119,8 +119,12 @@ fn md5(bytes: &[u8]) -> [u8; DIGEST_BYTE_COUNT] {
     let index = |stride, shift| move |i: usize| (stride * i + shift) % 16;
 
     for chunk in chunks(bytes) {
-        unsafe { assume(chunk.as_ptr() as usize % CHUNKSIZE == 0) };
-        unsafe { assume(chunk.len() == CHUNKSIZE) };
+        unsafe {
+            assume(chunk.as_ptr() as usize % CHUNKSIZE == 0)
+        };
+        unsafe {
+            assume(chunk.len() == CHUNKSIZE)
+        };
         let aa = a;
         let bb = b;
         let cc = c;
@@ -166,12 +170,7 @@ fn md5(bytes: &[u8]) -> [u8; DIGEST_BYTE_COUNT] {
             },
         ];
 
-        for Round {
-            round,
-            index,
-            s_cycle,
-        } in &md5_rounds
-        {
+        for Round { round, index, s_cycle } in &md5_rounds {
             for (k, &s) in (0..CHUNKSIZE / 4).map(index).zip(s_cycle.iter().cycle()) {
                 let tmp = d;
                 d = c;

@@ -188,14 +188,11 @@ impl State {
     fn has_unexplored_cells(&self) -> bool {
         self.hull
             .iter()
-            .filter_map(|(position, &tile)| {
-                if tile == Wall {
-                    None
-                }
-                else {
-                    Some(position)
-                }
-            })
+            .filter_map(
+                |(position, &tile)| {
+                    if tile == Wall { None } else { Some(position) }
+                },
+            )
             .flat_map(|&p| neighbours(p))
             .any(|p| !self.hull.contains_key(&p))
     }

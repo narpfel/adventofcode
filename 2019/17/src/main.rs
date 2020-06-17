@@ -93,17 +93,11 @@ impl IO for State {
         #[cfg(feature = "interactive")]
         print!("{}", cell as u8 as char);
         if is_newline(cell) {
-            self.position = Point {
-                x: 0,
-                y: self.position.y + 1,
-            };
+            self.position = Point { x: 0, y: self.position.y + 1 };
         }
         else if let Ok(tile) = cell.try_into() {
             self.scaffolding.insert(self.position, tile);
-            self.position = Point {
-                x: self.position.x + 1,
-                ..self.position
-            };
+            self.position = Point { x: self.position.x + 1, ..self.position };
         }
     }
 }

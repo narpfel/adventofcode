@@ -98,12 +98,7 @@ pub struct Computer<'a, T: IO> {
 impl<'a, T: IO> Computer<'a, T> {
     pub fn from_str(s: &str, io: &'a mut T) -> Result<Self, ParseIntError> {
         let memory = parse(s)?;
-        Ok(Computer {
-            memory,
-            io,
-            ip: 0,
-            rb: 0,
-        })
+        Ok(Computer { memory, io, ip: 0, rb: 0 })
     }
 
     pub fn from_file(path: impl AsRef<Path>, io: &'a mut T) -> Result<Self, Box<dyn Error>> {

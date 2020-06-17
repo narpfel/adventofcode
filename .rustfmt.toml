@@ -6,5 +6,6 @@ merge_imports = true
 newline_style = "Unix"
 normalize_comments = true
 reorder_impl_items = true
+struct_lit_width = 40
 use_field_init_shorthand = true
 wrap_comments = true
