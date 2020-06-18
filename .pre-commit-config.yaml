@@ -46,6 +46,7 @@ repos:
         require_serial: true
         language: script
         files: "Cargo.toml$"
+        always_run: true
       - id: cargo-fmt
         name: cargo-fmt
         entry: |
@@ -55,5 +56,6 @@ repos:
         require_serial: true
         language: script
         files: "Cargo.toml$"
+        always_run: true
 
 exclude: "input(_test)?$"
