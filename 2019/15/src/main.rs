@@ -1,6 +1,7 @@
 #![feature(or_patterns)]
 
 use std::{
+    cmp::Reverse,
     collections::{
         HashMap,
         HashSet,
@@ -17,13 +18,7 @@ use std::{
     },
 };
 
-#[cfg(feature = "interactive")]
 use itertools::Itertools;
-#[cfg(not(feature = "interactive"))]
-use rand::{
-    seq::SliceRandom,
-    thread_rng,
-};
 use std::iter::once;
 
 use intcode::{
@@ -35,7 +30,7 @@ use intcode::{
 type Point = (i64, i64);
 type Hull = HashMap<Point, Tile>;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 enum Direction {
     Up,
     Down,
@@ -66,7 +61,7 @@ impl TryFrom<console::Key> for Direction {
             ArrowDown => Down,
             ArrowRight => Right,
             ArrowLeft => Left,
-            _ => Err(NotAnArrowKey)?,
+            _ => return Err(NotAnArrowKey),
         })
     }
 }
@@ -74,23 +69,20 @@ impl TryFrom<console::Key> for Direction {
 #[cfg(feature = "interactive")]
 struct NotAnArrowKey;
 
-#[cfg(feature = "interactive")]
 fn render(tile: Option<Tile>) -> char {
     match tile {
         Some(Wall) => '\u{2588}',
         Some(Empty) => '.',
         Some(Target) => 'X',
-        Some(Myself) => 'o',
         None => ' ',
     }
 }
 
-#[derive(PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 enum Tile {
     Wall,
     Empty,
     Target,
-    Myself,
 }
 use Tile::*;
 
@@ -102,7 +94,6 @@ impl TryFrom<Cell> for Tile {
             0 => Wall,
             1 => Empty,
             2 => Target,
-            3 => Myself,
             _ => return Err(InvalidTile(value)),
         })
     }
@@ -111,6 +102,7 @@ impl TryFrom<Cell> for Tile {
 #[derive(Copy, Clone, Debug)]
 struct InvalidTile(Cell);
 
+#[derive(Debug)]
 struct State {
     x: i64,
     y: i64,
@@ -119,12 +111,12 @@ struct State {
     target: Option<Point>,
     #[cfg(feature = "interactive")]
     term: console::Term,
-    #[cfg(not(feature = "interactive"))]
-    rng: rand::rngs::ThreadRng,
+    path: VecDeque<Direction>,
+    visualise: bool,
 }
 
 impl State {
-    fn new() -> Self {
+    fn new(visualise: bool) -> Self {
         let mut hull = Hull::default();
         hull.insert((0, 0), Empty);
         State {
@@ -135,14 +127,13 @@ impl State {
             target: None,
             #[cfg(feature = "interactive")]
             term: console::Term::stdout(),
-            #[cfg(not(feature = "interactive"))]
-            rng: thread_rng(),
+            path: VecDeque::default(),
+            visualise,
         }
     }
 }
 
 impl State {
-    #[cfg(feature = "interactive")]
     fn print(&self) {
         let (&min_x, &max_x) = self
             .hull
@@ -169,7 +160,12 @@ impl State {
                     .collect::<String>())
                 .join("\n")
         );
-        print!("\x1B[{};{}Ho", max_y - self.y + 1, self.x - min_x + 1);
+        print!(
+            "\x1B[s\x1B[{};{}Ho\x1B[u",
+            max_y - self.y + 1,
+            self.x - min_x + 1
+        );
+
         stdout().flush().unwrap();
     }
 
@@ -180,37 +176,105 @@ impl State {
 
     #[cfg(not(feature = "interactive"))]
     fn read_input(&mut self) -> Option<Direction> {
-        // TODO: Optimise by systematically exploring the maze instead of performing a
-        // random walk.
-        [Up, Down, Right, Left].choose(&mut self.rng).copied()
+        if self.path.is_empty() {
+            self.path = self
+                .find_path((self.x, self.y), self.next_unexplored_cell()?)
+                .iter()
+                .copied()
+                .collect();
+        }
+        self.path.pop_front()
     }
 
-    fn has_unexplored_cells(&self) -> bool {
-        self.hull
+    /// Dijkstra’s algorithm
+    fn find_path(&self, start: Point, end: Point) -> Vec<Direction> {
+        #[derive(Default, Debug, PartialOrd, Ord, PartialEq, Eq, Copy, Clone)]
+        struct Distance(Reverse<Option<Reverse<u64>>>);
+
+        impl Distance {
+            fn new(distance: u64) -> Distance {
+                Distance(Reverse(Some(Reverse(distance))))
+            }
+
+            fn infinity() -> Distance {
+                Self::default()
+            }
+
+            fn map(self, f: impl FnOnce(u64) -> u64) -> Self {
+                Distance(Reverse(self.0 .0.map(|Reverse(d)| Reverse(f(d)))))
+            }
+        }
+
+        let mut unvisited: HashSet<_> = self
+            .hull
+            .keys()
+            .copied()
+            .chain(self.hull.keys().flat_map(neighbours))
+            .collect();
+
+        let mut distances: HashMap<_, _> = unvisited
             .iter()
-            .filter_map(
-                |(position, &tile)| {
-                    if tile == Wall { None } else { Some(position) }
-                },
-            )
-            .flat_map(|&p| neighbours(p))
-            .any(|p| !self.hull.contains_key(&p))
+            .map(|&p| {
+                (
+                    p,
+                    if p == start {
+                        Distance::new(0)
+                    }
+                    else {
+                        Distance::infinity()
+                    },
+                )
+            })
+            .collect();
+        let mut previous_point: HashMap<_, _> = unvisited.iter().map(|&p| (p, None)).collect();
+
+        while let Some(&current) = unvisited.iter().min_by_key(|p| distances.get(p)) {
+            unvisited.remove(&current);
+
+            for neighbour in neighbours(&current).filter(|p| unvisited.contains(p)) {
+                let distance = if self.hull.get(&neighbour) == Some(&Wall) {
+                    Distance::infinity()
+                }
+                else {
+                    distances[&current].map(|d| d + 1)
+                };
+                distances
+                    .entry(neighbour)
+                    .and_modify(|d| *d = std::cmp::min(*d, distance))
+                    .or_insert(distance);
+                previous_point.insert(neighbour, Some(current));
+            }
+
+            if current == end {
+                let mut path = vec![current];
+
+                let mut current = current;
+                while let Some(&Some(p)) = previous_point.get(&current) {
+                    path.push(p);
+                    current = p;
+                }
+                return path
+                    .into_iter()
+                    .rev()
+                    .tuple_windows()
+                    .map(|(from, to)| direction(from, to))
+                    .collect();
+            }
+        }
+
+        unreachable!();
     }
 
-    fn solve(&self) -> Option<(u64, u64)> {
+    fn floodfill(&self, start: Point) -> Option<u64> {
         let mut queue = VecDeque::new();
-        queue.push_back((self.target?, 0));
+        queue.push_back((start, 0));
         let mut seen = HashSet::new();
 
         let mut last_distance = None;
-        let mut target_distance = None;
         while let Some((point, distance)) = queue.pop_front() {
             last_distance = Some(distance);
-            if point == (0, 0) {
-                target_distance = Some(distance);
-            }
             seen.insert(point);
-            queue.extend(neighbours(point).filter_map(|p| {
+            queue.extend(neighbours(&point).filter_map(|p| {
                 self.hull.get(&p).and_then(|&tile| {
                     if tile == Wall || seen.contains(&p) {
                         None
@@ -221,17 +285,31 @@ impl State {
                 })
             }));
         }
+        last_distance
+    }
 
-        target_distance.and_then(|td| last_distance.map(|ld| (td, ld)))
+    fn solve(&self) -> Option<(u64, u64)> {
+        Some((
+            self.find_path(self.target?, (0, 0)).len() as _,
+            self.floodfill(self.target?)?,
+        ))
+    }
+
+    #[cfg(not(feature = "interactive"))]
+    fn next_unexplored_cell(&self) -> Option<Point> {
+        for (xy, &tile) in self.hull.iter() {
+            for n in neighbours(xy) {
+                if tile == Empty && !self.hull.contains_key(&n) {
+                    return Some(n);
+                }
+            }
+        }
+        None
     }
 }
 
 impl IO for State {
     fn next_input(&mut self) -> Option<Cell> {
-        if !self.has_unexplored_cells() {
-            return None;
-        }
-
         self.last_input = self.read_input();
         self.last_input.map(|d| d.to_cell())
     }
@@ -257,6 +335,7 @@ impl IO for State {
                 Some(Right) => (self.x + 1, self.y),
                 _ => unreachable!(),
             };
+
             self.hull.insert((x, y), state);
         }
         else {
@@ -267,28 +346,59 @@ impl IO for State {
             self.target = Some((self.x, self.y));
         }
 
-        #[cfg(feature = "interactive")]
-        self.print();
+        if self.visualise {
+            self.print();
+            #[cfg(not(feature = "interactive"))]
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
     }
 }
 
-fn neighbours((x, y): (i64, i64)) -> impl Iterator<Item = (i64, i64)> {
+fn neighbours(&(x, y): &Point) -> impl Iterator<Item = Point> {
     once((x - 1, y))
         .chain(once((x + 1, y)))
         .chain(once((x, y - 1)))
         .chain(once((x, y + 1)))
 }
 
+fn direction((x, y): Point, (a, b): Point) -> Direction {
+    if x - a == 1 {
+        Left
+    }
+    else if x - a == -1 {
+        Right
+    }
+    else if y - b == 1 {
+        Down
+    }
+    else if y - b == -1 {
+        Up
+    }
+    else {
+        unreachable!()
+    }
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
-    let mut state = State::new();
+    #[cfg(feature = "interactive")]
+    let interactive = true;
+    #[cfg(not(feature = "interactive"))]
+    let interactive = false;
+
+    let visualise = interactive || std::env::args().nth(1) == Some("--visualise".to_owned());
+
+    let mut state = State::new(visualise);
     let mut computer = Computer::from_file("input", &mut state)?;
 
-    #[cfg(feature = "interactive")]
-    print!("\x1B[2J\x1B[?25l\x1B[;Ho");
-    stdout().flush()?;
+    if visualise {
+        print!("\x1B[2J\x1B[?25l\x1B[;Ho");
+        stdout().flush()?;
+    }
     computer.run();
-    #[cfg(feature = "interactive")]
-    println!("\x1B[9999;1H\x1B[4F\x1B[?25hGoodbye.");
+    if visualise {
+        println!("\x1B[?25h\nGoodbye.");
+    }
+
     if let Some((part1, part2)) = state.solve() {
         println!("{}\n{}", part1, part2);
     }

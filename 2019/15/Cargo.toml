@@ -4,17 +4,15 @@ version = "0.1.0"
 authors = ["narpfel <narpfel@gmx.de>"]
 edition = "2018"
 
+[profile.release]
+lto = true
+
 [features]
-interactive = ["console", "itertools"]
+interactive = ["console"]
 
 [dependencies]
 console = { version = "0", optional = true }
-itertools = { version = "0", optional = true }
-
-# TODO: Remove `rand` from `interactive` feature. (Currently, it is not
-# possible to specify that a dependency is *not* needed for a specific
-# feature.)
-rand = "0"
+itertools = "0"
 
 [dependencies.intcode]
 path = "../11/intcode"
