@@ -34,13 +34,13 @@ class Runner:
             path = solution_dir / language_indicator
             if path.exists():
                 if self.output is not None:
-                    print(f"{solution_dir}: ", end="", flush=True)
+                    print(f"{solution_dir}: ", end="", flush=True, file=sys.stderr)
                 else:
-                    print(f"\n\nExecuting `{path}`...\n")
+                    print(f"\n\nExecuting `{path}`...\n", file=sys.stderr)
                 try:
                     build_time, execution_time = getattr(self, runner_name)(path)
                 except subprocess.CalledProcessError:
-                    print()
+                    print(file=sys.stderr)
                     self.failed_solutions += 1
                     return 0
                 else:
@@ -49,7 +49,10 @@ class Runner:
                         if build_time > 1
                         else "."
                     )
-                    print(f"{execution_time_output_prefix}{execution_time} s{build_time_output}")
+                    print(
+                        f"{execution_time_output_prefix}{execution_time} s{build_time_output}",
+                        file=sys.stderr
+                    )
                     return 1
 
         # See if multiple solutions are present
@@ -131,9 +134,12 @@ def main(argv):
         solution_count = 0
         for solution in args.solutions:
             solution_count += runner.run_solution(solution)
-    print(f"Found {solution_count} solutions in {time.perf_counter() - start_time} s.")
+    print(
+        f"Found {solution_count} solutions in {time.perf_counter() - start_time} s.",
+        file=sys.stderr
+    )
     if runner.failed_solutions:
-        print(f"{runner.failed_solutions} solutions failed executing.")
+        print(f"{runner.failed_solutions} solutions failed executing.", file=sys.stderr)
 
     return runner.failed_solutions
 
@@ -142,4 +148,4 @@ if __name__ == "__main__":
     try:
         sys.exit(main(sys.argv[1:]))
     except KeyboardInterrupt:
-        print("\nAborted.")
+        print("\nAborted.", file=sys.stderr)
