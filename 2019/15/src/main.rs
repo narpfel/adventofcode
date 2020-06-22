@@ -16,6 +16,7 @@ use std::{
         stdout,
         Write,
     },
+    iter::repeat,
 };
 
 use itertools::Itertools;
@@ -297,13 +298,25 @@ impl State {
 
     #[cfg(not(feature = "interactive"))]
     fn next_unexplored_cell(&self) -> Option<Point> {
-        for (xy, &tile) in self.hull.iter() {
-            for n in neighbours(xy) {
-                if tile == Empty && !self.hull.contains_key(&n) {
-                    return Some(n);
-                }
+        // BFS around current position
+
+        let neighbours_with_tile = |ref point| neighbours(point).zip(repeat(self.hull.get(point)));
+
+        let mut queue: VecDeque<_> = neighbours_with_tile((self.x, self.y)).collect();
+        let mut seen = HashSet::new();
+        seen.insert((self.x, self.y));
+
+        while let Some((point, neighbour_tile)) = queue.pop_front() {
+            let tile = self.hull.get(&point);
+            if neighbour_tile.map(|&tile| tile == Empty).unwrap_or(false) && tile.is_none() {
+                return Some(point);
+            }
+            seen.insert(point);
+            if tile == Some(&Empty) {
+                queue.extend(neighbours_with_tile(point).filter(|(p, _)| !seen.contains(p)));
             }
         }
+
         None
     }
 }
