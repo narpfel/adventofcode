@@ -16,8 +16,10 @@ use std::{
         stdout,
         Write,
     },
-    iter::repeat,
 };
+
+#[cfg(not(feature = "interactive"))]
+use std::iter::repeat;
 
 use itertools::Itertools;
 use std::iter::once;
@@ -136,20 +138,7 @@ impl State {
 
 impl State {
     fn print(&self) {
-        let (&min_x, &max_x) = self
-            .hull
-            .keys()
-            .map(|(x, _)| x)
-            .minmax()
-            .into_option()
-            .unwrap();
-        let (&min_y, &max_y) = self
-            .hull
-            .keys()
-            .map(|(_, y)| y)
-            .minmax()
-            .into_option()
-            .unwrap();
+        let ((min_x, min_y), (max_x, max_y)) = self.dimensions();
 
         print!("\x1B[;H");
         print!(
@@ -168,6 +157,24 @@ impl State {
         );
 
         stdout().flush().unwrap();
+    }
+
+    fn dimensions(&self) -> (Point, Point) {
+        let (&min_x, &max_x) = self
+            .hull
+            .keys()
+            .map(|(x, _)| x)
+            .minmax()
+            .into_option()
+            .unwrap();
+        let (&min_y, &max_y) = self
+            .hull
+            .keys()
+            .map(|(_, y)| y)
+            .minmax()
+            .into_option()
+            .unwrap();
+        ((min_x, min_y), (max_x, max_y))
     }
 
     #[cfg(feature = "interactive")]
@@ -206,53 +213,67 @@ impl State {
             }
         }
 
-        let mut unvisited: HashSet<_> = self
-            .hull
-            .keys()
-            .copied()
-            .chain(self.hull.keys().flat_map(neighbours))
-            .collect();
+        let (bottom_left, top_right) = self.dimensions();
+        let size = (
+            top_right.0 - bottom_left.0 + 3,
+            top_right.1 - bottom_left.1 + 3,
+        );
 
-        let mut distances: HashMap<_, _> = unvisited
-            .iter()
-            .map(|&p| {
-                (
-                    p,
-                    if p == start {
+        let index = |(x, y)| ((y - bottom_left.1 + 1) * size.0 + x - bottom_left.0 + 1) as usize;
+        let reverse_index = |i| {
+            (
+                i as i64 % size.0 + bottom_left.0 - 1,
+                i as i64 / size.0 + bottom_left.1 - 1,
+            )
+        };
+
+        let mut distances: Vec<_> = (bottom_left.1 - 1..=top_right.1 + 1)
+            .flat_map(|y| {
+                (bottom_left.0 - 1..=top_right.0 + 1).map(move |x| {
+                    if (x, y) == start {
                         Distance::new(0)
                     }
                     else {
                         Distance::infinity()
-                    },
-                )
+                    }
+                })
             })
             .collect();
-        let mut previous_point: HashMap<_, _> = unvisited.iter().map(|&p| (p, None)).collect();
 
-        while let Some(&current) = unvisited.iter().min_by_key(|p| distances.get(p)) {
-            unvisited.remove(&current);
+        let mut unvisited: Vec<_> = distances.iter().map(|_| true).collect();
 
-            for neighbour in neighbours(&current).filter(|p| unvisited.contains(p)) {
+        let mut previous_point: Vec<_> = distances.iter().map(|_| None).collect();
+
+        while let Some(((current_index, _), _)) = unvisited
+            .iter()
+            .enumerate()
+            .zip(distances.iter())
+            .filter(|&((_, &unvisited), _)| unvisited)
+            .min_by_key(|(_, &distance)| distance)
+        {
+            let current = reverse_index(current_index);
+            unvisited[current_index] = false;
+
+            for neighbour in neighbours(&reverse_index(current_index))
+                .filter(|&p| *unvisited.get(index(p)).unwrap_or(&false))
+            {
                 let distance = if self.hull.get(&neighbour) == Some(&Wall) {
                     Distance::infinity()
                 }
                 else {
-                    distances[&current].map(|d| d + 1)
+                    distances[current_index].map(|d| d + 1)
                 };
-                distances
-                    .entry(neighbour)
-                    .and_modify(|d| *d = std::cmp::min(*d, distance))
-                    .or_insert(distance);
-                previous_point.insert(neighbour, Some(current));
+                distances[index(neighbour)] = std::cmp::min(distances[index(neighbour)], distance);
+                previous_point[index(neighbour)] = Some(current_index);
             }
 
             if current == end {
                 let mut path = vec![current];
 
-                let mut current = current;
-                while let Some(&Some(p)) = previous_point.get(&current) {
-                    path.push(p);
-                    current = p;
+                let mut current_index = current_index;
+                while let Some(&Some(index)) = previous_point.get(current_index) {
+                    path.push(reverse_index(index));
+                    current_index = index;
                 }
                 return path
                     .into_iter()
