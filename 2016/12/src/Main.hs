@@ -8,7 +8,7 @@ import qualified Data.Vector as Vector
 
 import Au.Parser
 
-type Register = Integer
+type Register = Int
 type Offset = Int
 
 type Condition = RegisterFile -> Bool
@@ -23,11 +23,11 @@ data Instruction
 type Rom = Vector Instruction
 
 data RegisterFile = RegisterFile
-  { _a :: Register
-  , _b :: Register
-  , _c :: Register
-  , _d :: Register
-  , _pc :: Int
+  { _a :: !Register
+  , _b :: !Register
+  , _c :: !Register
+  , _d :: !Register
+  , _pc :: !Register
   }
 
 data Cpu = Cpu
@@ -93,7 +93,7 @@ runProgram = do
     Just instr -> execute instr >> runProgram
     Nothing -> return ()
 
-solve :: Integer -> Rom -> Integer
+solve :: Register -> Rom -> Register
 solve n = view (registerFile . a) . execState runProgram . Cpu (RegisterFile 0 0 n 0 0)
 
 main :: IO ()
