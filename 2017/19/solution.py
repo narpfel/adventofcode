@@ -38,7 +38,7 @@ def go_left(by_line, _, position):
     begin = max(
         filter(
             nonnegative,
-            [line.rfind("+", 0, position.x - 1), line.rfind(" ", 0, position.x - 1) + 1]
+            [line.rfind("+", 0, position.x - 1), line.rfind(" ", 0, position.x - 1) + 1],
         )
     )
     steps = line[begin:position.x]
@@ -51,7 +51,7 @@ def go_right(by_line, _, position):
     end = min(
         filter(
             nonnegative,
-            [line.find("+", position.x + 1), line.find(" ", position.x + 1)]
+            [line.find("+", position.x + 1), line.find(" ", position.x + 1)],
         )
     )
     steps = line[position.x:end]
