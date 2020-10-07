@@ -58,4 +58,4 @@ repos:
         files: "Cargo.toml$"
         always_run: true
 
-exclude: "input(_test)?$"
+exclude: "input(_test.*)?$"
