@@ -1,6 +1,6 @@
 module Main where
 
-import Data.List (inits)
+import Data.List (scanl')
 import Data.List.Split (splitOn)
 
 data Direction
@@ -20,7 +20,7 @@ parse "sw" = SouthWest
 parse "nw" = NorthWest
 parse s = error $ "Parse invalid Direction string " ++ show s
 
-data Position = Position Integer Integer deriving Show
+data Position = Position Int Int deriving Show
 
 move :: Position -> Direction -> Position
 move (Position x y) North
@@ -40,10 +40,7 @@ move (Position x y) NorthWest
   | even x = Position (x - 1) y
   | otherwise = Position (x - 1) (y + 1)
 
-moveAll :: [Direction] -> Position
-moveAll = foldl move $ Position 0 0
-
-distance :: Position -> Integer
+distance :: Position -> Int
 distance (Position 0 y) = abs y
 distance (Position x 0) = abs x
 distance p@(Position x y)
@@ -55,5 +52,6 @@ distance p@(Position x y)
 main :: IO ()
 main = do
   directions <- map parse . splitOn "," . head . lines <$> readFile "input"
-  print . distance . moveAll $ directions
-  print . maximum . map (distance . moveAll) . inits $ directions
+  let distances = map distance . scanl' move (Position 0 0) $ directions
+  print . last $ distances
+  print . maximum $ distances
