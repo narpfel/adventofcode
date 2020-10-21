@@ -21,13 +21,49 @@ class Particle
     @a = a
   end
 
-  def move!
-    @v = @v.zip(@a).map { |v, a| v + a }
-    @p = @p.zip(@v).map { |p, v| p + v }
+  def at t
+    @a.zip(@v, @p).map { |a, v, p| a * t * (t + 1) / 2 + v * t + p }
   end
 
   def <=> other
     [@a, @v, @p].map(&:manhattan_distance) <=> [other.a, other.v, other.p].map(&:manhattan_distance)
+  end
+
+  def collides_with? other, dim = 0
+    δa = @a[dim] - other.a[dim]
+    δv = @v[dim] - other.v[dim]
+    δp = @p[dim] - other.p[dim]
+
+    if δa == 0
+      if δv == 0
+        if δp == 0
+          return self.collides_with?(other, dim + 1)
+        else
+          return []
+        end
+      else
+        if δp % δv == 0
+          return [-δp / δv]
+            .filter { |t| t > 0 }
+            .filter { |t| self.at(t) == other.at(t) }
+        else
+          return []
+        end
+      end
+    end
+
+    discriminant = (δa + 2 * δv) ** 2 - 8 * δa * δp
+    return [] if discriminant < 0
+
+    discriminant_sqrt = Integer.sqrt(discriminant)
+    return [] unless discriminant_sqrt ** 2 == discriminant
+
+    [-(δa + 2 * δv) + discriminant_sqrt, -(δa - 2 * δv) - discriminant_sqrt]
+      .uniq
+      .filter { |t| t % (2 * δa) == 0 }
+      .map { |t| t / (2 * δa) }
+      .filter { |t| t > 0 }
+      .filter { |t| self.at(t) == other.at(t) }
   end
 end
 
@@ -39,20 +75,22 @@ def part1 particles
   particles.each_with_index.min_by(&:first).last
 end
 
-def simulate_step particles
-  particles.each &:move!
-  particles.group_by(&:p).values.reject { |ps| ps.length > 1 }.flatten
-end
-
 def part2 particles
-  # FIXME: This assumes that 100 steps are enough to reach a steady state.
-  # For my input, all collisions are resolved after 39 steps, so this seems
-  # like an acceptable safety margin. A more elegant solution would be to
-  # calculate the necessary amount of steps beforehand.
-  100.times do
-    particles = simulate_step(particles)
-  end
-  particles.length
+  dead = Set[]
+  collisions = particles
+    .product(particles)
+    .reject { |p1, p2| p1.equal? p2 }
+    .flat_map { |p1, p2| p1.collides_with?(p2).map { |t| [t, p1, p2] } }
+    .group_by(&:first)
+    .transform_values { |cs| cs.map { |c| c[1..].flatten.uniq } }
+    .to_a
+    .sort
+    .map(&:last)
+    .each do |collision|
+      colliding_particles = collision.flatten.reject { |p| dead.include?(p) }
+      dead.merge(colliding_particles) unless colliding_particles.length == 1
+    end
+  particles.length - dead.length
 end
 
 def main
