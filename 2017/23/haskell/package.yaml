@@ -1,0 +1,23 @@
+name: solution
+
+dependencies:
+  - base >= 4.7 && < 5
+  - au
+  - vector
+  - mtl
+
+default-extensions:
+  - LambdaCase
+  - ParallelListComp
+  - DeriveFunctor
+  - RecordWildCards
+
+ghc-options:
+  -Wall
+  -Wextra
+  -O2
+
+executables:
+  solution:
+    source-dirs:      src
+    main:             Main.hs
