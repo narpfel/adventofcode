@@ -20,12 +20,16 @@ bridge(Pieces, End, Ports, Result) :-
 
 bridge(_, End, Ports, [End | Ports]).
 
-bridge(Pieces, Strength) :-
+bridge(Pieces, Length-Strength) :-
     bridge(Pieces, 0, [], Ports),
-    sum_list(Ports, Strength).
+    sum_list(Ports, Strength),
+    length(Ports, Length).
 
 main :-
     read_input("input", Pieces),
-    findall(Strength, bridge(Pieces, Strength), Strengths),
-    max_list(Strengths, Solution),
-    write(Solution), nl.
+    findall(Bridge, bridge(Pieces, Bridge), Bridges),
+    pairs_values(Bridges, Strengths),
+    max_list(Strengths, Part1),
+    write(Part1), nl,
+    max_member(_-Part2, Bridges),
+    write(Part2), nl.
