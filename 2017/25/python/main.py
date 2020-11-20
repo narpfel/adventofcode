@@ -42,8 +42,8 @@ class State:
     )
 
 
-def main():
-    with open("input") as input_file:
+def parse_input(input_filename):
+    with open(input_filename) as input_file:
         preamble, _, states_description = input_file.read().partition("\n\n")
 
     m = PREAMBLE_RE.match(preamble)
@@ -54,6 +54,12 @@ def main():
         m["state_name"]: State(m["state_name"], m.groupdict())
         for m in STATES_RE.finditer(states_description)
     }
+
+    return initial_state, step_count, states
+
+
+def main():
+    initial_state, step_count, states = parse_input("input")
 
     memory = defaultdict(int)
     cursor = 0
