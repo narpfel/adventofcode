@@ -41,7 +41,7 @@ fn precompute_sums(grid: &mut Grid) {
     }
 }
 
-fn windowed<'a>(grid: &'a Grid, window_size: usize) -> impl Iterator<Item = Window> + 'a {
+fn windowed(grid: &Grid, window_size: usize) -> impl Iterator<Item = Window> + '_ {
     #![allow(clippy::many_single_char_names)]
 
     let y = grid.len();

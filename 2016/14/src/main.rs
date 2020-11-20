@@ -234,7 +234,7 @@ fn key_stretched(s: &str, count: usize) -> [u8; DIGEST_CHAR_LENGTH] {
     buffer
 }
 
-fn otp_indices<'a>(salt: &'a str, key_stretching_count: usize) -> impl Iterator<Item = usize> + 'a {
+fn otp_indices(salt: &str, key_stretching_count: usize) -> impl Iterator<Item = usize> + '_ {
     type Deque = ArrayDeque<GenericArray<Option<u8>, U1000>, arraydeque::Wrapping>;
     let mut triple_repetitions = Deque::new();
     let mut quintuple_repetitions = Deque::new();

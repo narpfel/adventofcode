@@ -65,7 +65,7 @@ impl State {
         }
     }
 
-    fn intersections<'a>(&'a self) -> impl Iterator<Item = Point> + 'a {
+    fn intersections(&self) -> impl Iterator<Item = Point> + '_ {
         self.scaffolding
             .keys()
             .filter(move |&&p| {
