@@ -1,9 +1,10 @@
 module Main (main) where
 
-import Data.List (foldl')
 import Data.List (iterate')
-import Data.List.Split (chunksOf)
+import Data.Composition ((.:))
 import Data.Maybe (fromJust)
+import Data.Vector.Unboxed (Vector)
+import qualified Data.Vector.Unboxed as Vector
 
 input :: String
 input = "11100010111110100"
@@ -14,33 +15,33 @@ discLengthPart1 = 272
 discLengthPart2 :: Int
 discLengthPart2 = 35_651_584
 
-parse :: String -> Maybe [Bool]
-parse = traverse fromChar
+parse :: String -> Maybe (Vector Bool)
+parse = Vector.mapM fromChar . Vector.fromList
   where
     fromChar '0' = Just False
     fromChar '1' = Just True
     fromChar _ = Nothing
 
-step :: [Bool] -> [Bool]
-step a = a <> [False] <> b
+step :: Vector Bool -> Vector Bool
+step a = a <> Vector.singleton False <> b
   where
-    b = map not . reverse $ a
+    b = Vector.map not . Vector.reverse $ a
 
-checksum :: [Bool] -> [Bool]
+checksum :: Vector Bool -> Vector Bool
 checksum xs
-  | odd . length $ xs = xs
-  | otherwise = checksum . map (foldl1' (==)) . chunksOf 2 $ xs
+  | odd . Vector.length $ xs = xs
+  | otherwise
+    = checksum
+    . Vector.ifilter (even .: const)
+    . (Vector.zipWith (==) <*> Vector.tail)
+    $ xs
 
-foldl1' :: (a -> a -> a) -> [a] -> a
-foldl1' _ [] = error "foldl1' of empty list"
-foldl1' f (x:xs) = foldl' f x xs
-
-solve :: Int -> [Bool] -> [Bool]
+solve :: Int -> Vector Bool -> Vector Bool
 solve discLength
   = checksum
-  . take discLength
+  . Vector.take discLength
   . head
-  . dropWhile ((< discLength) . length)
+  . dropWhile ((< discLength) . Vector.length)
   . iterate' step
 
 toChar :: Bool -> Char
@@ -48,9 +49,15 @@ toChar False = '0'
 toChar True = '1'
 
 solution :: Int -> String
-solution discLength = map toChar . solve discLength . fromJust . parse $ input
+solution discLength
+  = Vector.toList
+  . Vector.map toChar
+  . solve discLength
+  . fromJust
+  . parse
+  $ input
 
 main :: IO ()
 main = do
   putStrLn . solution $ discLengthPart1
-  putStrLn "part2: not optimised enough"
+  putStrLn . solution $ discLengthPart2
