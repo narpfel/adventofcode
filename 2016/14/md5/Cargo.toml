@@ -1,16 +1,13 @@
 [package]
-name = "solution"
+name = "md5"
 version = "0.1.0"
 authors = ["narpfel <narpfel@gmx.de>"]
 edition = "2018"
 
 [dependencies]
-generic-array = "0.12"
-md5 = { path = "md5" }
-
-[dependencies.arraydeque]
-version = "0.4"
-features = ["use_generic_array"]
+byteorder = "1"
+memmap = "0.7"
+ct-python = "0.5"
 
 [profile.release]
 lto = true
