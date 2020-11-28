@@ -4,7 +4,7 @@ run: build
 build: main.*.so
 	@:
 
-main.*.so: venv main.py
+main.%.so: venv main.py
 	./venv/bin/python -m mypy main.py
 	./venv/bin/mypyc main.py
 
