@@ -70,5 +70,5 @@ main = do
   Just input <- parse moves <$> readFile "input"
   let cycleLength = findCycleLength $ arrangements input
       solutionIndex = 1_000_000_000 `mod` cycleLength
-  putStrLn $ arrangements input !! 0
+  putStrLn $ arrangements input !! 1
   putStrLn $ arrangements input !! solutionIndex
