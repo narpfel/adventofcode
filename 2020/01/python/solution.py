@@ -30,7 +30,7 @@ def test(length, expected):
 
 
 def main():
-    expenses = read_input("input")
+    expenses = sorted(read_input("input"))
     print(solve(expenses, 2))
     print(solve(expenses, 3))
 

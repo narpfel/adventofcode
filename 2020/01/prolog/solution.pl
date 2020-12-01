@@ -21,7 +21,8 @@ part2(Expenses, Solution) :-
 
 main :-
     read_input(input, Expenses),
-    part1(Expenses, Part1),
+    sort(Expenses, SortedExpenses),
+    part1(SortedExpenses, Part1),
     write(Part1), nl,
-    part2(Expenses, Part2),
+    part2(SortedExpenses, Part2),
     write(Part2), nl.
