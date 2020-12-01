@@ -4,11 +4,13 @@ dependencies:
   - base >= 4.7 && < 5
   - au
   - vector
+  - QuickCheck
 
 default-extensions:
   - LambdaCase
   - ParallelListComp
   - DeriveFunctor
+  - RecordWildCards
 
 ghc-options:
   -Wall
