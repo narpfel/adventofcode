@@ -1,12 +1,10 @@
 module Main (main) where
 
 import Data.Functor (($>))
+import Data.List (elemIndex)
 import Data.Maybe (fromJust)
 import Data.Semigroup (Endo(Endo, appEndo))
 import Prelude hiding (Either(..))
-
-import Data.Vector.Unboxed (Vector)
-import qualified Data.Vector.Unboxed as Vector
 
 import Test.QuickCheck
 
@@ -68,32 +66,38 @@ move
 parseScramble :: Parser Scramble
 parseScramble = choice [swapPosition, swapLetter, rotate, rotatePosition, reversePositions, move]
 
-scramble :: Scramble -> Vector Char -> Vector Char
-scramble (SwapPosition i j) cs = cs Vector.// [(i, cs Vector.! j), (j, cs Vector.! i)]
+scramble :: Scramble -> String -> String
+scramble (SwapPosition i j) cs
+  = [ case n of
+        _ | n == i -> cs !! j
+        _ | n == j -> cs !! i
+        _ -> c
+    | (n, c) <- zip [0..] cs
+    ]
 scramble (SwapLetter a b) cs
   = flip scramble cs
   . fromJust
   $ SwapPosition
-    <$> a `Vector.elemIndex` cs
-    <*> b `Vector.elemIndex` cs
-scramble (Rotate Left i) cs = Vector.drop i' cs <> Vector.take i' cs
+    <$> a `elemIndex` cs
+    <*> b `elemIndex` cs
+scramble (Rotate Left i) cs = end <> begin
   where
-    i' = i `mod` Vector.length cs
-scramble (Rotate Right i) cs = scramble (Rotate Left (Vector.length cs - i)) cs
+    (begin, end) = splitAt (i `mod` length cs) cs
+scramble (Rotate Right i) cs = scramble (Rotate Left (length cs - i)) cs
 scramble (RotatePosition c) cs = scramble (Rotate Right (1 + i + if i >= 4 then 1 else 0)) cs
   where
-    i = fromJust $ c `Vector.elemIndex` cs
-scramble (ReversePositions i j) cs
-  = Vector.take i cs
-  <> (Vector.reverse . Vector.take (j - i + 1) . Vector.drop i) cs
-  <> Vector.drop (j + 1) cs
-scramble (Move i j) cs = begin <> Vector.singleton c <> end
+    i = fromJust $ c `elemIndex` cs
+scramble (ReversePositions i j) cs = begin <> reverse middle <> end
   where
-    c = cs Vector.! i
-    (begin, end) = Vector.splitAt j . Vector.ifilter (\n _ -> n /= i) $ cs
+    (begin, rest) = splitAt i cs
+    (middle, end) = splitAt (j - i + 1) rest
+scramble (Move i j) cs = begin <> [c] <> end
+  where
+    c = cs !! i
+    (begin, end) = splitAt j [c' | (n, c') <- zip [0..] cs, n /= i]
 scramble (InvertRotatePosition c) cs = scramble (Rotate Right j) cs
   where
-    Just i = c `Vector.elemIndex` cs
+    Just i = c `elemIndex` cs
     -- FIXME: These values were determined manually and are only valid
     -- for length 8 passwords
     j = [7, -1, 2, -2, 1, -3, 0, -4] !! i
@@ -108,13 +112,13 @@ invert (ReversePositions i j) = ReversePositions i j
 invert (Move i j) = Move j i
 invert (InvertRotatePosition _) = error "InvertRotatePosition is not meant to be inverted"
 
-unScramble :: Scramble -> Vector Char -> Vector Char
+unScramble :: Scramble -> String -> String
 unScramble = scramble . invert
 
-runScramble :: [Scramble] -> Vector Char -> Vector Char
+runScramble :: [Scramble] -> String -> String
 runScramble = appEndo . foldMap (Endo . scramble)
 
-runUnScramble :: [Scramble] -> Vector Char -> Vector Char
+runUnScramble :: [Scramble] -> String -> String
 runUnScramble = appEndo . foldMap (Endo . unScramble) . reverse
 
 password :: String
@@ -137,22 +141,22 @@ main = do
     failure -> error $ "QuickCheck failed with " <> show failure
 
   inputTest <- readInput "input_test"
-  case Vector.toList (runScramble inputTest $ Vector.fromList "abcde") of
+  case runScramble inputTest "abcde" of
     "decab" -> pure ()
     _ -> error "test input produced invalid result"
 
   input <- readInput "input"
-  let part1 = Vector.toList . runScramble input . Vector.fromList $ password
+  let part1 = runScramble input password
   putStrLn part1
 
-  case Vector.toList . runUnScramble input . Vector.fromList $ part1 of
+  case runUnScramble input part1 of
     "abcdefgh" -> pure ()
     _ -> error "unscrambling part1 solution failed"
 
-  putStrLn . Vector.toList . runUnScramble input . Vector.fromList $ scrambledPassword
+  putStrLn . runUnScramble input $ scrambledPassword
 
 
-newtype Input = Input (Vector Char) deriving (Show)
+newtype Input = Input String deriving (Show)
 
 instance Arbitrary Direction where
   arbitrary = elements [Left, Right]
@@ -174,7 +178,7 @@ instance Arbitrary Scramble where
         chars = elements ['a'..'h']
 
 instance Arbitrary Input where
-  arbitrary = Input . Vector.fromList <$> shuffle ['a'..'h']
+  arbitrary = Input <$> shuffle ['a'..'h']
 
 prop_unScramble :: Scramble -> Input -> Bool
 prop_unScramble s (Input cs) = (unScramble s . scramble s) cs == cs
