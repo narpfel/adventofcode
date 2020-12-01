@@ -98,15 +98,24 @@ scramble (InvertRotatePosition c) cs = scramble (Rotate Right j) cs
     -- for length 8 passwords
     j = [7, -1, 2, -2, 1, -3, 0, -4] !! i
 
-unScramble :: Scramble -> Scramble
-unScramble (SwapPosition i j) = SwapPosition i j
-unScramble (SwapLetter a b) = SwapLetter a b
-unScramble (Rotate Left i) = Rotate Right i
-unScramble (Rotate Right i) = Rotate Left i
-unScramble (RotatePosition c) = InvertRotatePosition c
-unScramble (ReversePositions i j) = ReversePositions i j
-unScramble (Move i j) = Move j i
-unScramble (InvertRotatePosition _) = error "InvertRotatePosition is not meant to be inverted"
+invert :: Scramble -> Scramble
+invert (SwapPosition i j) = SwapPosition i j
+invert (SwapLetter a b) = SwapLetter a b
+invert (Rotate Left i) = Rotate Right i
+invert (Rotate Right i) = Rotate Left i
+invert (RotatePosition c) = InvertRotatePosition c
+invert (ReversePositions i j) = ReversePositions i j
+invert (Move i j) = Move j i
+invert (InvertRotatePosition _) = error "InvertRotatePosition is not meant to be inverted"
+
+unScramble :: Scramble -> Vector Char -> Vector Char
+unScramble = scramble . invert
+
+runScramble :: [Scramble] -> Vector Char -> Vector Char
+runScramble = appEndo . foldMap (Endo . scramble)
+
+runUnScramble :: [Scramble] -> Vector Char -> Vector Char
+runUnScramble = appEndo . foldMap (Endo . unScramble) . reverse
 
 password :: String
 password = "abcdefgh"
@@ -114,19 +123,9 @@ password = "abcdefgh"
 scrambledPassword :: String
 scrambledPassword = "fbgdceah"
 
-readInput :: String -> IO (Vector Char -> Vector Char)
+readInput :: String -> IO [Scramble]
 readInput filename
-  = appEndo
-  . foldMap (Endo . scramble)
-  . reverse
-  . fromJust
-  . parse (perLine parseScramble)
-  <$> readFile filename
-
-readReverse :: String -> IO (Vector Char -> Vector Char)
-readReverse filename
-  = appEndo
-  . foldMap (Endo . scramble . unScramble)
+  = reverse
   . fromJust
   . parse (perLine parseScramble)
   <$> readFile filename
@@ -138,20 +137,19 @@ main = do
     failure -> error $ "QuickCheck failed with " <> show failure
 
   inputTest <- readInput "input_test"
-  case Vector.toList (inputTest $ Vector.fromList "abcde") of
+  case Vector.toList (runScramble inputTest $ Vector.fromList "abcde") of
     "decab" -> pure ()
     _ -> error "test input produced invalid result"
 
   input <- readInput "input"
-  let part1 = Vector.toList . input . Vector.fromList $ password
+  let part1 = Vector.toList . runScramble input . Vector.fromList $ password
   putStrLn part1
 
-  reverseInput <- readReverse "input"
-  case Vector.toList . reverseInput . Vector.fromList $ part1 of
+  case Vector.toList . runUnScramble input . Vector.fromList $ part1 of
     "abcdefgh" -> pure ()
     _ -> error "unscrambling part1 solution failed"
 
-  putStrLn . Vector.toList . reverseInput . Vector.fromList $ scrambledPassword
+  putStrLn . Vector.toList . runUnScramble input . Vector.fromList $ scrambledPassword
 
 
 newtype Input = Input (Vector Char) deriving (Show)
@@ -179,7 +177,7 @@ instance Arbitrary Input where
   arbitrary = Input . Vector.fromList <$> shuffle ['a'..'h']
 
 prop_unScramble :: Scramble -> Input -> Bool
-prop_unScramble s (Input cs) = (scramble (unScramble s) . scramble s) cs == cs
+prop_unScramble s (Input cs) = (unScramble s . scramble s) cs == cs
 
 runTests :: IO Result
 runTests = quickCheckWithResult stdArgs { maxSuccess = 1000, chatty = False } prop_unScramble
