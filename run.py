@@ -108,6 +108,7 @@ class Runner:
         "solution.hy": "run_executable",
         "solution.rb": "run_executable",
         "solution.js": "run_executable",
+        "solution.sh": "run_executable",
         "package.yaml": "run_haskell",
         "Cargo.toml": "run_rust",
         "solution.pl": "run_executable",
