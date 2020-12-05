@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 read_input() {
-    < "$1" sed -e 'y/FLBR/0011/;s/^/ibase=2;obase=A;/' | bc | sort -n
+    < "$1" sed 'y/FLBR/0011/;s/^/ibase=2;/' | bc | sort -n
 }
 
 part1() {
