@@ -29,21 +29,7 @@ func parseInput(filename string) [][]map[rune]struct{} {
 	return declarations
 }
 
-func part1(declarations [][]map[rune]struct{}) int {
-	total := 0
-	for _, group := range declarations {
-		commonAnswers := map[rune]struct{}{}
-		for _, declaration := range group {
-			for key, _ := range declaration {
-				commonAnswers[key] = struct{}{}
-			}
-		}
-		total += len(commonAnswers)
-	}
-	return total
-}
-
-func part2(declarations [][]map[rune]struct{}) int {
+func solve(declarations [][]map[rune]struct{}, answerCounts func(int, int) bool) int {
 	total := 0
 	for _, group := range declarations {
 		commonAnswers := map[rune]int{}
@@ -53,7 +39,7 @@ func part2(declarations [][]map[rune]struct{}) int {
 			}
 		}
 		for _, count := range commonAnswers {
-			if count == len(group) {
+			if answerCounts(count, len(group)) {
 				total++
 			}
 		}
@@ -63,6 +49,9 @@ func part2(declarations [][]map[rune]struct{}) int {
 
 func main() {
 	declarations := parseInput("input")
-	fmt.Println(part1(declarations))
-	fmt.Println(part2(declarations))
+	fmt.Println(solve(declarations, func(int, int) bool { return true }))
+	fmt.Println(solve(
+		declarations,
+		func(count, groupLength int) bool { return count == groupLength },
+	))
 }
