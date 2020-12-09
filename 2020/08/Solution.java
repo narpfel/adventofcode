@@ -1,11 +1,11 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.stream.IntStream;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public final class Solution {
     private Solution() {}
@@ -14,8 +14,8 @@ public final class Solution {
         final var instructions = Files.lines(Path.of("input"))
             .map(Instruction::fromString)
             .collect(Collectors.toList());
-        System.out.println(part1(instructions));
-        System.out.println(part2(instructions));
+        System.out.println(Solution.part1(instructions));
+        System.out.println(Solution.part2(instructions));
     }
 
     private static int part1(final List<Instruction> instructions) {
