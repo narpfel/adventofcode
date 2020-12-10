@@ -14,9 +14,12 @@ const readInput = filename => {
     return input;
 };
 
-const factorial = n => _.range(1, n + 1).reduce(_.multiply, 1);
-
-const choose = n => k => factorial(n) / (factorial(k) * factorial(n - k));
+const tribonacci = _.memoize(n => {
+    if (n < 0) { return 0; }
+    if (n == 0) { return 1; }
+    if (n == 1) { return 1; }
+    return tribonacci(n - 1) + tribonacci(n - 2) + tribonacci(n - 3);
+});
 
 const solvePart1 = input => {
     const differences = _.zipWith(input, _.tail(input), _.flip(_.subtract));
@@ -39,7 +42,7 @@ const solvePart2 = input => {
         .filter(group => group[0] == 1)
         .map('length')
         .filter(l => l > 1)
-        .map(l => 1 + choose(l)(2))
+        .map(tribonacci)
         .reduce(_.multiply, 1);
 };
 
