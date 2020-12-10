@@ -21,6 +21,17 @@ const tribonacci = _.memoize(n => {
     return tribonacci(n - 1) + tribonacci(n - 2) + tribonacci(n - 3);
 });
 
+const groups = xs => {
+    const groups = [[xs[0]]];
+    _.forEach(_.tail(xs), diff => {
+        if (_.last(groups)[0] != diff) {
+            groups.push([]);
+        }
+        _.last(groups).push(diff);
+    });
+    return groups;
+};
+
 const solvePart1 = input => {
     const differences = _.zipWith(input, _.tail(input), _.flip(_.subtract));
     const counts = _.countBy(differences);
@@ -29,16 +40,7 @@ const solvePart1 = input => {
 
 const solvePart2 = input => {
     const differences = _.zipWith(input, _.tail(input), _.flip(_.subtract));
-
-    const groups = [[differences[0]]];
-    _.forEach(_.tail(differences), diff => {
-        if (_.last(groups)[0] != diff) {
-            groups.push([]);
-        }
-        _.last(groups).push(diff);
-    });
-
-    return _(groups)
+    return _(groups(differences))
         .filter(group => group[0] == 1)
         .map('length')
         .filter(l => l > 1)
