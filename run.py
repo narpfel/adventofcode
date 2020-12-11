@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 import subprocess
 import sys
 import time
@@ -30,41 +31,57 @@ class Runner:
     def run_solution(self, solution_dir):
         execution_time_output_prefix = f"\n{solution_dir}: " if self.output is None else ""
 
+        try:
+            runner, path = self.find_executor(solution_dir)
+        except FileNotFoundError:
+            # See if multiple solutions are present
+            solutions_executed = 0
+            for sub_solution in sorted(solution_dir.iterdir()):
+                if sub_solution.is_dir():
+                    with suppress(FileNotFoundError):
+                        solutions_executed += self.run_solution(sub_solution)
+
+            if not solutions_executed:
+                raise FileNotFoundError(f"`{solution_dir}` does not contain a solution.")
+            return solutions_executed
+        else:
+            if self.output is not None:
+                print(f"{solution_dir}: ", end="", flush=True, file=sys.stderr)
+            else:
+                print(f"\n\nExecuting `{path}`...\n", file=sys.stderr)
+
+            try:
+                build_time, execution_time = runner(path)
+            except subprocess.CalledProcessError:
+                print(file=sys.stderr)
+                self.failed_solutions += 1
+                return 0
+            else:
+                build_time_output = (
+                    f" (and {build_time} s of build time)."
+                    if build_time > 1
+                    else "."
+                )
+                print(
+                    f"{execution_time_output_prefix}{execution_time} s{build_time_output}",
+                    file=sys.stderr
+                )
+                return 1
+
+    def find_executor(self, solution_dir):
         for language_indicator, runner_name in self.RUNNERS.items():
             path = solution_dir / language_indicator
             if path.exists():
-                if self.output is not None:
-                    print(f"{solution_dir}: ", end="", flush=True, file=sys.stderr)
-                else:
-                    print(f"\n\nExecuting `{path}`...\n", file=sys.stderr)
-                try:
-                    build_time, execution_time = getattr(self, runner_name)(path)
-                except subprocess.CalledProcessError:
-                    print(file=sys.stderr)
-                    self.failed_solutions += 1
-                    return 0
-                else:
-                    build_time_output = (
-                        f" (and {build_time} s of build time)."
-                        if build_time > 1
-                        else "."
-                    )
-                    print(
-                        f"{execution_time_output_prefix}{execution_time} s{build_time_output}",
-                        file=sys.stderr
-                    )
-                    return 1
+                return getattr(self, runner_name), path
 
-        # See if multiple solutions are present
-        solutions_executed = 0
-        for sub_solution in sorted(solution_dir.iterdir()):
-            if sub_solution.is_dir():
-                with suppress(FileNotFoundError):
-                    solutions_executed += self.run_solution(sub_solution)
+        with suppress(StopIteration):
+            return next(
+                (self.run_executable, file)
+                for file in solution_dir.iterdir()
+                if file.is_file() and os.access(file, os.X_OK)
+            )
 
-        if not solutions_executed:
-            raise FileNotFoundError(f"`{solution_dir}` does not contain a solution.")
-        return solutions_executed
+        raise FileNotFoundError(f"`{solution_dir}` does not contain a solution.")
 
     def timed_run(self, command, cwd):
         start_time = time.perf_counter()
@@ -104,15 +121,8 @@ class Runner:
         )
 
     RUNNERS = {
-        "solution.py": "run_executable",
-        "solution.hy": "run_executable",
-        "solution.rb": "run_executable",
-        "solution.js": "run_executable",
-        "solution.sh": "run_executable",
-        "solution.zsh": "run_executable",
         "package.yaml": "run_haskell",
         "Cargo.toml": "run_rust",
-        "solution.pl": "run_executable",
         "Makefile": "run_makefile",
     }
 
