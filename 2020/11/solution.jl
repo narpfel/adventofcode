@@ -1,7 +1,5 @@
 #!/usr/bin/env julia
 
-using LinearAlgebra
-
 generation_part1(cells, chairs) = begin
     neighbours = zeros(size(cells))
     for (i, row) in enumerate(eachrow(cells))
@@ -29,29 +27,23 @@ generation_part2(cells, chairs) = begin
     with_chairs = cells .- empty_chairs
     for (i, row) in enumerate(eachrow(cells))
         for j in eachindex(row)
-            # Apparently you cannot `reverse` an empty `BitArray`‽ But an empty
-            # `Array` is fine?
-            lu = diag(reverse(reverse(Array(with_chairs[1:i - 1, 1:j - 1]), dims=1), dims=2))
-            ru = diag(reverse(Array(with_chairs[1:i - 1, j + 1:end]), dims=1))
-            rd = diag(with_chairs[i + 1:end, j + 1:end])
-            ld = diag(reverse(Array(with_chairs[i + 1:end, 1:j - 1]), dims=2))
             neighbours[i, j] = (
                 # left
-                next_visible_is_alive(reverse(with_chairs[i, 1:j - 1]))
+                next_visible_is_alive(with_chairs[i, j - 1:-1:1])
                 # left-up
-                + next_visible_is_alive(lu)
+                + (diagonal_for(with_chairs, i - 1:-1:1, j - 1:-1:1) |> next_visible_is_alive)
                 # up
-                + next_visible_is_alive(reverse(with_chairs[1:i - 1, j]))
+                + next_visible_is_alive(with_chairs[i - 1:-1:1, j])
                 # right-up
-                + next_visible_is_alive(ru)
+                + (diagonal_for(with_chairs, i - 1:-1:1, j + 1:size(with_chairs, 2)) |> next_visible_is_alive)
                 # right
                 + next_visible_is_alive(with_chairs[i, j + 1:end])
                 # right-down
-                + next_visible_is_alive(rd)
+                + (diagonal_for(with_chairs, i + 1:size(with_chairs, 1), j + 1:size(with_chairs, 2)) |> next_visible_is_alive)
                 # down
                 + next_visible_is_alive(with_chairs[i + 1:end, j])
                 # left-down
-                + next_visible_is_alive(ld)
+                + (diagonal_for(with_chairs, i + 1:size(with_chairs, 1), j - 1:-1:1) |> next_visible_is_alive)
             )
         end
     end
@@ -66,13 +58,16 @@ generation_part2(cells, chairs) = begin
 end
 
 
-slice_square(xss) = xss[1:min(size(xss)...), 1:min(size(xss)...)]
-
-
 next_visible_is_alive(xs) = (
     xs
     |> xs -> Iterators.dropwhile(x -> x == 0, xs)
     |> xs -> if isempty(xs) false else first(xs) == 1 end
+)
+
+
+diagonal_for(xss, is, js) = (
+    Iterators.zip(is, js)
+    |> ixs -> Iterators.map(ix -> xss[ix...], ixs)
 )
 
 
