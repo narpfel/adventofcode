@@ -1,22 +1,20 @@
-module Main where
+module Main (main) where
 
 import Data.List (subsequences)
 import Data.Word (Word64)
 import Data.Monoid
 import Data.Semigroup
+import Data.Foldable (foldMap')
 
 weight :: Num a => [a] -> a
 weight = sum
 
-quantumEntanglement :: Num a => [a] -> a
-quantumEntanglement = product
-
 solve :: Word64 -> [Word64] -> Word64
 solve targetWeight
   = getMin
-  . foldMap (Min . getProduct . snd)
+  . foldMap' (Min . getProduct . snd)
   . filter ((== targetWeight) . getSum . fst)
-  . map (foldMap (\x -> (Sum x, Product x)))
+  . map (foldMap' (\x -> (Sum x, Product x)))
   . subsequences
 
 main :: IO ()
