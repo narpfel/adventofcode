@@ -35,15 +35,15 @@ def solve_part1(earliest_time, busses):
 def solve_part2(busses):
     # Implementation of this algorithm:
     # https://en.wikipedia.org/w/index.php?title=Chinese_remainder_theorem&oldid=993982536#Search_by_sieving
-    n = busses[0]
-    x = 0
-    for i, bus in filter(lambda ibus: ibus[1] is not UNSPECIFIED, enumerate(busses[1:], 1)):
+    period = busses[0]
+    time = 0
+    for i, bus in filter(lambda i_bus: i_bus[1] is not UNSPECIFIED, enumerate(busses[1:], 1)):
         for _ in count():
-            x += n
-            if (x + i) % bus == 0:
-                n *= bus
+            time += period
+            if (time + i) % bus == 0:
+                period *= bus
                 break
-    return x
+    return time
 
 
 def test_part1():
