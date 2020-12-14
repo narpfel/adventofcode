@@ -9,6 +9,8 @@ from contextlib import suppress
 from itertools import count
 from pathlib import Path
 
+from identify import identify
+
 
 class Runner:
     def __init__(self, output):
@@ -46,9 +48,12 @@ class Runner:
             return solutions_executed
         else:
             if self.output is not None:
-                print(f"{solution_dir}: ", end="", flush=True, file=sys.stderr)
+                print(
+                    f"{solution_dir} [{language_for(path)}]: ",
+                    end="", flush=True, file=sys.stderr
+                )
             else:
-                print(f"\n\nExecuting `{path}`...\n", file=sys.stderr)
+                print(f"\n\nExecuting `{path}` [{language_for(path)}]...\n", file=sys.stderr)
 
             try:
                 build_time, execution_time = runner(path)
@@ -125,6 +130,28 @@ class Runner:
         "Cargo.toml": "run_rust",
         "Makefile": "run_makefile",
     }
+
+
+RUNNER_TO_LANGUAGE = {
+    "package.yaml": lambda _: "haskell",
+    "Cargo.toml": lambda _: "rust",
+    "Makefile": lambda path: subprocess.run(
+        ["make", "language"],
+        cwd=path.parent,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip(),
+}
+
+
+def language_for(path):
+    if os.access(path, os.X_OK):
+        return identify.parse_shebang_from_file(path)[0]
+    try:
+        return RUNNER_TO_LANGUAGE[path.name](path)
+    except subprocess.CalledProcessError:
+        return "unknown"
 
 
 def main(argv):
