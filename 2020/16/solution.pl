@@ -2,6 +2,7 @@
 
 :- use_module(library(dcg/basics)).
 :- use_module(library(dcg/high_order)).
+:- use_module(library(clpfd)).
 
 parse_field(Name-Ranges) -->
     string_without(":", NameCodes), { string_codes(Name, NameCodes) }, ": ",
@@ -47,16 +48,16 @@ is_field_valid(_-Ranges, Value) :- member(Range, Ranges), call(Range, Value).
 all_valid(_, []).
 all_valid(Field, [Value | Values]) :- is_field_valid(Field, Value), all_valid(Field, Values).
 
-find_order([], NearbyTickets, []) :- flatten(NearbyTickets, []).
-find_order(Fields, NearbyTickets, [Field | OrderedFields]) :-
-    maplist([[Head | Tail], Head, Tail] >> (true), NearbyTickets, Heads, Tails), !,
+find_order([], [], []).
+find_order(Fields, [Heads | Tails], [Field | OrderedFields]) :-
     select(Field, Fields, RestFields),
     all_valid(Field, Heads),
     find_order(RestFields, Tails, OrderedFields).
 
 part2(Fields, MyTicket, NearbyTickets, Solution) :-
     include(all_fields_valid(Fields), NearbyTickets, ValidTickets),
-    find_order(Fields, [MyTicket | ValidTickets], OrderedFields), !,
+    transpose([MyTicket | ValidTickets], TransposedTickets),
+    find_order(Fields, TransposedTickets, OrderedFields), !,
     maplist(
         [FieldName-_, Value, FieldName-Value] >> (true),
         OrderedFields,
