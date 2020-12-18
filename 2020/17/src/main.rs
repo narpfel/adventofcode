@@ -10,7 +10,7 @@ use std::{
 
 use itertools::iproduct;
 
-fn next_generation(cells: &[Vec<Vec<bool>>]) -> Vec<Vec<Vec<bool>>> {
+fn next_generation_part1(cells: &[Vec<Vec<bool>>]) -> Vec<Vec<Vec<bool>>> {
     let x = cells[0][0].len() as isize;
     let y = cells[0].len() as isize;
     let z = cells.len() as isize;
@@ -51,6 +51,63 @@ fn next_generation(cells: &[Vec<Vec<bool>>]) -> Vec<Vec<Vec<bool>>> {
         .collect()
 }
 
+fn next_generation_part2(cells: &[Vec<Vec<Vec<bool>>>]) -> Vec<Vec<Vec<Vec<bool>>>> {
+    let x = cells[0][0][0].len() as isize;
+    let y = cells[0][0].len() as isize;
+    let z = cells[0].len() as isize;
+    let w = cells.len() as isize;
+    (-1..=w)
+        .map(|i| {
+            (-1..=z)
+                .map(|j| {
+                    (-1..=y)
+                        .map(|k| {
+                            (-1..=x)
+                                .map(|l| {
+                                    let cell = (|| {
+                                        Some(
+                                            *cells
+                                                .get(i as usize)?
+                                                .get(j as usize)?
+                                                .get(k as usize)?
+                                                .get(l as usize)?,
+                                        )
+                                    })()
+                                    .unwrap_or(false);
+                                    let neighbours = iproduct!(
+                                        (i - 1)..=(i + 1),
+                                        (j - 1)..=(j + 1),
+                                        (k - 1)..=(k + 1),
+                                        (l - 1)..=(l + 1)
+                                    )
+                                    .filter_map(|(i, j, k, l)| {
+                                        Some(
+                                            *cells
+                                                .get(i as usize)?
+                                                .get(j as usize)?
+                                                .get(k as usize)?
+                                                .get(l as usize)?
+                                                as u8,
+                                        )
+                                    })
+                                    .sum::<u8>()
+                                        - cell as u8;
+                                    if cell {
+                                        neighbours == 2 || neighbours == 3
+                                    }
+                                    else {
+                                        neighbours == 3
+                                    }
+                                })
+                                .collect()
+                        })
+                        .collect()
+                })
+                .collect()
+        })
+        .collect()
+}
+
 fn read_input(filename: impl AsRef<Path>) -> io::Result<Vec<Vec<Vec<bool>>>> {
     let file = File::open(filename)?;
     Ok(vec![
@@ -72,7 +129,7 @@ fn read_input(filename: impl AsRef<Path>) -> io::Result<Vec<Vec<Vec<bool>>>> {
 fn main() -> io::Result<()> {
     let mut cells = read_input("input")?;
     for _ in 0..6 {
-        cells = next_generation(&cells);
+        cells = next_generation_part1(&cells);
     }
     println!(
         "{}",
@@ -81,6 +138,24 @@ fn main() -> io::Result<()> {
             .map(|plane| plane
                 .into_iter()
                 .map(|row| row.into_iter().map(|cell| cell as u64).sum::<u64>())
+                .sum::<u64>())
+            .sum::<u64>()
+    );
+
+    let mut cells = vec![read_input("input")?];
+    for _ in 0..6 {
+        cells = next_generation_part2(&cells);
+    }
+    println!(
+        "{}",
+        cells
+            .into_iter()
+            .map(|cube| cube
+                .into_iter()
+                .map(|plane| plane
+                    .into_iter()
+                    .map(|row| row.into_iter().map(|cell| cell as u64).sum::<u64>())
+                    .sum::<u64>())
                 .sum::<u64>())
             .sum::<u64>()
     );
