@@ -48,26 +48,34 @@ is_field_valid(_-Ranges, Value) :- member(Range, Ranges), call(Range, Value).
 all_valid(_, []).
 all_valid(Field, [Value | Values]) :- is_field_valid(Field, Value), all_valid(Field, Values).
 
-find_order([], [], []).
-find_order(Fields, [Heads | Tails], [Field | OrderedFields]) :-
-    select(Field, Fields, RestFields),
-    all_valid(Field, Heads),
-    find_order(RestFields, Tails, OrderedFields).
+valid_fields(_, [], []).
+valid_fields(Fields, [Column | Tickets], [Valid | Rest]) :-
+    include([Field] >> (all_valid(Field, Column)), Fields, ValidFields),
+    pairs_keys(ValidFields, Valid),
+    valid_fields(Fields, Tickets, Rest).
+
+find_order(Fields, TicketsByColumn, OrderedFields) :-
+    valid_fields(Fields, TicketsByColumn, ValidFields),
+    foldl(
+        [Batch, Acc, [Field | Acc]] >> (
+            subtract(Batch, Acc, Options),
+            member(Field, Options)
+        ),
+        ValidFields,
+        [],
+        ReverseOrderedFields
+    ),
+    reverse(ReverseOrderedFields, OrderedFields).
 
 part2(Fields, MyTicket, NearbyTickets, Solution) :-
     include(all_fields_valid(Fields), NearbyTickets, ValidTickets),
     transpose([MyTicket | ValidTickets], TransposedTickets),
     find_order(Fields, TransposedTickets, OrderedFields), !,
-    maplist(
-        [FieldName-_, Value, FieldName-Value] >> (true),
-        OrderedFields,
-        MyTicket,
-        OrderedTicket
-    ),
+    pairs_keys_values(TicketWithNames, OrderedFields, MyTicket),
     string_codes("departure", Departure),
     include(
         [Name-_] >> (string_codes(Name, NameCodes), prefix(Departure, NameCodes)),
-        OrderedTicket,
+        TicketWithNames,
         DepartureInfo
     ),
     foldl([_-Value, OldAcc, Acc] >> (Acc is Value * OldAcc), DepartureInfo, 1, Solution).
