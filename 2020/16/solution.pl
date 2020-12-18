@@ -30,32 +30,34 @@ read_input(Filename, Fields, MyTicket, NearbyTickets) :-
     string_codes(String, Codes),
     phrase(parse_input(Fields, MyTicket, NearbyTickets), Codes).
 
-is_valid(Fields, Value) :-
+is_valid_for_any_field(Fields, Value) :-
     member(_-Ranges, Fields),
     member(Range, Ranges),
     call(Range, Value).
 
 part1(Fields, NearbyTickets, Solution) :-
-    maplist(exclude(is_valid(Fields)), NearbyTickets, InvalidValues),
+    maplist(exclude(is_valid_for_any_field(Fields)), NearbyTickets, InvalidValues),
     flatten(InvalidValues, Flat),
     sum_list(Flat, Solution).
 
 all_fields_valid(Fields, Ticket) :-
-    include(is_valid(Fields), Ticket, Ticket).
+    include(is_valid_for_any_field(Fields), Ticket, Ticket).
 
 is_field_valid(_-Ranges, Value) :- member(Range, Ranges), call(Range, Value).
 
-all_valid(_, []).
-all_valid(Field, [Value | Values]) :- is_field_valid(Field, Value), all_valid(Field, Values).
+all_valid_for_field(_, []).
+all_valid_for_field(Field, [Value | Values]) :-
+    is_field_valid(Field, Value),
+    all_valid_for_field(Field, Values).
 
-valid_fields(_, [], []).
-valid_fields(Fields, [Column | Tickets], [Valid | Rest]) :-
-    include([Field] >> (all_valid(Field, Column)), Fields, ValidFields),
+valid_fields_for_column(_, [], []).
+valid_fields_for_column(Fields, [Column | Tickets], [Valid | Rest]) :-
+    include([Field] >> (all_valid_for_field(Field, Column)), Fields, ValidFields),
     pairs_keys(ValidFields, Valid),
-    valid_fields(Fields, Tickets, Rest).
+    valid_fields_for_column(Fields, Tickets, Rest).
 
 find_order(Fields, TicketsByColumn, OrderedFields) :-
-    valid_fields(Fields, TicketsByColumn, ValidFields),
+    valid_fields_for_column(Fields, TicketsByColumn, ValidFields),
     foldl(
         [Batch, Acc, [Field | Acc]] >> (
             subtract(Batch, Acc, Options),
