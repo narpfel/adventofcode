@@ -44,8 +44,17 @@ buildParser rules ruleName = go (rules Map.! ruleName) $> ()
     go (Literal s) = word s $> ()
     go (Compound subrules) = choice . map (mapM_ (buildParser rules)) $ subrules
 
+solve :: Map Int Rule -> [String] -> Int
+solve rules = length . mapMaybe (parse rulesParser)
+  where
+    rulesParser = buildParser rules 0
+
 main :: IO ()
 main = do
   Just (rules, messages) <- parse input <$> readFile "input"
-  let rulesParser = buildParser rules 0
-  print . length . mapMaybe (parse rulesParser) $ messages
+  let rulesPart2
+        = Map.insert 11 (Compound [[42, 31], [42, 11, 31]])
+        . Map.insert 8 (Compound [[42], [42, 8]])
+        $ rules
+  print . solve rules $ messages
+  print . solve rulesPart2 $ messages
