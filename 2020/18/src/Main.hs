@@ -7,10 +7,22 @@ import Au.Parser hiding (Parser)
 
 type Parser = Au.Parser Char
 
-term :: Parser Int
-term = (integer <> parenthesised term) `chainl1` keywords [" + " .= (+), " * " .= (*)]
+samePrecedenceTerm :: Parser Integer
+samePrecedenceTerm =
+  (integer <> parenthesised samePrecedenceTerm)
+    `chainl1` keywords [" + " .= (+), " * " .= (*)]
+
+tightAdditionTerm :: Parser Integer
+tightAdditionTerm = factor `chainl1` keywords [" * " .= (*)]
+
+factor :: Parser Integer
+factor = (integer <> parenthesised tightAdditionTerm) `chainl1` keywords [" + " .= (+)]
+
+solve :: Parser Integer -> String -> Integer
+solve term = sum . fromJust . parse (perLine term)
 
 main :: IO ()
 main = do
   input <- readFile "input"
-  print . sum . fromJust . parse (perLine term) $ input
+  print . solve samePrecedenceTerm $ input
+  print . solve tightAdditionTerm $ input
