@@ -1,0 +1,20 @@
+name: solution
+
+dependencies:
+  - base >= 4.7 && < 5
+  - au
+
+default-extensions:
+  - LambdaCase
+  - ParallelListComp
+  - DeriveFunctor
+
+ghc-options:
+  -Wall
+  -Wextra
+  -O2
+
+executables:
+  solution:
+    source-dirs:      src
+    main:             Main.hs
