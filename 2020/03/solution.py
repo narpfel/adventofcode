@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from functools import reduce
-from itertools import count
 from itertools import islice
 from operator import mul
 
@@ -9,7 +8,7 @@ from operator import mul
 def count_encountered_trees(tree_map, dx, dy):
     return sum(
         line[(dx * x) % len(line)] == "#"
-        for (x, line) in zip(count(), islice(tree_map, None, None, dy))
+        for (x, line) in enumerate(islice(tree_map, None, None, dy))
     )
 
 
