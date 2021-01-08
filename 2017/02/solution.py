@@ -15,7 +15,7 @@ def main():
             for row in numbers
             for (x, y) in permutations(row, 2)
             if not x % y
-        )
+        ),
     )
 
 

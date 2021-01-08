@@ -6,7 +6,7 @@ import attr
 
 PREAMBLE_RE = re.compile(
     r"""Begin in state (?P<initial_state>.)\.
-Perform a diagnostic checksum after (?P<step_count>\d+) steps\."""
+Perform a diagnostic checksum after (?P<step_count>\d+) steps\.""",
 )
 
 STATES_RE = re.compile(
@@ -35,10 +35,10 @@ class State:
     transitions = attr.ib(
         converter=lambda d: {
             state: Transition(
-                *(d[f"on_{state}_{value}"] for value in ("value", "direction", "state"))
+                *(d[f"on_{state}_{value}"] for value in ("value", "direction", "state")),
             )
             for state in (0, 1)
-        }
+        },
     )
 
 

@@ -34,13 +34,13 @@ def toggle2(lights, from_x, from_y, to_x, to_y):
 COMMANDS_PART1 = {
     "turn on": turn_on,
     "turn off": turn_off,
-    "toggle": toggle
-    }
+    "toggle": toggle,
+}
 
 COMMANDS_PART2 = {
     "turn on": turn_on2,
     "turn off": turn_off2,
-    "toggle": toggle2
+    "toggle": toggle2,
 }
 
 

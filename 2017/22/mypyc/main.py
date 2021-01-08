@@ -100,7 +100,7 @@ def solve(input_filename: str, step_count: int, work: Mapping[Node, Node]) -> in
     infections_caused = 0
     for _ in range(step_count):
         position, direction, has_caused_infection = step(
-            grid, position, direction, work
+            grid, position, direction, work,
         )
         infections_caused += has_caused_infection
 

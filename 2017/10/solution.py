@@ -21,12 +21,14 @@ class CyclicList(UserList):
         if isinstance(item, Number):
             return super().__getitem__(item % len(self))
         elif isinstance(item, slice):
-            return list(islice(
-                cycle(self),
-                item.start,
-                item.stop if item.stop is not None else len(self),
-                item.step
-            ))
+            return list(
+                islice(
+                    cycle(self),
+                    item.start,
+                    item.stop if item.stop is not None else len(self),
+                    item.step,
+                ),
+            )
         else:
             raise TypeError(f"Subscript must be numeric or slice, not `{type(item)}`.")
 
@@ -40,7 +42,7 @@ class CyclicList(UserList):
                     index.stop if index.stop is not None else len(self),
                     index.step if index.step is not None else 1,
                 ),
-                item
+                item,
             ):
                 self[i] = value
         else:
@@ -60,7 +62,7 @@ def knot_hash(input_bytes):
     numbers = CyclicList(range(256))
     for skip, length in zip(
         count(),
-        chain.from_iterable(repeat(list(chain(input_bytes, [17, 31, 73, 47, 23])), 64))
+        chain.from_iterable(repeat(list(chain(input_bytes, [17, 31, 73, 47, 23])), 64)),
     ):
         numbers.reverse(slice(index, index + length))
         index += length + skip

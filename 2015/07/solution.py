@@ -48,7 +48,7 @@ INSTRUCTION = re.compile(
         |((?P<operator>\w*)\ (?P<operand>\w*))
         |(?P<single>\w*)
     )\ ->\ (?P<destination>\w*)""",
-    re.VERBOSE
+    re.VERBOSE,
 )
 
 WIRE_NAME = re.compile(r"[a-z]+")
@@ -70,12 +70,12 @@ def main():
             input = partial(
                 LOGIC_FUNCTIONS[groups["binop"]],
                 wires.get(groups["left"], groups["left"]),
-                wires.get(groups["right"], groups["right"])
+                wires.get(groups["right"], groups["right"]),
             )
         elif groups["operator"] is not None:
             input = partial(
                 LOGIC_FUNCTIONS[groups["operator"]],
-                wires.get(groups["operand"], groups["operand"])
+                wires.get(groups["operand"], groups["operand"]),
             )
         else:
             input = wires.get(groups["single"], groups["single"])

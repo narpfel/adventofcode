@@ -39,7 +39,7 @@ def main():
     crossings = tracks[0].keys() & tracks[1].keys()
     print(min(tracks[0][crossing][0] for crossing in crossings))
     print(
-        min(tracks[0][crossing][1] + tracks[1][crossing][1] for crossing in crossings)
+        min(tracks[0][crossing][1] + tracks[1][crossing][1] for crossing in crossings),
     )
 
 

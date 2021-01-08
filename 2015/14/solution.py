@@ -6,7 +6,7 @@ from collections import defaultdict
 class Reindeer:
     LINE_RE = re.compile(
         r"(?P<name>.*) can fly (?P<speed>\d*) km/s for (?P<fly_duration>\d*) "
-        r"seconds, but then must rest for (?P<rest_duration>\d*) seconds."
+        r"seconds, but then must rest for (?P<rest_duration>\d*) seconds.",
     )
 
     def __init__(self, name, speed, fly_duration, rest_duration):

@@ -50,7 +50,7 @@ class Runner:
             if self.output is not None:
                 print(
                     f"{solution_dir} [{language_for(path)}]: ",
-                    end="", flush=True, file=sys.stderr
+                    end="", flush=True, file=sys.stderr,
                 )
             else:
                 print(f"\n\nExecuting `{path}` [{language_for(path)}]...\n", file=sys.stderr)
@@ -69,7 +69,7 @@ class Runner:
                 )
                 print(
                     f"{execution_time_output_prefix}{execution_time} s{build_time_output}",
-                    file=sys.stderr
+                    file=sys.stderr,
                 )
                 return 1
 
@@ -175,7 +175,7 @@ def main(argv):
             solution_count += runner.run_solution(solution)
     print(
         f"Found {solution_count} solutions in {time.perf_counter() - start_time} s.",
-        file=sys.stderr
+        file=sys.stderr,
     )
     if runner.failed_solutions:
         print(f"{runner.failed_solutions} solutions failed executing.", file=sys.stderr)

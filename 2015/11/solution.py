@@ -37,7 +37,7 @@ def has_overlapping_equal_pairs(s):
 def is_valid(s):
     return all(
         pred(s) for pred in [
-            has_increasing_triple, has_no_iol, has_overlapping_equal_pairs
+            has_increasing_triple, has_no_iol, has_overlapping_equal_pairs,
         ]
     )
 

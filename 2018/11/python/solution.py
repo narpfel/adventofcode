@@ -51,7 +51,7 @@ def solve(power_levels, window_sizes):
             windowed(power_levels, window_size)
             for window_size in window_sizes
         ),
-        key=attrgetter("total_power")
+        key=attrgetter("total_power"),
     )
 
 

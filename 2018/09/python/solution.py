@@ -22,7 +22,7 @@ def play(player_count, highest_marble_number):
 def main():
     player_count, highest_marble_number = map(
         int,
-        re.match(r"(\d+) players; last marble is worth (\d+) points", INPUT).groups()
+        re.match(r"(\d+) players; last marble is worth (\d+) points", INPUT).groups(),
     )
     print(play(player_count, highest_marble_number))
     print(play(player_count, highest_marble_number * 100))

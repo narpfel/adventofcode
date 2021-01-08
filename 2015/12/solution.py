@@ -37,9 +37,9 @@ def main():
     print(
         sum_numbers(
             json.dumps(
-                list(filter_recursively(has_no_red, json.loads(json_document)))
-            )
-        )
+                list(filter_recursively(has_no_red, json.loads(json_document))),
+            ),
+        ),
     )
 
 

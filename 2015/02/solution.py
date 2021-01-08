@@ -18,7 +18,7 @@ def solve(solver):
     with open("input") as lines:
         return sum(
             solver(
-                map(int, line.split("x"))
+                map(int, line.split("x")),
             )
             for line in lines
         )

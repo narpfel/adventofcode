@@ -8,7 +8,7 @@ from itertools import tee
 def read_input(filename):
     line_format = re.compile(
         r"(?P<name>.*) would (?P<gain_or_lose>.*) (?P<happiness>\d*) happiness "
-        r"units by sitting next to (?P<other>.*)\."
+        r"units by sitting next to (?P<other>.*)\.",
     )
     with open(filename) as input:
         for line in input:
@@ -16,7 +16,7 @@ def read_input(filename):
             gain_or_lose = -1 if match.group("gain_or_lose") == "lose" else 1
             yield (
                 (match.group("name"), match.group("other")),
-                int(match.group("happiness")) * gain_or_lose
+                int(match.group("happiness")) * gain_or_lose,
             )
 
 
@@ -41,7 +41,7 @@ def happiness(arrangement, pair2happiness):
 def find_best_arrangement(people, pair2happiness):
     return max(
         permutations(people),
-        key=partial(happiness, pair2happiness=pair2happiness)
+        key=partial(happiness, pair2happiness=pair2happiness),
     )
 
 

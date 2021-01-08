@@ -27,7 +27,7 @@ def main():
                 for (x, y)
                 in pairs(line, selector)
                 if x == y
-            )
+            ),
         )
 
 

@@ -17,10 +17,14 @@ def main():
         tree_map = [line.strip() for line in lines]
 
     print(count_encountered_trees(tree_map, 3, 1))
-    print(reduce(mul, (
-        count_encountered_trees(tree_map, dx, dy)
-        for dx, dy in [(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)]
-    )))
+    print(
+        reduce(
+            mul, (
+                count_encountered_trees(tree_map, dx, dy)
+                for dx, dy in [(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)]
+            ),
+        ),
+    )
 
 
 if __name__ == "__main__":

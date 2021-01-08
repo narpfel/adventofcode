@@ -71,7 +71,7 @@ def part2(reactions):
 
 @mark.parametrize(
     "number, expected",
-    [(0, 165), (1, 13312), (2, 180697), (3, 2210736)]
+    [(0, 165), (1, 13312), (2, 180697), (3, 2210736)],
 )
 def test_part1(number, expected):
     assert part1(read_input(f"input_test{number}")) == expected
@@ -79,7 +79,7 @@ def test_part1(number, expected):
 
 @mark.parametrize(
     "number, expected",
-    [(1, 82892753), (2, 5586022), (3, 460664)]
+    [(1, 82892753), (2, 5586022), (3, 460664)],
 )
 def test_part2(number, expected):
     assert part2(read_input(f"input_test{number}")) == expected

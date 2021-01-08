@@ -20,7 +20,7 @@ TRANSFORMATIONS = [
     np.fliplr,
     np.rot90,
     np.rot90,
-    np.rot90
+    np.rot90,
 ]
 
 SEA_MONSTER_SHAPE = [

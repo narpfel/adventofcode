@@ -58,12 +58,14 @@ def generate_c(initial_state, step_count, states):
     print(C_PREAMBLE.format(initial_state=initial_state, step_count=step_count))
     for state in states.values():
         for cell_value, transition in state.transitions.items():
-            print(C_STEP.format(
-                step_count=step_count,
-                cell_value=cell_value,
-                state=state,
-                transition=transition
-            ))
+            print(
+                C_STEP.format(
+                    step_count=step_count,
+                    cell_value=cell_value,
+                    state=state,
+                    transition=transition,
+                ),
+            )
     print(C_POSTAMBLE)
 
 

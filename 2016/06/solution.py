@@ -13,14 +13,14 @@ def main():
         "".join(
             abundance.most_common(1)[0][0]
             for abundance in abundances
-        )
+        ),
     )
 
     print(
         "".join(
             abundance.most_common()[-1][0]
             for abundance in abundances
-        )
+        ),
     )
 
 

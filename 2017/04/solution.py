@@ -8,7 +8,7 @@ def main():
         sum(
             len(set(line.split())) == len(line.split())
             for line in lines
-        )
+        ),
     )
 
     print(
@@ -17,7 +17,7 @@ def main():
                 "".join(sorted(word)) for word in line.split()
             }) == len(line.split())
             for line in lines
-        )
+        ),
     )
 
 
