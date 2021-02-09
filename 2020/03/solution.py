@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
-from functools import reduce
 from itertools import islice
-from operator import mul
+from math import prod
 
 
 def count_encountered_trees(tree_map, dx, dy):
@@ -18,11 +17,9 @@ def main():
 
     print(count_encountered_trees(tree_map, 3, 1))
     print(
-        reduce(
-            mul, (
-                count_encountered_trees(tree_map, dx, dy)
-                for dx, dy in [(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)]
-            ),
+        prod(
+            count_encountered_trees(tree_map, dx, dy)
+            for dx, dy in [(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)]
         ),
     )
 

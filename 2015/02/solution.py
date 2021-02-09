@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-from functools import reduce
 from itertools import combinations
-from operator import mul
+from math import prod
 
 
 def calculate_paper(dimensions):
@@ -11,7 +10,7 @@ def calculate_paper(dimensions):
 
 def calculate_ribbon(dimensions):
     dimensions = sorted(dimensions)
-    return 2 * sum(dimensions[:2]) + reduce(mul, dimensions)
+    return 2 * sum(dimensions[:2]) + prod(dimensions)
 
 
 def solve(solver):

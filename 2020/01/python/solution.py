@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
-from functools import reduce
 from itertools import combinations
-from operator import mul
+from math import prod
 
 import pytest
 
@@ -15,7 +14,7 @@ def read_input(filename):
 def solve(expenses, length):
     for values in combinations(expenses, length):
         if sum(values) == 2020:
-            return reduce(mul, values)
+            return prod(values)
 
 
 @pytest.mark.parametrize(
