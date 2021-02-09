@@ -50,8 +50,8 @@ const solvePart2 = input => {
 
 const main = () => {
     const input = readInput("input");
-    console.log(solvePart1(input));
-    console.log(solvePart2(input));
+    console.log("%d", solvePart1(input));
+    console.log("%d", solvePart2(input));
 }
 
 main();
