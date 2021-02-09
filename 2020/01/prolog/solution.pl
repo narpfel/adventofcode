@@ -4,7 +4,7 @@ read_input(Filename, Expenses) :-
     open(Filename, read, Input),
     read_string(Input, "", "\n", _, String),
     split_string(String, "\n", "", Lines),
-    maplist([Line, Expense] >> (number_string(Expense, Line)), Lines, Expenses).
+    maplist(number_string, Expenses, Lines).
 
 part1(Expenses, Solution) :-
     select(A, Expenses, Rest),
