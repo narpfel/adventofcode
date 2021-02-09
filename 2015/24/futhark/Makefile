@@ -5,8 +5,8 @@ build: solution
 	@:
 
 solution: solution.fut
-	futhark c solution.fut
+	futhark multicore solution.fut
 
 .PHONY: clean
 clean:
-	rm solution solution.c
+	rm -f solution solution.c
