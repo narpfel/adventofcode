@@ -11,6 +11,9 @@ repos:
       - id: check-yaml
       - id: debug-statements
       - id: end-of-file-fixer
+      - id: file-contents-sorter
+        files: \.gitignore
+        args: ["--unique"]
       - id: fix-byte-order-marker
       - id: mixed-line-ending
       - id: name-tests-test
