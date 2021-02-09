@@ -54,7 +54,7 @@ def test_solve(starting_numbers, count, expected):
 
 def main():
     print(solve(parse_input(INPUT), 2020))
-    print(solve(parse_input(INPUT), 30000000))
+    print(solve(parse_input(INPUT), 30_000_000))
 
 
 if __name__ == "__main__":
