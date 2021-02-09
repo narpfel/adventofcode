@@ -4,7 +4,7 @@ const GRID_SIZE: usize = 300;
 
 const INPUT: i64 = 7672;
 
-type Grid = Box<[[i64; GRID_SIZE + 1]; GRID_SIZE + 1]>;
+type Grid = [[i64; GRID_SIZE + 1]; GRID_SIZE + 1];
 
 struct Window {
     x: usize,
@@ -18,7 +18,7 @@ fn power_level(x: usize, y: usize, serial_number: i64) -> i64 {
     ((((rack_id * y as i64 + serial_number) * rack_id) / 100) % 10) - 5
 }
 
-fn calculate_grid(serial_number: i64) -> Grid {
+fn calculate_grid(serial_number: i64) -> Box<Grid> {
     let mut grid = box [[0; GRID_SIZE + 1]; GRID_SIZE + 1];
     for (y, line) in grid.iter_mut().enumerate() {
         for (x, fuel_cell) in line.iter_mut().enumerate() {

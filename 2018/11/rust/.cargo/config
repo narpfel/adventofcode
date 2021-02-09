@@ -1,0 +1,6 @@
+[build]
+rustflags = [
+    "-C", "target-cpu=native",
+    "-C", "llvm-args=-unroll-threshold=50000",
+    "-C", "panic=abort",
+]

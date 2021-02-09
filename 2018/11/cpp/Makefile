@@ -20,4 +20,4 @@ solution: solution.cxx
 
 .PHONY: clean
 clean:
-	rm solution
+	rm -f solution

@@ -8,11 +8,13 @@ default-extensions:
   - LambdaCase
   - ParallelListComp
   - DeriveFunctor
+  - Strict
 
 ghc-options:
   -Wall
   -Wextra
   -O2
+  -fllvm
 
 executables:
   solution:
