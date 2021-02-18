@@ -5,9 +5,10 @@ authors = ["narpfel <narpfel@gmx.de>"]
 edition = "2018"
 
 [features]
-interactive = []
+visualise = []
 
 [dependencies]
+itertools = "0.10"
 
 [dependencies.intcode]
 path = "../11/intcode"
