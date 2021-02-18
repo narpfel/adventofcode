@@ -267,42 +267,14 @@ impl<Iter: Iterator<Item = Cell>> State<Iter> {
                     new_functions[2].clone(),
                 ]);
                 if !already_seen && is_valid(&new_main, &new_functions, &rle) {
-                    seen.insert([
-                        new_main.clone(),
-                        new_functions[0].clone(),
-                        new_functions[1].clone(),
-                        new_functions[2].clone(),
-                    ]);
-                    seen.insert([
-                        new_main.clone(),
-                        new_functions[0].clone(),
-                        new_functions[2].clone(),
-                        new_functions[1].clone(),
-                    ]);
-                    seen.insert([
-                        new_main.clone(),
-                        new_functions[1].clone(),
-                        new_functions[0].clone(),
-                        new_functions[2].clone(),
-                    ]);
-                    seen.insert([
-                        new_main.clone(),
-                        new_functions[1].clone(),
-                        new_functions[2].clone(),
-                        new_functions[0].clone(),
-                    ]);
-                    seen.insert([
-                        new_main.clone(),
-                        new_functions[2].clone(),
-                        new_functions[0].clone(),
-                        new_functions[1].clone(),
-                    ]);
-                    seen.insert([
-                        new_main.clone(),
-                        new_functions[2].clone(),
-                        new_functions[1].clone(),
-                        new_functions[0].clone(),
-                    ]);
+                    for fs in new_functions.iter().permutations(new_functions.len()) {
+                        if let [a, b, c] = &fs[..] {
+                            seen.insert([main.clone(), a.to_vec(), b.to_vec(), c.to_vec()]);
+                        }
+                        else {
+                            unreachable!();
+                        }
+                    }
                     let solution = go(new_i, rle, new_main, new_functions, seen);
                     if let Some((main, functions)) = solution.as_ref() {
                         if expand(main, functions)
