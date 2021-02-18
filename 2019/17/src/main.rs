@@ -69,7 +69,7 @@ impl TryFrom<Cell> for Tile {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 enum Step {
-    Go,
+    Go(usize),
     TurnLeft,
     TurnRight,
     A,
@@ -77,28 +77,33 @@ enum Step {
     C,
 }
 
-fn to_ascii(step: (Step, usize)) -> String {
-    match step {
-        (Step::TurnLeft, 1) => "L".into(),
-        (Step::TurnRight, 1) => "R".into(),
-        (Step::Go, n) => n.to_string(),
-        (Step::A, 1) => "A".into(),
-        (Step::B, 1) => "B".into(),
-        (Step::C, 1) => "C".into(),
-        _ => unreachable!(),
+impl Step {
+    fn to_ascii(self) -> String {
+        use Step::*;
+        match self {
+            TurnLeft => "L".into(),
+            TurnRight => "R".into(),
+            Go(n) => n.to_string(),
+            A => "A".into(),
+            B => "B".into(),
+            C => "C".into(),
+        }
     }
-}
 
-fn length(step: (Step, usize)) -> usize {
-    match step.0 {
-        Step::Go =>
-            if step.1 >= 10 {
-                2
-            }
-            else {
-                1
-            },
-        _ => 1,
+    fn len(self) -> usize {
+        match self {
+            Step::Go(n) => if n >= 10 { 2 } else { 1 },
+            _ => 1,
+        }
+    }
+
+    fn as_index(self) -> usize {
+        match self {
+            Step::A => 0,
+            Step::B => 1,
+            Step::C => 2,
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -144,141 +149,112 @@ impl<Iter: Iterator<Item = Cell>> State<Iter> {
     fn part2(&self) -> String {
         #[derive(Copy, Clone, Debug)]
         enum Possibility {
-            MainA,
-            MainB,
-            MainC,
-            A,
-            B,
-            C,
+            Main(Step),
+            Function(Step),
         }
 
         impl Possibility {
             fn iter() -> impl Iterator<Item = Self> {
                 use Possibility::*;
-                [A, B, C, MainA, MainB, MainC].iter().copied()
+                use Step::*;
+                [
+                    Function(A),
+                    Function(B),
+                    Function(C),
+                    Main(A),
+                    Main(B),
+                    Main(C),
+                ]
+                .iter()
+                .copied()
             }
         }
 
-        type Function = Vec<(Step, usize)>;
+        type Function = Vec<Step>;
 
         fn expand<'a>(
             main: &'a Function,
             functions: &'a [Function; 3],
-        ) -> impl Iterator<Item = (Step, usize)> + 'a {
+        ) -> impl Iterator<Item = Step> + 'a {
             main.iter()
-                .flat_map(move |(step, count)| {
-                    assert_eq!(count, &1);
-                    match step {
-                        Step::A => &functions[0],
-                        Step::B => &functions[1],
-                        Step::C => &functions[2],
-                        _ => unreachable!(),
-                    }
-                })
+                .flat_map(move |step| &functions[step.as_index()])
                 .copied()
         }
 
         fn render(f: &Function) -> String {
-            f.iter().copied().map(to_ascii).join(",")
+            f.iter().copied().map(Step::to_ascii).join(",")
         }
 
-        fn is_valid(main: &Function, functions: &[Function; 3], rle: &Function) -> bool {
+        fn is_valid(main: &Function, functions: &[Function; 3], steps: &Function) -> bool {
             const MAX_LENGTH: usize = 20;
 
             main.len() <= MAX_LENGTH / 2
                 && functions
                     .iter()
-                    .all(|f| f.iter().copied().map(length).sum::<usize>() <= MAX_LENGTH / 2)
+                    .all(|f| f.iter().copied().map(Step::len).sum::<usize>() <= MAX_LENGTH / 2)
                 && expand(main, functions)
-                    .zip(rle.iter())
+                    .zip(steps.iter())
                     .all(|(x, &y)| x == y)
         }
 
         fn go(
             i: usize,
-            rle: &Function,
+            steps: &Function,
             main: Function,
             functions: [Function; 3],
-            seen: &mut HashSet<[Function; 4]>,
+            seen: &mut HashSet<(Function, Function, Function, Function)>,
         ) -> Option<(Function, [Function; 3])> {
             // FIXME: Also a false positive maybe? Regardless, a `match` wouldn’t make the
             // code more readable here.
             #[allow(clippy::clippy::comparison_chain)]
-            if i == rle.len() {
+            if i == steps.len() {
                 return Some((main, functions));
             }
-            else if i > rle.len() {
+            else if i > steps.len() {
                 return None;
             }
 
             for possibility in Possibility::iter() {
                 use Possibility::*;
                 let (new_main, new_functions, new_i) = match possibility {
-                    MainA => {
+                    Main(step) => {
                         let mut new_main = main.clone();
-                        new_main.push((Step::A, 1));
-                        (new_main, functions.clone(), i + functions[0].len())
-                    }
-                    MainB => {
-                        let mut new_main = main.clone();
-                        new_main.push((Step::B, 1));
-                        (new_main, functions.clone(), i + functions[1].len())
-                    }
-                    MainC => {
-                        let mut new_main = main.clone();
-                        new_main.push((Step::C, 1));
-                        (new_main, functions.clone(), i + functions[2].len())
-                    }
-                    A => {
-                        let new_main = main.clone();
-                        let mut new_functions = functions.clone();
-                        new_functions[0].push(rle[i]);
+                        new_main.push(step);
                         (
                             new_main,
-                            new_functions,
-                            i + main.iter().filter(|&&it| it == (Step::A, 1)).count(),
+                            functions.clone(),
+                            i + functions[step.as_index()].len(),
                         )
                     }
-                    B => {
-                        let new_main = main.clone();
+                    Function(step) => {
                         let mut new_functions = functions.clone();
-                        new_functions[1].push(rle[i]);
+                        new_functions[step.as_index()].push(steps[i]);
                         (
-                            new_main,
+                            main.clone(),
                             new_functions,
-                            i + main.iter().filter(|&&it| it == (Step::B, 1)).count(),
-                        )
-                    }
-                    C => {
-                        let new_main = main.clone();
-                        let mut new_functions = functions.clone();
-                        new_functions[2].push(rle[i]);
-                        (
-                            new_main,
-                            new_functions,
-                            i + main.iter().filter(|&&it| it == (Step::C, 1)).count(),
+                            i + main.iter().filter(|&&it| it == step).count(),
                         )
                     }
                 };
-                let already_seen = seen.contains(&[
+                let already_seen = seen.contains(&(
                     new_main.clone(),
                     new_functions[0].clone(),
                     new_functions[1].clone(),
                     new_functions[2].clone(),
-                ]);
-                if !already_seen && is_valid(&new_main, &new_functions, &rle) {
+                ));
+                if !already_seen && is_valid(&new_main, &new_functions, &steps) {
                     for fs in new_functions.iter().permutations(new_functions.len()) {
                         if let [a, b, c] = &fs[..] {
-                            seen.insert([main.clone(), a.to_vec(), b.to_vec(), c.to_vec()]);
+                            seen.insert((main.clone(), a.to_vec(), b.to_vec(), c.to_vec()));
                         }
                         else {
                             unreachable!();
                         }
                     }
-                    let solution = go(new_i, rle, new_main, new_functions, seen);
+                    let solution = go(new_i, steps, new_main, new_functions, seen);
                     if let Some((main, functions)) = solution.as_ref() {
                         if expand(main, functions)
-                            .zip(rle.iter())
+                            .zip(steps.iter())
                             .all(|(x, &y)| x == y)
                         {
                             return solution;
@@ -291,11 +267,10 @@ impl<Iter: Iterator<Item = Cell>> State<Iter> {
 
         let mut robot = Robot::new(self.scaffolding.clone());
         let steps = robot.steps();
-        let rle = run_length_encode(steps.into_iter());
 
-        let main = vec![(Step::A, 1)];
+        let main = vec![Step::A];
         let functions = <[_; 3]>::default();
-        let result = go(0, &rle, main, functions, &mut HashSet::default());
+        let result = go(0, &steps, main, functions, &mut HashSet::default());
 
         let (main, [a, b, c]) = result.unwrap();
 
@@ -369,24 +344,26 @@ impl Robot {
     fn steps(&mut self) -> Vec<Step> {
         let mut steps = Vec::new();
         loop {
-            if self.can_move() {
-                steps.push(Step::Go);
+            let mut n = 0;
+            while self.can_move() {
+                n += 1;
                 self.move_forward();
             }
+            if n != 0 {
+                steps.push(Step::Go(n));
+            }
+            self.turn_left();
+            if self.can_move() {
+                steps.push(Step::TurnLeft);
+            }
             else {
-                self.turn_left();
+                self.turn_right();
+                self.turn_right();
                 if self.can_move() {
-                    steps.push(Step::TurnLeft);
+                    steps.push(Step::TurnRight);
                 }
                 else {
-                    self.turn_right();
-                    self.turn_right();
-                    if self.can_move() {
-                        steps.push(Step::TurnRight);
-                    }
-                    else {
-                        break steps;
-                    }
+                    break steps;
                 }
             }
         }
@@ -453,14 +430,6 @@ fn neighbours(Point { x, y }: Point) -> impl Iterator<Item = Point> {
         .chain(once(Point { x: x + 1, y }))
         .chain(once(Point { x, y: y - 1 }))
         .chain(once(Point { x, y: y + 1 }))
-}
-
-fn run_length_encode<T: PartialEq + Clone>(iterator: impl Iterator<Item = T>) -> Vec<(T, usize)> {
-    iterator
-        .group_by(|t| t.clone())
-        .into_iter()
-        .map(|(key, group)| (key, group.count()))
-        .collect()
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
