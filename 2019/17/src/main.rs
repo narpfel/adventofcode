@@ -3,10 +3,7 @@
 #![allow(clippy::vec_init_then_push)]
 #![allow(clippy::ptr_arg)]
 use std::{
-    collections::{
-        HashMap,
-        HashSet,
-    },
+    collections::HashMap,
     convert::{
         TryFrom,
         TryInto,
@@ -92,7 +89,13 @@ impl Step {
 
     fn len(self) -> usize {
         match self {
-            Step::Go(n) => if n >= 10 { 2 } else { 1 },
+            Step::Go(n) =>
+                if n >= 10 {
+                    2
+                }
+                else {
+                    1
+                },
             _ => 1,
         }
     }
@@ -185,30 +188,17 @@ impl<Iter: Iterator<Item = Cell>> State<Iter> {
             f.iter().copied().map(Step::to_ascii).join(",")
         }
 
-        fn is_valid(main: &Function, functions: &[Function; 3], steps: &Function) -> bool {
-            const MAX_LENGTH: usize = 20;
-
-            main.len() <= MAX_LENGTH / 2
-                && functions
-                    .iter()
-                    .all(|f| f.iter().copied().map(Step::len).sum::<usize>() <= MAX_LENGTH / 2)
-                && expand(main, functions)
-                    .zip(steps.iter())
-                    .all(|(x, &y)| x == y)
-        }
-
         fn go(
             i: usize,
             steps: &Function,
-            main: Function,
-            functions: [Function; 3],
-            seen: &mut HashSet<(Function, Function, Function, Function)>,
+            main: &mut Function,
+            functions: &mut [Function; 3],
         ) -> Option<(Function, [Function; 3])> {
             // FIXME: Also a false positive maybe? Regardless, a `match` wouldn’t make the
             // code more readable here.
             #[allow(clippy::clippy::comparison_chain)]
             if i == steps.len() {
-                return Some((main, functions));
+                return Some((main.clone(), functions.clone()));
             }
             else if i > steps.len() {
                 return None;
@@ -216,50 +206,47 @@ impl<Iter: Iterator<Item = Cell>> State<Iter> {
 
             for possibility in Possibility::iter() {
                 use Possibility::*;
-                let (new_main, new_functions, new_i) = match possibility {
+                let i_offset = match possibility {
                     Main(step) => {
-                        let mut new_main = main.clone();
-                        new_main.push(step);
-                        (
-                            new_main,
-                            functions.clone(),
-                            i + functions[step.as_index()].len(),
-                        )
-                    }
-                    Function(step) => {
-                        let mut new_functions = functions.clone();
-                        new_functions[step.as_index()].push(steps[i]);
-                        (
-                            main.clone(),
-                            new_functions,
-                            i + main.iter().filter(|&&it| it == step).count(),
-                        )
-                    }
-                };
-                let already_seen = seen.contains(&(
-                    new_main.clone(),
-                    new_functions[0].clone(),
-                    new_functions[1].clone(),
-                    new_functions[2].clone(),
-                ));
-                if !already_seen && is_valid(&new_main, &new_functions, &steps) {
-                    for fs in new_functions.iter().permutations(new_functions.len()) {
-                        if let [a, b, c] = &fs[..] {
-                            seen.insert((main.clone(), a.to_vec(), b.to_vec(), c.to_vec()));
+                        if steps[i..].starts_with(&functions[step.as_index()]) && main.len() < 10 {
+                            main.push(step);
                         }
                         else {
-                            unreachable!();
+                            continue;
                         }
+                        functions[step.as_index()].len()
                     }
-                    let solution = go(new_i, steps, new_main, new_functions, seen);
-                    if let Some((main, functions)) = solution.as_ref() {
-                        if expand(main, functions)
-                            .zip(steps.iter())
-                            .all(|(x, &y)| x == y)
+                    Function(step) => {
+                        functions[step.as_index()].push(steps[i]);
+                        if functions[step.as_index()]
+                            .iter()
+                            .map(|step| step.len())
+                            .sum::<usize>()
+                            > 10
+                            || expand(main, functions)
+                                .zip(steps.iter())
+                                .any(|(x, &y)| x != y)
                         {
-                            return solution;
+                            functions[step.as_index()].pop();
+                            continue;
                         }
+                        main.iter().filter(|&&it| it == step).count()
                     }
+                };
+                let solution = go(i + i_offset, steps, main, functions);
+                if let Some((main, functions)) = solution.as_ref() {
+                    if expand(main, functions)
+                        .zip(steps.iter())
+                        .all(|(x, &y)| x == y)
+                    {
+                        return solution;
+                    }
+                }
+                else {
+                    match possibility {
+                        Main(_) => main.pop(),
+                        Function(step) => functions[step.as_index()].pop(),
+                    };
                 }
             }
             None
@@ -268,9 +255,9 @@ impl<Iter: Iterator<Item = Cell>> State<Iter> {
         let mut robot = Robot::new(self.scaffolding.clone());
         let steps = robot.steps();
 
-        let main = vec![Step::A];
-        let functions = <[_; 3]>::default();
-        let result = go(0, &steps, main, functions, &mut HashSet::default());
+        let mut main = vec![Step::A];
+        let mut functions = <[_; 3]>::default();
+        let result = go(0, &steps, &mut main, &mut functions);
 
         let (main, [a, b, c]) = result.unwrap();
 
@@ -444,7 +431,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let part2_input = state.part2();
 
     #[cfg(feature = "visualise")]
-    print!("\x1B[2J\x1B[?1049h");
+    print!("\x1B[2J");
 
     let mut state = new_state(part2_input.bytes());
     let mut computer = Computer::from_file("input", &mut state)?;
