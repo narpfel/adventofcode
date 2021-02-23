@@ -1,7 +1,3 @@
-// FIXME: False positive, but not fixed yet in Rust nightly 2021-02-16
-// See https://github.com/rust-lang/rust-clippy/pull/6697
-#![allow(clippy::vec_init_then_push)]
-#![allow(clippy::ptr_arg)]
 use std::{
     collections::HashMap,
     convert::{
@@ -196,7 +192,7 @@ impl<Iter: Iterator<Item = Cell>> State<Iter> {
         ) -> Option<(Function, [Function; 3])> {
             // FIXME: Also a false positive maybe? Regardless, a `match` wouldn’t make the
             // code more readable here.
-            #[allow(clippy::clippy::comparison_chain)]
+            #[allow(clippy::comparison_chain)]
             if i == steps.len() {
                 return Some((main.clone(), functions.clone()));
             }
