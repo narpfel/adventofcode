@@ -65,24 +65,9 @@ enum Step {
     Go(usize),
     TurnLeft,
     TurnRight,
-    A,
-    B,
-    C,
 }
 
 impl Step {
-    fn to_ascii(self) -> String {
-        use Step::*;
-        match self {
-            TurnLeft => "L".into(),
-            TurnRight => "R".into(),
-            Go(n) => n.to_string(),
-            A => "A".into(),
-            B => "B".into(),
-            C => "C".into(),
-        }
-    }
-
     fn len(self) -> usize {
         match self {
             Step::Go(n) =>
@@ -95,13 +80,48 @@ impl Step {
             _ => 1,
         }
     }
+}
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+enum Function {
+    A,
+    B,
+    C,
+}
+
+impl Function {
     fn as_index(self) -> usize {
+        use Function::*;
         match self {
-            Step::A => 0,
-            Step::B => 1,
-            Step::C => 2,
-            _ => unreachable!(),
+            A => 0,
+            B => 1,
+            C => 2,
+        }
+    }
+}
+
+trait ToAscii {
+    fn to_ascii(&self) -> String;
+}
+
+impl ToAscii for Step {
+    fn to_ascii(&self) -> String {
+        use Step::*;
+        match self {
+            TurnLeft => "L".into(),
+            TurnRight => "R".into(),
+            Go(n) => n.to_string(),
+        }
+    }
+}
+
+impl ToAscii for Function {
+    fn to_ascii(&self) -> String {
+        use Function::*;
+        match self {
+            A => "A".into(),
+            B => "B".into(),
+            C => "C".into(),
         }
     }
 }
@@ -148,14 +168,14 @@ impl<Iter: Iterator<Item = Cell>> State<Iter> {
     fn part2(&self) -> String {
         #[derive(Copy, Clone, Debug)]
         enum Possibility {
-            Main(Step),
-            Function(Step),
+            Main(Function),
+            Function(Function),
         }
 
         impl Possibility {
             fn iter() -> impl Iterator<Item = Self> {
+                use crate::Function::*;
                 use Possibility::*;
-                use Step::*;
                 [
                     Function(A),
                     Function(B),
@@ -169,28 +189,26 @@ impl<Iter: Iterator<Item = Cell>> State<Iter> {
             }
         }
 
-        type Function = Vec<Step>;
-
         fn expand<'a>(
-            main: &'a Function,
-            functions: &'a [Function; 3],
+            main: &'a [Function],
+            functions: &'a [Vec<Step>; 3],
         ) -> impl Iterator<Item = Step> + 'a {
             main.iter()
-                .flat_map(move |step| &functions[step.as_index()])
+                .flat_map(move |f| &functions[f.as_index()])
                 .copied()
         }
 
-        fn render(f: &Function) -> String {
-            f.iter().copied().map(Step::to_ascii).join(",")
+        fn render(f: &[impl ToAscii]) -> String {
+            f.iter().map(ToAscii::to_ascii).join(",")
         }
 
         fn go(
             i: usize,
-            steps: &Function,
-            main: &mut Function,
-            functions: &mut [Function; 3],
-        ) -> Option<(Function, [Function; 3])> {
-            // FIXME: Also a false positive maybe? Regardless, a `match` wouldn’t make the
+            steps: &[Step],
+            main: &mut Vec<Function>,
+            functions: &mut [Vec<Step>; 3],
+        ) -> Option<(Vec<Function>, [Vec<Step>; 3])> {
+            // FIXME: Is this a false positive? Regardless, a `match` wouldn’t make the
             // code more readable here.
             #[allow(clippy::comparison_chain)]
             if i == steps.len() {
@@ -240,8 +258,12 @@ impl<Iter: Iterator<Item = Cell>> State<Iter> {
                 }
                 else {
                     match possibility {
-                        Main(_) => main.pop(),
-                        Function(step) => functions[step.as_index()].pop(),
+                        Main(_) => {
+                            main.pop();
+                        }
+                        Function(step) => {
+                            functions[step.as_index()].pop();
+                        }
                     };
                 }
             }
@@ -251,7 +273,7 @@ impl<Iter: Iterator<Item = Cell>> State<Iter> {
         let mut robot = Robot::new(self.scaffolding.clone());
         let steps = robot.steps();
 
-        let mut main = vec![Step::A];
+        let mut main = vec![Function::A];
         let mut functions = <[_; 3]>::default();
         let result = go(0, &steps, &mut main, &mut functions);
 
