@@ -20,7 +20,7 @@ fn next_scores(scores: &[u8], elves: (usize, usize)) -> impl Iterator<Item = u8>
     let sum = scores[elves.0] + scores[elves.1];
     once(if sum >= 10 { Some(1) } else { None })
         .chain(once(if sum >= 10 { Some(sum - 10) } else { Some(sum) }))
-        .filter_map(|n| n)
+        .flatten()
 }
 
 fn main() {

@@ -68,7 +68,7 @@ fn iter_paths(input: &str) -> impl Iterator<Item = String> + '_ {
         }
         Some(None)
     })
-    .filter_map(|x| x)
+    .flatten()
 }
 
 fn solve(input: &str) -> Option<(String, usize)> {

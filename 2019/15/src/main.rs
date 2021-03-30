@@ -1,5 +1,3 @@
-#![feature(or_patterns)]
-
 use std::{
     cmp::Reverse,
     collections::{

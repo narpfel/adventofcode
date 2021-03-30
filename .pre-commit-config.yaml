@@ -50,7 +50,7 @@ repos:
             -q
             -f warning
             --
-            cargo clippy -Z unstable-options --manifest-path {} --color=always
+            cargo clippy --manifest-path {} --color=always -- -D warnings -D clippy::dbg_macro
             ---
         require_serial: true
         language: script
