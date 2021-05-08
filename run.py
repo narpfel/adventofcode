@@ -2,12 +2,14 @@
 
 import argparse
 import os
+import shlex
 import subprocess
 import sys
 import time
 from contextlib import suppress
 from itertools import count
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 from identify import identify
 
@@ -125,10 +127,25 @@ class Runner:
             cwd=path.parent,
         )
 
+    def run_nvim(self, path):
+        with NamedTemporaryFile() as tempfile:
+            filename = shlex.quote(os.fspath(tempfile.name))
+            # Ugly hack because `Runner.execute` does not support pipes
+            return self.execute(
+                None,
+                [
+                    "sh", "-c",
+                    f'cat {shlex.quote(os.fspath(path.absolute()))} - <<<":wq! {filename}" '
+                    f"| nvim --clean -s - && cat {filename}",
+                ],
+                cwd=path.parent,
+            )
+
     RUNNERS = {
         "package.yaml": "run_haskell",
         "Cargo.toml": "run_rust",
         "Makefile": "run_makefile",
+        "solution.vim": "run_nvim",
     }
 
 
