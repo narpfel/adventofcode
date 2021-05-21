@@ -1,8 +1,13 @@
-name:                solution
+name: solution
 
 dependencies:
   - base >= 4.7 && < 5
   - composition
+
+ghc-options:
+  -Wall
+  -Wextra
+  -O2
 
 executables:
   solution:
