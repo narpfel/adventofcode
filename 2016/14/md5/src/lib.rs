@@ -94,6 +94,7 @@ fn read_word(buffer: &[u8]) -> Word {
     Wrapping(LittleEndian::read_u32(buffer))
 }
 
+#[inline]
 pub fn md5(bytes: &[u8]) -> [u8; DIGEST_BYTE_COUNT] {
     // Single-letter variable names match the names given in the MD5 RFC (RFC 1321),
     // see https://www.ietf.org/rfc/rfc1321.txt
@@ -192,6 +193,7 @@ pub fn md5(bytes: &[u8]) -> [u8; DIGEST_BYTE_COUNT] {
     result
 }
 
+#[inline]
 pub fn format_digest(digest: [u8; DIGEST_BYTE_COUNT]) -> [u8; DIGEST_CHAR_LENGTH] {
     const HEX_DIGITS: &[u8] = b"0123456789abcdef";
 
