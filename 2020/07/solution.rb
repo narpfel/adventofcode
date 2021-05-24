@@ -33,7 +33,7 @@ def part2 rules
 end
 
 def main
-  rules = open("input") { |f| f.lines.map { |line| parse(line) } }.to_h
+  rules = open("input") { |f| f.map { |line| parse(line) } }.to_h
   puts part1(rules)
   puts part2(rules)
 end
