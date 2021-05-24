@@ -1,11 +1,5 @@
 #!/usr/bin/env pypy3
 
-import sys
-
-if sys.version_info < (3,):
-    range = xrange  # noqa: F821 (python2 only)
-
-
 INPUT = "16,12,1,0,15,7,11"
 
 
@@ -14,25 +8,19 @@ def parse_input(starting_numbers):
 
 
 def solve(starting_numbers, turn_count):
-    # lists of tuples use `ObjectListStrategy` even when all tuples are the
-    # same size and contain only ints. Manually unpacking the tuple into two
-    # ints therefore improves performance by 5x.
-    number_to_turns = [-1, -1] * turn_count
-    for i, n in enumerate(starting_numbers):
-        number_to_turns[2 * n] = i
-        number_to_turns[2 * n + 1] = -1
+    number_to_turn = [-1] * turn_count
+    for i, n in enumerate(starting_numbers[:-1]):
+        number_to_turn[n] = i
     last_spoken = starting_numbers[-1]
 
+    # nice PyPy feature: range() lists don’t create the whole list in memory
     for turn in range(len(starting_numbers), turn_count):
-        x = number_to_turns[2 * last_spoken]
-        y = number_to_turns[2 * last_spoken + 1]
-        if y == -1:
+        last_spoken_on_turn = number_to_turn[last_spoken]
+        number_to_turn[last_spoken] = turn - 1
+        if last_spoken_on_turn < 0:
             last_spoken = 0
         else:
-            last_spoken = x - y
-        x = number_to_turns[2 * last_spoken]
-        number_to_turns[2 * last_spoken] = turn
-        number_to_turns[2 * last_spoken + 1] = x
+            last_spoken = turn - last_spoken_on_turn - 1
 
     return last_spoken
 
