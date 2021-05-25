@@ -1,16 +1,13 @@
 let input = [16; 12; 1; 0; 15; 7; 11]
 
 let solve starting_numbers turn_count =
-    let number_to_turn = Array.make (2 * turn_count) (-1) in
-    List.iteri (fun i n -> Array.set number_to_turn (2 * n) i) input;
+    let number_to_turn = Array.make turn_count (-1) in
+    List.iteri (fun i n -> Array.set number_to_turn n i) input;
     let last_spoken = List.length starting_numbers |> pred |> List.nth starting_numbers |> ref in
     for turn = List.length starting_numbers to pred turn_count do
-        let x = Array.get number_to_turn (2 * !last_spoken) in
-        let y = Array.get number_to_turn (2 * !last_spoken + 1) in
-        last_spoken := if y == -1 then 0 else x - y;
-        let x = Array.get number_to_turn (2 * !last_spoken) in
-        Array.set number_to_turn (2 * !last_spoken) turn;
-        Array.set number_to_turn (2 * !last_spoken + 1) x
+        let last_spoken_on_turn = Array.get number_to_turn !last_spoken in
+        Array.set number_to_turn !last_spoken (pred turn);
+        last_spoken := if last_spoken_on_turn < 0 then 0 else turn - last_spoken_on_turn - 1
     done;
     !last_spoken
 
