@@ -1,5 +1,7 @@
 *.cabal
 *.class
+*.cmi
+*.cmx
 *.exe
 *.o
 *.prof
