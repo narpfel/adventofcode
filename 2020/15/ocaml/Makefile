@@ -6,6 +6,7 @@ build: solution
 
 solution: solution.ml
 	ocamlopt \
+		-w A \
 		-O3 \
 		-o $@ \
 		$<
