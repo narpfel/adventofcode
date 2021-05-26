@@ -1,12 +1,7 @@
 #include <cstdint>
 
-#include <algorithm>
 #include <array>
-#include <tuple>
 #include <iostream>
-#include <map>
-#include <string_view>
-#include <unordered_map>
 #include <vector>
 
 constexpr auto input = std::array<std::uint64_t, 7>{16, 12, 1, 0, 15, 7, 11};
