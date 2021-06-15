@@ -1,13 +1,9 @@
-#![feature(core_intrinsics)]
-
-use std::intrinsics::assume;
+#![feature(array_chunks)]
 
 use std::{
     io::Cursor,
     num::Wrapping,
 };
-
-use std::borrow::Cow;
 
 use byteorder::{
     ByteOrder,
@@ -41,52 +37,51 @@ fn pad(bytes: &[u8], total_length: Wrapping<u64>) -> Vec<u8> {
 
 struct Chunks<'a> {
     chunk_count: Wrapping<u64>,
-    chunks: std::iter::Peekable<std::slice::Chunks<'a, u8>>,
-    last_chunk: Option<Cow<'a, [u8]>>,
+    chunks: std::slice::ArrayChunks<'a, u8, CHUNKSIZE>,
+    done: bool,
+    last_chunk: Option<[u8; CHUNKSIZE]>,
 }
 
 impl<'a> Iterator for Chunks<'a> {
-    type Item = Cow<'a, [u8]>;
+    type Item = [u8; CHUNKSIZE];
 
     fn next(&mut self) -> Option<Self::Item> {
         self.chunks
             .next()
-            .and_then(|chunk| {
-                if self.chunks.peek().is_some() {
-                    self.chunk_count += Wrapping(1);
-                    return Some(chunk.into());
+            .map(|chunk| {
+                self.chunk_count += Wrapping(1);
+                *chunk
+            })
+            .or_else(|| {
+                if self.done {
+                    return None;
                 }
+                if self.last_chunk.is_some() {
+                    self.done = true;
+                    return self.last_chunk;
+                }
+                let chunk = self.chunks.remainder();
                 let p = pad(
                     chunk,
                     Wrapping(CHUNKSIZE as u64) * self.chunk_count + Wrapping(chunk.len() as u64),
                 );
-                let mut padded_chunks = p.chunks(CHUNKSIZE).map(|c| Cow::Owned(c.into()));
+                let mut padded_chunks = p.array_chunks();
                 let first = padded_chunks.next();
-                self.last_chunk = padded_chunks.next();
-                first
+                self.last_chunk = padded_chunks.next().copied();
+                if self.last_chunk.is_none() {
+                    self.done = true;
+                }
+                first.copied()
             })
-            .or_else(|| self.last_chunk.take())
     }
 }
 
 fn chunks(bytes: &[u8]) -> Chunks {
-    let last_chunk = if bytes.is_empty() {
-        let mut padded_empty_bytes = Vec::with_capacity(CHUNKSIZE);
-        padded_empty_bytes.push(0b1000_0000);
-        padded_empty_bytes.resize(CHUNKSIZE - 8, 0);
-        padded_empty_bytes
-            .write_u64::<LittleEndian>(0)
-            .unwrap_or_else(|_| unreachable!());
-        Some(padded_empty_bytes.into())
-    }
-    else {
-        None
-    };
-
     Chunks {
         chunk_count: Wrapping(0),
-        chunks: bytes.chunks(CHUNKSIZE).peekable(),
-        last_chunk,
+        chunks: bytes.array_chunks(),
+        done: false,
+        last_chunk: None,
     }
 }
 
@@ -115,12 +110,6 @@ pub fn md5(bytes: &[u8]) -> [u8; DIGEST_BYTE_COUNT] {
     let index = |stride, shift| move |i: usize| (stride * i + shift) % 16;
 
     for chunk in chunks(bytes) {
-        unsafe {
-            assume(chunk.as_ptr() as usize % CHUNKSIZE == 0)
-        };
-        unsafe {
-            assume(chunk.len() == CHUNKSIZE)
-        };
         let aa = a;
         let bb = b;
         let cc = c;
