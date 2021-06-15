@@ -1,7 +1,12 @@
 #![feature(array_chunks)]
 
 use std::{
-    io::Cursor,
+    io::{
+        Cursor,
+        Seek,
+        SeekFrom,
+        Write,
+    },
     num::Wrapping,
 };
 
@@ -16,7 +21,11 @@ mod constants;
 pub use constants::DIGEST_CHAR_LENGTH;
 use constants::*;
 
-fn pad(bytes: &[u8], total_length: Wrapping<u64>) -> Vec<u8> {
+fn pad<'a>(
+    bytes: &'a [u8],
+    total_length: Wrapping<u64>,
+    buffer: &'a mut [u8; 2 * CHUNKSIZE],
+) -> std::io::Result<&'a [u8]> {
     let len = bytes.len();
     if len > CHUNKSIZE {
         panic!("Invalid chunk length: {} > {}", len, CHUNKSIZE);
@@ -24,64 +33,63 @@ fn pad(bytes: &[u8], total_length: Wrapping<u64>) -> Vec<u8> {
 
     let number_of_chunks = if len > CHUNKSIZE - 9 { 2 } else { 1 };
 
-    let mut buffer = Vec::with_capacity(number_of_chunks * CHUNKSIZE);
+    let buffer = if number_of_chunks == 1 {
+        &mut buffer[..CHUNKSIZE]
+    }
+    else {
+        buffer
+    };
 
-    buffer.extend_from_slice(bytes);
-    buffer.push(0b1000_0000);
-    buffer.resize(number_of_chunks * CHUNKSIZE - 8, 0);
-    buffer
-        .write_u64::<LittleEndian>((total_length * Wrapping(8)).0)
-        .unwrap_or_else(|_| unreachable!());
-    buffer
+    let mut cursor = Cursor::new(buffer);
+    cursor.write_all(bytes)?;
+    cursor.write_u8(0b1000_0000)?;
+    cursor.seek(SeekFrom::End(-8))?;
+    cursor.write_u64::<LittleEndian>((total_length * Wrapping(8)).0)?;
+    Ok(cursor.into_inner())
 }
 
 struct Chunks<'a> {
     chunk_count: Wrapping<u64>,
     chunks: std::slice::ArrayChunks<'a, u8, CHUNKSIZE>,
-    done: bool,
-    last_chunk: Option<[u8; CHUNKSIZE]>,
+    last_chunk: Option<&'a [u8; CHUNKSIZE]>,
+    buffer: Option<&'a mut [u8; 2 * CHUNKSIZE]>,
 }
 
 impl<'a> Iterator for Chunks<'a> {
-    type Item = [u8; CHUNKSIZE];
+    type Item = &'a [u8; CHUNKSIZE];
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         self.chunks
             .next()
             .map(|chunk| {
                 self.chunk_count += Wrapping(1);
-                *chunk
+                chunk
             })
             .or_else(|| {
-                if self.done {
-                    return None;
-                }
-                if self.last_chunk.is_some() {
-                    self.done = true;
-                    return self.last_chunk;
-                }
+                let buffer = self.buffer.take()?;
                 let chunk = self.chunks.remainder();
-                let p = pad(
+                let mut padded_chunks = pad(
                     chunk,
                     Wrapping(CHUNKSIZE as u64) * self.chunk_count + Wrapping(chunk.len() as u64),
-                );
-                let mut padded_chunks = p.array_chunks();
-                let first = padded_chunks.next();
-                self.last_chunk = padded_chunks.next().copied();
-                if self.last_chunk.is_none() {
-                    self.done = true;
-                }
-                first.copied()
+                    buffer,
+                )
+                .ok()?
+                .array_chunks();
+                let first_chunk = padded_chunks.next();
+                self.last_chunk = padded_chunks.next();
+                first_chunk
             })
+            .or_else(|| self.last_chunk.take())
     }
 }
 
-fn chunks(bytes: &[u8]) -> Chunks {
+fn chunks<'a>(bytes: &'a [u8], buffer: &'a mut [u8; 2 * CHUNKSIZE]) -> Chunks<'a> {
     Chunks {
         chunk_count: Wrapping(0),
         chunks: bytes.array_chunks(),
-        done: false,
         last_chunk: None,
+        buffer: Some(buffer),
     }
 }
 
@@ -109,7 +117,7 @@ pub fn md5(bytes: &[u8]) -> [u8; DIGEST_BYTE_COUNT] {
 
     let index = |stride, shift| move |i: usize| (stride * i + shift) % 16;
 
-    for chunk in chunks(bytes) {
+    for chunk in chunks(bytes, &mut [0; 2 * CHUNKSIZE]) {
         let aa = a;
         let bb = b;
         let cc = c;
