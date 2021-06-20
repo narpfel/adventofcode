@@ -2,11 +2,8 @@
 from collections import defaultdict
 from enum import Enum
 from typing import Callable
-from typing import Dict
-from typing import List
 from typing import Mapping
 from typing import MutableMapping
-from typing import Tuple
 
 STEP_COUNT_PART1 = 10_000
 STEP_COUNT_PART2 = 10_000_000
