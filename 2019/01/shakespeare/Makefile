@@ -32,6 +32,8 @@ solution.c: solution.spl
 	$(info `libspl.a` must be available in the library search path `$$LIBRARY_PATH`)
 	spl2c < $< > $@
 
+language:
+	@echo shakespeare
 
 .PHONY: clean
 clean:

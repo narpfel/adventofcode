@@ -7,6 +7,9 @@ build: solution
 solution: solution.fut
 	futhark multicore solution.fut
 
+language:
+	@echo futhark
+
 .PHONY: clean
 clean:
 	rm -f solution solution.c

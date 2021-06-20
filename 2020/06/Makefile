@@ -5,7 +5,10 @@ build: solution
 	@:
 
 solution: solution.go
-	go build -o $@
+	go build $<
+
+language:
+	@echo go
 
 .PHONY: clean
 clean:

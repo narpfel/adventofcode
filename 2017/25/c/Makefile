@@ -22,6 +22,9 @@ solution.o: solution.c
 solution.c: generate.py
 	./$< > $@
 
+language:
+	@echo c
+
 .PHONY: clean
 clean:
 	rm -rf solution solution.o solution.c

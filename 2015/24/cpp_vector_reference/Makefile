@@ -18,6 +18,9 @@ solution: solution.cxx
 		-o solution \
 		solution.cxx
 
+language:
+	@echo c++
+
 .PHONY: clean
 clean:
 	rm -f solution

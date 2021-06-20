@@ -18,6 +18,9 @@ solution: solution.c
 		-o solution \
 		solution.c
 
+language:
+	@echo c
+
 .PHONY: clean
 clean:
 	rm solution

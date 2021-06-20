@@ -10,6 +10,9 @@ venv:
 	./venv/bin/python -m pip install -U pip wheel
 	./venv/bin/python -m pip install attrs
 
+language:
+	@echo pypy3
+
 .PHONY: clean
 clean:
 	rm -rf venv
