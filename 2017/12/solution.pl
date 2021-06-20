@@ -1,9 +1,6 @@
-#!/usr/bin/swipl
+#!/usr/bin/env -S swipl -g main -t halt
 
-
-:- initialization main.
 :- set_prolog_flag(double_quotes, codes).
-
 
 connection(N, Ms) -->
     numeric(N),
@@ -82,5 +79,4 @@ main :-
     write(Count), nl,
     all_groups(Groups),
     length(Groups, GroupCount),
-    write(GroupCount), nl,
-    halt.
+    write(GroupCount), nl.

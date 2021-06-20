@@ -1,6 +1,4 @@
-#!/usr/bin/env swipl
-
-:- initialization main.
+#!/usr/bin/env -S swipl -g main -t halt
 
 orbit(Center, Orbiting) -->
     many(alnum, Center), ")", many(alnum, Orbiting).
@@ -58,5 +56,4 @@ main :-
     part1(Part1),
     write(Part1), nl,
     part2(Part2),
-    write(Part2), nl,
-    halt.
+    write(Part2), nl.
