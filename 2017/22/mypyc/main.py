@@ -19,19 +19,19 @@ class Node(Enum):
     Flagged: int = 3
 
 
-NEXT_DIRECTION_INDEX: Dict[Node, int] = {
+NEXT_DIRECTION_INDEX: dict[Node, int] = {
     Node.Infected: 1,
     Node.Clean: -1,
     Node.Weakened: 0,
     Node.Flagged: 2,
 }
 
-NODE_TRANSITION_PART1: Dict[Node, Node] = {
+NODE_TRANSITION_PART1: dict[Node, Node] = {
     Node.Infected: Node.Clean,
     Node.Clean: Node.Infected,
 }
 
-NODE_TRANSITION_PART2: Dict[Node, Node] = {
+NODE_TRANSITION_PART2: dict[Node, Node] = {
     Node.Clean: Node.Weakened,
     Node.Weakened: Node.Infected,
     Node.Infected: Node.Flagged,
@@ -39,27 +39,27 @@ NODE_TRANSITION_PART2: Dict[Node, Node] = {
 }
 
 
-def left(position: Tuple[int, int]) -> Tuple[int, int]:
+def left(position: tuple[int, int]) -> tuple[int, int]:
     x, y = position
     return x - 1, y
 
 
-def right(position: Tuple[int, int]) -> Tuple[int, int]:
+def right(position: tuple[int, int]) -> tuple[int, int]:
     x, y = position
     return x + 1, y
 
 
-def up(position: Tuple[int, int]) -> Tuple[int, int]:
+def up(position: tuple[int, int]) -> tuple[int, int]:
     x, y = position
     return x, y - 1
 
 
-def down(position: Tuple[int, int]) -> Tuple[int, int]:
+def down(position: tuple[int, int]) -> tuple[int, int]:
     x, y = position
     return x, y + 1
 
 
-MOVE: List[Callable[[Tuple[int, int]], Tuple[int, int]]] = [left, up, right, down]
+MOVE: list[Callable[[tuple[int, int]], tuple[int, int]]] = [left, up, right, down]
 
 
 def next_direction(cell: Node, direction: int) -> int:
@@ -67,11 +67,11 @@ def next_direction(cell: Node, direction: int) -> int:
 
 
 def step(
-    grid: MutableMapping[Tuple[int, int], Node],
-    position: Tuple[int, int],
+    grid: MutableMapping[tuple[int, int], Node],
+    position: tuple[int, int],
     direction: int,
     node_transition: Mapping[Node, Node],
-) -> Tuple[Tuple[int, int], int, bool]:
+) -> tuple[tuple[int, int], int, bool]:
     direction = next_direction(grid[position], direction)
     grid[position] = node_transition[grid[position]]
     has_caused_infection = grid[position] == Node.Infected
@@ -79,7 +79,7 @@ def step(
     return position, direction, has_caused_infection
 
 
-def read_input(input_filename: str) -> MutableMapping[Tuple[int, int], Node]:
+def read_input(input_filename: str) -> MutableMapping[tuple[int, int], Node]:
     grid = defaultdict(lambda: Node.Clean)
     with open(input_filename) as lines:
         for y, line in enumerate(lines):
