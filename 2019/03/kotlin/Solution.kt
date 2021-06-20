@@ -27,6 +27,6 @@ fun track(s: String): Map<Pair<Int, Int>, Pair<Int, Int>> {
 fun main() {
     val tracks = File("input").readLines().map { track(it) }
     val crossings = tracks[0].keys.intersect(tracks[1].keys)
-    println(crossings.map { tracks[0][it]!!.first }.min())
-    println(crossings.map { tracks[0][it]!!.second + tracks[1][it]!!.second }.min())
+    println(crossings.map { tracks[0][it]!!.first }.minOrNull())
+    println(crossings.map { tracks[0][it]!!.second + tracks[1][it]!!.second }.minOrNull())
 }
