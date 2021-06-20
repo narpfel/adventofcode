@@ -11,16 +11,15 @@ use generic_array::{
 };
 
 fn has_byte_repetition(s: &[u8], length: usize) -> Option<u8> {
-    s.windows(length)
-        .find_map(|window| {
-            let first_char = window[0];
-            if window.iter().all(|&c| c == first_char) {
-                Some(first_char)
-            }
-            else {
-                None
-            }
-        })
+    s.windows(length).find_map(|window| {
+        let first_char = window[0];
+        if window.iter().all(|&c| c == first_char) {
+            Some(first_char)
+        }
+        else {
+            None
+        }
+    })
 }
 
 fn key_stretched(s: &str, count: usize) -> [u8; DIGEST_CHAR_LENGTH] {

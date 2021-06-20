@@ -2,7 +2,11 @@ const INPUT: &[u64] = &[16, 12, 1, 0, 15, 7, 11];
 
 fn solve(starting_numbers: &[u64], turn_count: usize) -> usize {
     let mut number_to_turn = vec![-1_i32; turn_count];
-    for (i, n) in starting_numbers.iter().take(starting_numbers.len() - 1).enumerate() {
+    for (i, n) in starting_numbers
+        .iter()
+        .take(starting_numbers.len() - 1)
+        .enumerate()
+    {
         number_to_turn[*n as usize] = i as _;
     }
     let mut last_spoken = *starting_numbers.last().unwrap() as usize;

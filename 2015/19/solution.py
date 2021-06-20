@@ -77,7 +77,7 @@ def main():
         }
         medicine = tokenize(next(lines))
 
-    print("len(medicine) =", len(medicine))
+    print(f"{len(medicine) = }")
     print()
     print(
         "Solution (part 1):",
@@ -86,7 +86,7 @@ def main():
     print()
     print("endpoints")
     for endpoint in endpoints(replacements):
-        print("{}: {}".format(endpoint, medicine.count(endpoint)))
+        print(f"{endpoint}: {medicine.count(endpoint)}")
 
     print(
         dedent(

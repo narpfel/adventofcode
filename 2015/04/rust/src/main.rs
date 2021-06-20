@@ -2,20 +2,15 @@ use md5::{
     format_digest,
     md5,
 };
-use std::{
-    fmt::{
-        self,
-        Write,
-    },
-    iter::repeat,
+use std::fmt::{
+    self,
+    Write,
 };
 
 const INPUT: &str = "iwrupvqb";
 
 fn lowest_with_n_zeroes(leading_zeroes_count: u64) -> Result<u64, fmt::Error> {
-    let leading_zeroes = repeat('0')
-        .take(leading_zeroes_count as _)
-        .collect::<String>();
+    let leading_zeroes = "0".repeat(leading_zeroes_count as _);
     let mut buf = INPUT.to_string();
     for n in 0.. {
         buf.truncate(INPUT.as_bytes().len());

@@ -51,10 +51,7 @@ impl State {
     }
 
     fn handle_outputs(&mut self) {
-        for (x, y, tile) in std::mem::replace(&mut self.outputs, Vec::new())
-            .into_iter()
-            .tuples()
-        {
+        for (x, y, tile) in std::mem::take(&mut self.outputs).into_iter().tuples() {
             self.tiles.push(Tile { position: (x, y), tile });
             if tile == 3 {
                 self.paddle_position = x;

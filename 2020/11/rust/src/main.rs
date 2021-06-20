@@ -91,7 +91,7 @@ fn find_steady_state(
 ) -> Vec<Vec<bool>> {
     let mut cells = vec![vec![false; chairs[0].len()]; chairs.len()];
     loop {
-        let new_cells = generation(&cells, &chairs);
+        let new_cells = generation(&cells, chairs);
         if new_cells == cells {
             break cells;
         }

@@ -39,7 +39,7 @@ where
     Ok(read_instructions()?
         .iter()
         .map(|instructions| {
-            follow_instructions(&mut position, &instructions, &validate);
+            follow_instructions(&mut position, instructions, &validate);
             let [x, y] = position;
             keypad[y as usize][x as usize]
         })
