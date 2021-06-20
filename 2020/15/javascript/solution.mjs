@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-"use strict";
-
 const input = [16, 12, 1, 0, 15, 7, 11];
 
 const solve = (starting_numbers, turn_count) => {

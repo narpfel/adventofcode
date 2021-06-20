@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 
-"use strict";
-
-const { readFileSync } = require("fs");
-const _ = require("lodash");
+import { readFileSync } from "fs";
+import _ from "lodash";
 
 const WIDTH = 25;
 const HEIGHT = 6;

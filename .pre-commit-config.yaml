@@ -41,6 +41,11 @@ repos:
     rev: 5.7.0
     hooks:
       - id: isort
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v7.29.0
+    hooks:
+      - id: eslint
+
   - repo: local
     hooks:
       - id: cargo-clippy

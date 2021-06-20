@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 
-"use strict";
-
-const { readFileSync } = require("fs");
-const _ = require("lodash");
+import { readFileSync } from "fs";
+import _ from "lodash";
 
 const readInput = filename => {
     const input = readFileSync(filename, "utf-8")
@@ -44,7 +42,7 @@ const solvePart2 = input => {
     const differences = _.zipWith(input, _.tail(input), _.flip(_.subtract));
     return _(groups(differences))
         .filter(group => group[0] == 1)
-        .map('length')
+        .map("length")
         .filter(l => l > 1)
         .map(tribonacci)
         .reduce(_.multiply, 1);
@@ -54,6 +52,6 @@ const main = () => {
     const input = readInput("input");
     console.log("%d", solvePart1(input));
     console.log("%d", solvePart2(input));
-}
+};
 
 main();
