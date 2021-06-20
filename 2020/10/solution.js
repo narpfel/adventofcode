@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+"use strict";
+
 const { readFileSync } = require("fs");
 const _ = require("lodash");
 
