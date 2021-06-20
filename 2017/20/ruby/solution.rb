@@ -95,7 +95,7 @@ end
 
 def main
   particles = open("input") do |f|
-    f.lines.map { |line| Particle.from_line(line) }
+    f.map { |line| Particle.from_line(line) }
   end
   puts part1(particles)
   puts part2(particles)
