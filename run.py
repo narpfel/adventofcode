@@ -13,6 +13,10 @@ from tempfile import NamedTemporaryFile
 
 from identify import identify
 
+FG_BOLD = "\x1B[1m"
+FG_RED = "\x1B[31m"
+RESET = "\x1B[m"
+
 
 class Runner:
     def __init__(self, output):
@@ -60,7 +64,7 @@ class Runner:
             try:
                 build_time, execution_time = runner(path)
             except subprocess.CalledProcessError:
-                print(file=sys.stderr)
+                print(f"{FG_BOLD}{FG_RED}failed!{RESET}", file=sys.stderr)
                 self.failed_solutions += 1
                 return 0
             else:
