@@ -20,8 +20,9 @@ RESET = "\x1B[m"
 
 
 class Runner:
-    def __init__(self, output):
-        self.output = output
+    def __init__(self, *, build_output, solution_output):
+        self.build_output = build_output
+        self.solution_output = solution_output
         self.failed_solutions = 0
 
     def run_all(self):
@@ -38,7 +39,7 @@ class Runner:
         return next(solution_count)
 
     def run_solution(self, solution_dir):
-        execution_time_output_prefix = f"\n{solution_dir}: " if self.output is None else ""
+        execution_time_prefix = f"\n{solution_dir}: " if self.solution_output is None else ""
 
         try:
             runner, path = self.find_executor(solution_dir)
@@ -54,7 +55,7 @@ class Runner:
                 raise FileNotFoundError(f"`{solution_dir}` does not contain a solution.")
             return solutions_executed
         else:
-            if self.output is not None:
+            if self.solution_output is not None:
                 print(
                     f"{solution_dir} [{language_for(path)}]: ",
                     end="", flush=True, file=sys.stderr,
@@ -75,7 +76,7 @@ class Runner:
                     else "."
                 )
                 print(
-                    f"{execution_time_output_prefix}{execution_time} s{build_time_output}",
+                    f"{execution_time_prefix}{execution_time} s{build_time_output}",
                     file=sys.stderr,
                 )
                 return 1
@@ -95,17 +96,17 @@ class Runner:
 
         raise FileNotFoundError(f"`{solution_dir}` does not contain a solution.")
 
-    def timed_run(self, command, cwd):
+    def timed_run(self, command, cwd, output):
         start_time = time.perf_counter()
-        subprocess.run(command, cwd=cwd, check=True, stdout=self.output, stderr=self.output)
+        subprocess.run(command, cwd=cwd, check=True, stdout=output, stderr=output)
         return time.perf_counter() - start_time
 
     def execute(self, build_command, exection_command, cwd):
         if build_command is not None:
-            build_time = self.timed_run(build_command, cwd)
+            build_time = self.timed_run(build_command, cwd, self.build_output)
         else:
             build_time = 0
-        execution_time = self.timed_run(exection_command, cwd)
+        execution_time = self.timed_run(exection_command, cwd, self.solution_output)
         return build_time, execution_time
 
     def run_executable(self, path):
@@ -180,6 +181,11 @@ def language_for(path):
 def main(argv):
     parser = argparse.ArgumentParser(description="Run solutions.")
     parser.add_argument("-a", "--all", help="Run all solutions.", action="store_true")
+    parser.add_argument(
+        "-b", "--build-output",
+        help="Show build output",
+        action="store_const", const=None, default=subprocess.DEVNULL,
+    )
     parser.add_argument("solutions", help="Run specified solutions.", nargs="*", type=Path)
     parser.add_argument(
         "-t", "--time",
@@ -188,7 +194,10 @@ def main(argv):
     )
     args = parser.parse_args(argv)
 
-    runner = Runner(args.time)
+    runner = Runner(
+        build_output=args.time if args.time is not None else args.build_output,
+        solution_output=args.time,
+    )
     start_time = time.perf_counter()
     if args.all:
         solution_count = runner.run_all()
