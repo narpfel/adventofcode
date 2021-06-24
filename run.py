@@ -10,6 +10,7 @@ from contextlib import suppress
 from itertools import count
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from tempfile import TemporaryDirectory
 
 from identify import identify
 
@@ -111,16 +112,17 @@ class Runner:
         return self.execute(None, [path.absolute()], cwd=path.parent)
 
     def run_haskell(self, path):
-        return self.execute(
-            ["stack", "build", "solution"],
-            ["stack", "exec", "solution"],
-            cwd=path.parent,
-        )
+        with TemporaryDirectory() as tmpdir:
+            return self.execute(
+                ["stack", "build", "--local-bin-path", tmpdir, "--copy-bins", "solution"],
+                [Path(tmpdir) / "solution"],
+                cwd=path.parent,
+            )
 
     def run_rust(self, path):
         return self.execute(
             ["cargo", "build", "--release"],
-            ["cargo", "run", "--release"],
+            ["./target/release/solution"],
             cwd=path.parent,
         )
 
