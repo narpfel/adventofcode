@@ -77,6 +77,7 @@ impl TryFrom<Cell> for Opcode {
         result
     }
 }
+
 pub fn read_puzzle_input(path: impl AsRef<Path>) -> Result<Memory, Box<dyn Error>> {
     Ok(parse(&read_to_string(path)?)?)
 }
@@ -96,9 +97,13 @@ pub struct Computer<'a, T: IO> {
 }
 
 impl<'a, T: IO> Computer<'a, T> {
+    pub fn new(memory: Memory, io: &'a mut T) -> Self {
+        Self { memory, io, ip: 0, rb: 0 }
+    }
+
     pub fn from_str(s: &str, io: &'a mut T) -> Result<Self, ParseIntError> {
         let memory = parse(s)?;
-        Ok(Computer { memory, io, ip: 0, rb: 0 })
+        Ok(Self::new(memory, io))
     }
 
     pub fn from_file(path: impl AsRef<Path>, io: &'a mut T) -> Result<Self, Box<dyn Error>> {
