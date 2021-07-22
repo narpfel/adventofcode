@@ -10,7 +10,7 @@ use std::{
 };
 
 pub type Cell = i64;
-type Memory = Vec<Cell>;
+pub type Memory = Vec<Cell>;
 
 #[derive(Debug, Copy, Clone)]
 enum Mode {
