@@ -117,6 +117,7 @@ impl<'a, T: IO> Computer<'a, T> {
         self.memory.get_mut(address)
     }
 
+    #[inline(always)]
     fn read(&mut self, mode: Mode) -> Option<&mut Cell> {
         let cell = match mode {
             Position => (*self.lookup(self.ip)?).try_into().ok()?,
