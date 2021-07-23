@@ -1,13 +1,25 @@
 /// This is intended to be useful for more than just one puzzle.
 use std::{
+    any::TypeId,
     cmp::Reverse,
     collections::{
         HashMap,
-        HashSet,
         VecDeque,
     },
     fmt::Debug,
-    hash::Hash,
+    hash::{
+        BuildHasher,
+        Hash,
+    },
+};
+
+use fnv::{
+    FnvHashMap,
+    FnvHashSet,
+};
+use im_rc::{
+    vector::RRBPool,
+    Vector,
 };
 
 // TODO: Formulate in terms of edges and vertices. Maybe use some kind of
@@ -23,7 +35,10 @@ pub trait World: Clone {
         self.get(p).is_some()
     }
 
-    fn is_reachable(&self, start: &Self::Point, end: &Self::Point) -> bool {
+    fn is_reachable(&self, start: &Self::Point, end: &Self::Point) -> bool
+    where
+        <Self as World>::Point: 'static,
+    {
         self.walk_cells_breadth_first(start)
             .into_iter()
             .any(|(ref p, _)| p == end)
@@ -33,7 +48,10 @@ pub trait World: Clone {
         self.get(p).as_ref().map_or(false, Tile::is_walkable)
     }
 
-    fn distance(&self, start: &Self::Point, end: &Self::Point) -> Distance {
+    fn distance(&self, start: &Self::Point, end: &Self::Point) -> Distance
+    where
+        <Self as World>::Point: 'static,
+    {
         self.walk_cells_breadth_first(start)
             .into_iter()
             .find_map(|(p, d)| if &p == end { Some(d.len() as _) } else { None })
@@ -41,7 +59,7 @@ pub trait World: Clone {
     }
 
     fn neighbours(&self, p: Self::Point) -> Vec<Self::Point> {
-        (p.neighbours())
+        p.neighbours()
             .into_iter()
             .filter(|neighbour| self.is_walkable(neighbour))
             .collect()
@@ -50,17 +68,47 @@ pub trait World: Clone {
     fn walk_cells_breadth_first(
         &self,
         start: &Self::Point,
-    ) -> Vec<(Self::Point, Vec<Self::Point>)> {
-        let mut visited = HashSet::new();
+    ) -> Vector<(Self::Point, Vector<Self::Point>)>
+    where
+        <Self as World>::Point: 'static,
+    {
+        struct Erased(FnvHashMap<TypeId, ErasedPtr>);
+
+        impl Erased {
+            fn get<T: 'static>(&mut self) -> &'static RRBPool<T> {
+                self.0
+                    .entry(TypeId::of::<T>())
+                    .or_insert_with(|| ErasedPtr::new(RRBPool::<T>::new(300_000)))
+                    .get()
+            }
+        }
+
+        struct ErasedPtr(*const ());
+
+        impl ErasedPtr {
+            fn new<T>(val: T) -> Self {
+                ErasedPtr(Box::leak(Box::new(val)) as *const T as _)
+            }
+
+            fn get<T>(&self) -> &'static T {
+                unsafe { &*(self.0 as *const T) }
+            }
+        }
+
+        #[thread_local]
+        static mut POOL: Option<Erased> = None;
+        let pool = unsafe { POOL.get_or_insert_with(|| Erased(FnvHashMap::default())) };
+
+        let mut visited = FnvHashSet::default();
+        let mut result = Vector::with_pool(pool.get());
         visited.insert(start.clone());
-        let mut result = vec![];
 
         let mut next_points = VecDeque::new();
-        next_points.push_back((start.clone(), vec![]));
+        next_points.push_back((start.clone(), Vector::with_pool(pool.get())));
 
         while let Some((point, path)) = next_points.pop_front() {
             visited.insert(point.clone());
-            result.push((point.clone(), path.clone()));
+            result.push_back((point.clone(), path.clone()));
             next_points.extend(
                 self.neighbours(point.clone())
                     .iter()
@@ -68,7 +116,7 @@ pub trait World: Clone {
                     .map(|p| {
                         (p.clone(), {
                             let mut path = path.clone();
-                            path.push(p.clone());
+                            path.push_back(p.clone());
                             path
                         })
                     }),
@@ -83,10 +131,11 @@ pub trait Tile: Clone {
     fn is_walkable(&self) -> bool;
 }
 
-impl<Point, Tile> World for HashMap<Point, Tile>
+impl<Point, Tile, S> World for HashMap<Point, Tile, S>
 where
     Point: self::Point + Eq + Hash,
     Tile: self::Tile,
+    S: BuildHasher + Clone,
 {
     type Point = Point;
     type Tile = Tile;

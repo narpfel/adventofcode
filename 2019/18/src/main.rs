@@ -1,7 +1,7 @@
 #![feature(entry_insert)]
+#![feature(thread_local)]
 
 use std::{
-    collections::HashMap,
     convert::{
         TryFrom,
         TryInto,
@@ -15,6 +15,8 @@ use std::{
     iter::from_fn,
     path::Path,
 };
+
+use fnv::FnvHashMap;
 
 mod graph;
 
@@ -56,13 +58,13 @@ impl graph::Tile for Tile {
 
 #[derive(Clone, Default, Debug)]
 struct Maze {
-    maze: HashMap<Point, Tile>,
+    maze: FnvHashMap<Point, Tile>,
     adjacency: Vec<Vec<Option<(u64, u32)>>>,
     entrance_count: usize,
 }
 
 impl Maze {
-    fn new(maze: HashMap<Point, Tile>) -> Self {
+    fn new(maze: FnvHashMap<Point, Tile>) -> Self {
         let entrance_count;
         let key_locations: Vec<_> = {
             let mut keys: Vec<_> = maze
@@ -80,7 +82,7 @@ impl Maze {
                 .count();
             keys.into_iter().map(|(_, point)| point).collect()
         };
-        let location_to_key: HashMap<_, _> = key_locations
+        let location_to_key: FnvHashMap<_, _> = key_locations
             .iter()
             .enumerate()
             .map(|(key, point)| (*point, key))
@@ -130,11 +132,11 @@ impl From<io::Error> for Error {
     }
 }
 
-fn read_input(path: impl AsRef<Path>) -> Result<HashMap<Point, Tile>, Error> {
+fn read_input(path: impl AsRef<Path>) -> Result<FnvHashMap<Point, Tile>, Error> {
     let f = File::open(path)?;
     let reader = BufReader::new(f);
 
-    let mut maze = HashMap::new();
+    let mut maze = FnvHashMap::default();
     for (y, line) in reader.lines().enumerate() {
         for (x, c) in line?.chars().enumerate() {
             maze.insert(Point(x, y), c.try_into()?);
@@ -150,7 +152,7 @@ fn dfs(
     open_doors: u32,
     positions: u32,
     collected_keys: usize,
-    visited_positions: &mut HashMap<(u32, u32), u64>,
+    visited_positions: &mut FnvHashMap<(u32, u32), u64>,
     min_distance: &mut u64,
 ) -> Option<u64> {
     if collected_keys == maze.key_count() {
@@ -218,7 +220,7 @@ fn find_path_length(maze: &Maze) -> u64 {
             .map(|i| 1 << i)
             .fold(0, std::ops::BitOr::bitor),
         0,
-        &mut HashMap::default(),
+        &mut FnvHashMap::default(),
         &mut { u64::MAX },
     )
     .unwrap()

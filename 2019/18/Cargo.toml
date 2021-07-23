@@ -3,3 +3,11 @@ name = "solution"
 version = "0.1.0"
 authors = ["narpfel <narpfel@gmx.de>"]
 edition = "2018"
+
+[profile.release]
+lto = true
+codegen-units = 1
+
+[dependencies]
+fnv = "1"
+im-rc = { version = "15", features = ["pool"] }
