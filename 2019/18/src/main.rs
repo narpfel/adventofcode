@@ -149,17 +149,19 @@ fn read_input(path: impl AsRef<Path>) -> Result<FnvHashMap<Point, Tile>, Error> 
 fn dfs(
     maze: &Maze,
     distance: u64,
-    open_doors: u32,
+    collected_keys: u32,
+    collected_key_count: usize,
     positions: u32,
-    collected_keys: usize,
     visited_positions: &mut FnvHashMap<(u32, u32), u64>,
     min_distance: &mut u64,
 ) -> Option<u64> {
-    if collected_keys == maze.key_count() {
+    // `collected_key_count` is not strictly necessary as it always equals
+    // `collected_keys.count_ones()`, but removing it is ~5% slower.
+    if collected_key_count == maze.key_count() {
         return Some(distance);
     }
 
-    match visited_positions.entry((open_doors, positions)) {
+    match visited_positions.entry((collected_keys, positions)) {
         std::collections::hash_map::Entry::Occupied(entry) if *entry.get() <= distance =>
             return None,
         entry => {
@@ -173,23 +175,19 @@ fn dfs(
                 .iter()
                 .enumerate()
                 .filter_map(|(i, opt)| opt.map(|val| (i, val)))
-                .filter_map(|(key, (additional_distance, mask))| {
+                .filter_map(|(key, (additional_distance, required_keys))| {
                     let key = 1 << key;
                     let distance = distance + additional_distance;
-                    if distance >= *min_distance {
-                        return None;
+                    if distance >= *min_distance || collected_keys & key != 0 {
+                        None
                     }
-                    if open_doors & key != 0 {
-                        return None;
-                    }
-                    if open_doors & mask == mask {
-                        let positions = (positions & !(1 << position)) | key;
+                    else if collected_keys & required_keys == required_keys {
                         dfs(
                             maze,
                             distance,
-                            open_doors | key,
-                            positions,
-                            collected_keys + 1,
+                            collected_keys | key,
+                            collected_key_count + 1,
+                            (positions & !(1 << position)) | key,
                             visited_positions,
                             min_distance,
                         )
@@ -216,10 +214,10 @@ fn find_path_length(maze: &Maze) -> u64 {
         maze,
         0,
         0,
+        0,
         (maze.key_count()..maze.key_count() + maze.entrance_count)
             .map(|i| 1 << i)
             .fold(0, std::ops::BitOr::bitor),
-        0,
         &mut FnvHashMap::default(),
         &mut { u64::MAX },
     )
