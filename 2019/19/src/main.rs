@@ -1,8 +1,4 @@
-use std::{
-    collections::HashSet,
-    error::Error,
-    iter::repeat,
-};
+use std::error::Error;
 
 use itertools::Itertools;
 
@@ -44,21 +40,22 @@ fn is_tile_covered(memory: Memory, x: usize, y: usize) -> bool {
 }
 
 fn part_2(memory: Memory) -> u64 {
-    let mut covered_tiles = HashSet::new();
-    // TODO: Walking the upper and lower edges of the tractor beam is sufficient.
-    // This makes the solution linear in `SIZE` instead of quadratic.
-    for i in 0.. {
-        for (x, y) in repeat(i).zip(0..=i).chain((0..=i).zip(repeat(i))) {
-            if is_tile_covered(memory.clone(), x, y) {
-                covered_tiles.insert((x, y));
-                if let Some((x2, y2)) = x.checked_sub(SIZE - 1).zip(y.checked_sub(SIZE - 1)) {
-                    // This assumes the tractor beam is convex
-                    if covered_tiles.contains(&(x2, y))
-                        && covered_tiles.contains(&(x, y2))
-                        && covered_tiles.contains(&(x2, y2))
-                    {
-                        return 10_000 * x2 as u64 + y2 as u64;
-                    }
+    let mut y = 0;
+    for x in 0.. {
+        if !is_tile_covered(memory.clone(), x, y) {
+            y += 1;
+        }
+
+        while is_tile_covered(memory.clone(), x, y + 1) {
+            y += 1;
+            if let Some(y2) = y.checked_sub(SIZE - 1) {
+                let x2 = x + SIZE - 1;
+                // This assumes the tractor beam is convex
+                if is_tile_covered(memory.clone(), x2, y)
+                    && is_tile_covered(memory.clone(), x, y2)
+                    && is_tile_covered(memory.clone(), x2, y2)
+                {
+                    return 10_000 * x as u64 + y2 as u64;
                 }
             }
         }
