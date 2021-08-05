@@ -10,4 +10,4 @@ codegen-units = 1
 
 [dependencies]
 fnv = "1"
-im-rc = { version = "15", features = ["pool"] }
+graph = { path = "graph" }

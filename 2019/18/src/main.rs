@@ -1,5 +1,4 @@
 #![feature(entry_insert)]
-#![feature(thread_local)]
 
 use std::{
     convert::{
@@ -17,8 +16,6 @@ use std::{
 };
 
 use fnv::FnvHashMap;
-
-mod graph;
 
 use graph::{
     CartesianPoint as Point,

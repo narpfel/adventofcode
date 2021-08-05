@@ -1,4 +1,5 @@
-/// This is intended to be useful for more than just one puzzle.
+#![feature(thread_local)]
+
 use std::{
     any::TypeId,
     cmp::Reverse,
@@ -6,6 +7,7 @@ use std::{
         HashMap,
         VecDeque,
     },
+    convert::TryInto,
     fmt::Debug,
     hash::{
         BuildHasher,
@@ -35,6 +37,10 @@ pub trait World: Clone {
         self.get(p).is_some()
     }
 
+    fn canonicalise_point(&self, p: &Self::Point) -> Self::Point {
+        p.clone()
+    }
+
     fn is_reachable(&self, start: &Self::Point, end: &Self::Point) -> bool
     where
         <Self as World>::Point: 'static,
@@ -54,7 +60,14 @@ pub trait World: Clone {
     {
         self.walk_cells_breadth_first(start)
             .into_iter()
-            .find_map(|(p, d)| if &p == end { Some(d.len() as _) } else { None })
+            .find_map(|(p, path)| {
+                if &p == end {
+                    Some(path.len() as _)
+                }
+                else {
+                    None
+                }
+            })
             .into()
     }
 
@@ -113,10 +126,11 @@ pub trait World: Clone {
                 self.neighbours(point.clone())
                     .iter()
                     .filter(|p| !visited.contains(p))
+                    .map(|p| self.canonicalise_point(p))
                     .map(|p| {
                         (p.clone(), {
                             let mut path = path.clone();
-                            path.push_back(p.clone());
+                            path.push_back(p);
                             path
                         })
                     }),
@@ -167,12 +181,16 @@ pub struct CartesianPoint(pub usize, pub usize);
 impl Point for CartesianPoint {
     fn neighbours(&self) -> Vec<Self> {
         let CartesianPoint(x, y) = *self;
-        vec![
-            CartesianPoint(x - 1, y),
-            CartesianPoint(x + 1, y),
-            CartesianPoint(x, y - 1),
-            CartesianPoint(x, y + 1),
-        ]
+        let mut neighbours = Vec::with_capacity(4);
+        if let Some(x) = x.checked_sub(1) {
+            neighbours.push(CartesianPoint(x, y));
+        }
+        neighbours.push(CartesianPoint(x + 1, y));
+        if let Some(y) = y.checked_sub(1) {
+            neighbours.push(CartesianPoint(x, y));
+        }
+        neighbours.push(CartesianPoint(x, y + 1));
+        neighbours
     }
 }
 
@@ -194,3 +212,14 @@ impl From<Option<u64>> for Distance {
         value.map_or_else(Distance::infinity, Distance::new)
     }
 }
+
+impl TryInto<u64> for Distance {
+    type Error = Unreachable;
+
+    fn try_into(self) -> Result<u64, Self::Error> {
+        Ok(self.0.0.ok_or(Unreachable)?.0)
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct Unreachable;
