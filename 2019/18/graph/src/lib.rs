@@ -13,6 +13,7 @@ use std::{
         BuildHasher,
         Hash,
     },
+    iter::from_fn,
 };
 
 use fnv::{
@@ -26,6 +27,9 @@ use im_rc::{
 
 // TODO: Formulate in terms of edges and vertices. Maybe use some kind of
 // adjacency matrix/hash map?
+
+type Paths<'a, W> =
+    Box<dyn Iterator<Item = (<W as World>::Point, Vector<<W as World>::Point>)> + 'a>;
 
 pub trait World: Clone {
     type Point: Point;
@@ -71,17 +75,16 @@ pub trait World: Clone {
             .into()
     }
 
-    fn neighbours(&self, p: Self::Point) -> Vec<Self::Point> {
-        p.neighbours()
-            .into_iter()
-            .filter(|neighbour| self.is_walkable(neighbour))
-            .collect()
+    fn neighbours<'a>(&'a self, point: Self::Point) -> Box<dyn Iterator<Item = Self::Point> + 'a> {
+        Box::new(
+            point
+                .neighbours()
+                .into_iter()
+                .filter(move |neighbour| self.is_walkable(neighbour)),
+        )
     }
 
-    fn walk_cells_breadth_first(
-        &self,
-        start: &Self::Point,
-    ) -> Vector<(Self::Point, Vector<Self::Point>)>
+    fn walk_cells_breadth_first<'a>(&'a self, start: &Self::Point) -> Paths<'a, Self>
     where
         <Self as World>::Point: 'static,
     {
@@ -113,31 +116,30 @@ pub trait World: Clone {
         let pool = unsafe { POOL.get_or_insert_with(|| Erased(FnvHashMap::default())) };
 
         let mut visited = FnvHashSet::default();
-        let mut result = Vector::with_pool(pool.get());
         visited.insert(start.clone());
 
         let mut next_points = VecDeque::new();
         next_points.push_back((start.clone(), Vector::with_pool(pool.get())));
 
-        while let Some((point, path)) = next_points.pop_front() {
-            visited.insert(point.clone());
-            result.push_back((point.clone(), path.clone()));
-            next_points.extend(
-                self.neighbours(point.clone())
-                    .iter()
+        Box::new(from_fn(move || {
+            next_points.pop_front().map(|(point, path)| {
+                visited.insert(point.clone());
+                let result = (point.clone(), path.clone());
+                let neighbours = self
+                    .neighbours(point)
                     .filter(|p| !visited.contains(p))
-                    .map(|p| self.canonicalise_point(p))
+                    .map(|p| self.canonicalise_point(&p))
                     .map(|p| {
                         (p.clone(), {
                             let mut path = path.clone();
                             path.push_back(p);
                             path
                         })
-                    }),
-            );
-        }
-
-        result
+                    });
+                next_points.extend(neighbours);
+                result
+            })
+        }))
     }
 }
 
@@ -178,6 +180,30 @@ pub trait Point: PartialEq + Clone + Eq + Hash + Debug {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Ord, PartialOrd, Default)]
 pub struct CartesianPoint(pub usize, pub usize);
 
+impl CartesianPoint {
+    pub fn is_direct_neighbour(self, CartesianPoint(x2, y2): CartesianPoint) -> bool {
+        fn absolute_difference(x: usize, y: usize) -> usize {
+            if x > y {
+                x - y
+            }
+            else {
+                y - x
+            }
+        }
+
+        let CartesianPoint(x1, y1) = self;
+        if x1 == x2 {
+            absolute_difference(y1, y2) == 1
+        }
+        else if y1 == y2 {
+            absolute_difference(x1, x2) == 1
+        }
+        else {
+            false
+        }
+    }
+}
+
 impl Point for CartesianPoint {
     fn neighbours(&self) -> Vec<Self> {
         let CartesianPoint(x, y) = *self;
@@ -217,7 +243,7 @@ impl TryInto<u64> for Distance {
     type Error = Unreachable;
 
     fn try_into(self) -> Result<u64, Self::Error> {
-        Ok(self.0.0.ok_or(Unreachable)?.0)
+        Ok(self.0 .0.ok_or(Unreachable)?.0)
     }
 }
 
