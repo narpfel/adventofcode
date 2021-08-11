@@ -28,9 +28,6 @@ use im_rc::{
 // TODO: Formulate in terms of edges and vertices. Maybe use some kind of
 // adjacency matrix/hash map?
 
-type Paths<'a, W> =
-    Box<dyn Iterator<Item = (<W as World>::Point, Vector<<W as World>::Point>)> + 'a>;
-
 pub trait World: Clone {
     type Point: Point;
     type Tile: Tile;
@@ -51,7 +48,7 @@ pub trait World: Clone {
     {
         self.walk_cells_breadth_first(start)
             .into_iter()
-            .any(|(ref p, _)| p == end)
+            .any(|path| path.last() == Some(end))
     }
 
     fn is_walkable(&self, p: &Self::Point) -> bool {
@@ -64,8 +61,8 @@ pub trait World: Clone {
     {
         self.walk_cells_breadth_first(start)
             .into_iter()
-            .find_map(|(p, path)| {
-                if &p == end {
+            .find_map(|path| {
+                if path.last() == Some(end) {
                     Some(path.len() as _)
                 }
                 else {
@@ -84,7 +81,10 @@ pub trait World: Clone {
         )
     }
 
-    fn walk_cells_breadth_first<'a>(&'a self, start: &Self::Point) -> Paths<'a, Self>
+    fn walk_cells_breadth_first<'a>(
+        &'a self,
+        start: &Self::Point,
+    ) -> Box<dyn Iterator<Item = Vector<Self::Point>> + 'a>
     where
         <Self as World>::Point: 'static,
     {
@@ -124,7 +124,6 @@ pub trait World: Clone {
         Box::new(from_fn(move || {
             next_points.pop_front().map(|(point, path)| {
                 visited.insert(point.clone());
-                let result = (point.clone(), path.clone());
                 let neighbours = self
                     .neighbours(point)
                     .filter(|p| !visited.contains(p))
@@ -137,7 +136,7 @@ pub trait World: Clone {
                         })
                     });
                 next_points.extend(neighbours);
-                result
+                path
             })
         }))
     }

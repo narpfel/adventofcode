@@ -88,8 +88,8 @@ impl Maze {
             vec![vec![Default::default(); key_locations.len()]; key_locations.len()];
 
         for (i, start) in key_locations.iter().enumerate() {
-            for (point, path) in maze.walk_cells_breadth_first(start) {
-                if let Some(&j) = location_to_key.get(&point) {
+            for path in maze.walk_cells_breadth_first(start) {
+                if let Some(&j) = path.last().and_then(|point| location_to_key.get(&point)) {
                     adjacency[i][j] = Some((
                         path.len() as _,
                         path.iter()
