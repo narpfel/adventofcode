@@ -20,7 +20,12 @@ fn position(depth: Depth, time: Time) -> Position {
 
     let (d, m) = time.div_mod_floor(&(depth - 1));
 
-    if d.is_even() { m } else { depth - m - 1 }
+    if d.is_even() {
+        m
+    }
+    else {
+        depth - m - 1
+    }
 }
 
 fn is_caught(depth: Depth, time: Time) -> bool {

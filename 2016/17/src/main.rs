@@ -1,4 +1,3 @@
-#![feature(bindings_after_at)]
 use std::{
     collections::VecDeque,
     iter::from_fn,

@@ -110,20 +110,18 @@ fn next_generation_part2(cells: &[Vec<Vec<Vec<bool>>>]) -> Vec<Vec<Vec<Vec<bool>
 
 fn read_input(filename: impl AsRef<Path>) -> io::Result<Vec<Vec<Vec<bool>>>> {
     let file = File::open(filename)?;
-    Ok(vec![
-        BufReader::new(file)
-            .lines()
-            .map(|line| {
-                let line = line?;
-                Ok(line
-                    .strip_suffix(char::is_whitespace)
-                    .unwrap_or(&line)
-                    .chars()
-                    .map(|c| c == '#')
-                    .collect())
-            })
-            .collect::<io::Result<_>>()?,
-    ])
+    Ok(vec![BufReader::new(file)
+        .lines()
+        .map(|line| {
+            let line = line?;
+            Ok(line
+                .strip_suffix(char::is_whitespace)
+                .unwrap_or(&line)
+                .chars()
+                .map(|c| c == '#')
+                .collect())
+        })
+        .collect::<io::Result<_>>()?])
 }
 
 fn main() -> io::Result<()> {
