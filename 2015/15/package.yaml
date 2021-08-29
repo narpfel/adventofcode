@@ -2,14 +2,19 @@ name:                solution
 
 dependencies:
   - base >= 4.7 && < 5
-  - matrix
-  - vector
+  - hmatrix
   - composition
   - au
 
 default-extensions:
   - ParallelListComp
   - Strict
+
+ghc-options:
+  -Wall
+  -Wextra
+  -O2
+  -fllvm
 
 executables:
   solution:

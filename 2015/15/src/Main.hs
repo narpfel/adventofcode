@@ -1,62 +1,63 @@
-module Main where
+module Main (main) where
 
-import Control.Applicative (some)
-import Data.Char (isLetter)
+import Control.Monad (replicateM)
+import Data.Bifunctor (bimap)
 import Data.Composition ((.:))
-import Data.Foldable (product)
-import Data.List (genericReplicate)
-import Data.Matrix
 import Data.Maybe (fromJust)
-import Data.Vector (toList)
+import qualified Numeric.LinearAlgebra.HMatrix as M
+import Numeric.LinearAlgebra.HMatrix (Matrix, Vector, Z)
 
 import Au.Parser
 
-ingredients :: Tokenizer [[Integer]]
+ingredients :: Tokenizer [[Z]]
 ingredients = separatedBy' newline line
 
-line :: Tokenizer [Integer]
+line :: Tokenizer [Z]
 line =
   alphabetical
   >> word ": "
   >> mapM property ["capacity", "durability", "flavor", "texture", "calories"]
 
-property :: String -> Tokenizer Integer
+property :: String -> Tokenizer Z
 property s = word s *> space *> integer <* optional (word ", ")
 
-score :: Matrix Integer -> Matrix Integer -> Integer
-score = product . fmap (max 0) .: multStd
+score :: Vector Z -> Matrix Z -> Z
+score = M.prodElements . M.cmap (max 0) .: (M.<#)
 
-maxScore :: [(a, Integer)] -> Integer
-maxScore = maximum . map snd
-
-possibleCombinations :: Integer -> Matrix Integer -> [([Integer], Integer)]
-possibleCombinations n properties =
-  [(a, score (fromLists [a]) ingredients) | a <- amounts]
+possibleCombinations :: Z -> Matrix Z -> [(Vector Z, Z)]
+possibleCombinations n ingrs =
+  [(amountPerIngredient, score amountPerIngredient ingrs) | amountPerIngredient <- amounts]
   where
-    ingredients =
-      submatrix 1 (nrows properties) 1 (ncols properties - 1) properties
     amounts
-      = filter ((== n) . sum)
-      . sequence
-      . genericReplicate (nrows ingredients)
+      = map M.fromList
+      . filter ((== n) . sum)
+      . replicateM (M.rows ingrs)
       $ [0 .. n]
 
-part1 :: Matrix Integer -> Integer
-part1 = maxScore . possibleCombinations 100
+part1 :: [(Vector Z, Z)] -> Z
+part1 = maximum . map snd
 
-part2 :: Matrix Integer -> Integer
-part2 properties =
-  maxScore
-    [ (calories, score)
-    | (amounts, score) <- possibleCombinations 100 properties
-    , let calories = sum [a * c | a <- amounts | c <- caloriesPerIngredient]
+part2 :: [(Vector Z, Z)] -> Vector Z -> Z
+part2 combinations caloriesPerIngredient =
+  maximum
+    [ score'
+    | (amounts, score') <- combinations
+    , let calories = amounts M.<.> caloriesPerIngredient
     , calories == 500
     ]
-  where
-    caloriesPerIngredient = Data.Vector.toList (getCol (ncols properties) properties)
+
+unsnoc :: [a] -> ([a], a)
+unsnoc xs = (init xs, last xs)
 
 main :: IO ()
 main = do
-  ingrs <- fromLists . fromJust . parse ingredients <$> readFile "input"
-  print $ part1 ingrs
-  print $ part2 ingrs
+  (ingrs, caloriesPerIngredient)
+    <- bimap M.fromLists M.fromList
+    . unzip
+    . map unsnoc
+    . fromJust
+    . parse ingredients
+    <$> readFile "input"
+  let combinations = possibleCombinations 100 ingrs
+  print $ part1 combinations
+  print $ part2 combinations caloriesPerIngredient
