@@ -1,16 +1,17 @@
 #!/usr/bin/env pypy3
 from itertools import count
 
-from sympy import divisors
+import sympy
 
 
 def main():
     part_1_solved = False
     for n in count(1):
-        if not part_1_solved and 10 * sum(divisors(n, generator=True)) >= 36000000:
+        divisors = sympy.divisors(n)
+        if not part_1_solved and 10 * sum(divisors) >= 36000000:
             print("Solution (part 1):", n)
             part_1_solved = True
-        if 11 * sum(div for div in divisors(n, generator=True) if n / div <= 50) >= 36000000:
+        if 11 * sum(div for div in divisors if n / div <= 50) >= 36000000:
             print("Solution (part 2):", n)
             break
 
