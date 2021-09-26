@@ -149,9 +149,9 @@ class Runner:
             )
 
     RUNNERS = {
+        "Makefile": "run_makefile",
         "package.yaml": "run_haskell",
         "Cargo.toml": "run_rust",
-        "Makefile": "run_makefile",
         "solution.vim": "run_nvim",
     }
 

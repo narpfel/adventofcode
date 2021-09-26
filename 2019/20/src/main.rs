@@ -22,7 +22,7 @@ use graph::{
     World,
 };
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 enum Tile {
     Wall,
     Empty,
@@ -118,6 +118,10 @@ impl World for WarpedMaze {
             .get_key_value(p)
             .map_or_else(|| unreachable!(), |(p, _)| *p)
     }
+
+    fn find(&self, tile: &Self::Tile) -> Option<Self::Point> {
+        self.inner.find(tile)
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -174,6 +178,12 @@ impl World for FractalMaze {
             point,
             points: self.inner.neighbours(point.inner),
         })
+    }
+
+    fn find(&self, tile: &Self::Tile) -> Option<Self::Point> {
+        self.inner
+            .find(tile)
+            .map(|inner| FractalPoint { inner, level: 0 })
     }
 }
 

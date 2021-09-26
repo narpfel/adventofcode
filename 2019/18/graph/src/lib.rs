@@ -4,16 +4,28 @@ use std::{
     any::TypeId,
     cmp::Reverse,
     collections::{
+        BinaryHeap,
         HashMap,
+        HashSet,
         VecDeque,
     },
-    convert::TryInto,
+    convert::{
+        TryFrom,
+        TryInto,
+    },
     fmt::Debug,
+    fs::File,
     hash::{
         BuildHasher,
         Hash,
     },
+    io::{
+        self,
+        BufRead,
+        BufReader,
+    },
     iter::from_fn,
+    path::Path,
 };
 
 use fnv::{
@@ -33,6 +45,7 @@ pub trait World: Clone {
     type Tile: Tile;
 
     fn get(&self, p: &Self::Point) -> Option<Self::Tile>;
+    fn find(&self, tile: &Self::Tile) -> Option<Self::Point>;
 
     fn contains(&self, p: &Self::Point) -> bool {
         self.get(p).is_some()
@@ -42,34 +55,84 @@ pub trait World: Clone {
         p.clone()
     }
 
-    fn is_reachable(&self, start: &Self::Point, end: &Self::Point) -> bool
-    where
-        <Self as World>::Point: 'static,
-    {
-        self.walk_cells_breadth_first(start)
-            .into_iter()
-            .any(|path| path.last() == Some(end))
+    fn is_reachable(&self, start: &Self::Point, end: &Self::Point) -> bool {
+        self.path(start, end).is_some()
     }
 
     fn is_walkable(&self, p: &Self::Point) -> bool {
         self.get(p).as_ref().map_or(false, Tile::is_walkable)
     }
 
-    fn distance(&self, start: &Self::Point, end: &Self::Point) -> Distance
-    where
-        <Self as World>::Point: 'static,
-    {
-        self.walk_cells_breadth_first(start)
-            .into_iter()
-            .find_map(|path| {
-                if path.last() == Some(end) {
-                    Some(path.len() as _)
+    fn distance(&self, start: &Self::Point, end: &Self::Point) -> Distance {
+        self.path(start, end).map(|path| path.len() as _).into()
+    }
+
+    /// Dijkstra’s algorithm
+    fn path(&self, start: &Self::Point, end: &Self::Point) -> Option<Vec<Self::Point>> {
+        #[derive(Eq, PartialEq)]
+        struct NextPoint<P> {
+            distance: Reverse<Distance>,
+            point: P,
+        }
+        impl<P: Eq> PartialOrd for NextPoint<P> {
+            fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+                self.distance.partial_cmp(&other.distance)
+            }
+        }
+        impl<P: Eq> Ord for NextPoint<P> {
+            fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+                self.distance.cmp(&other.distance)
+            }
+        }
+
+        let mut distances = HashMap::new();
+        distances.insert(self.canonicalise_point(start), Distance::new(0));
+        let mut visited = HashSet::new();
+        let mut previous_point = HashMap::new();
+        let mut next_points = BinaryHeap::new();
+        next_points.push(NextPoint {
+            distance: Reverse(Distance::new(0)),
+            point: self.canonicalise_point(start),
+        });
+
+        while let Some(NextPoint { distance: Reverse(distance), point }) = next_points.pop() {
+            visited.insert(point.clone());
+            for neighbour in self
+                .neighbours(point.clone())
+                .filter(|p| self.get(p).is_some() && !visited.contains(p))
+                .map(|p| self.canonicalise_point(&p))
+            {
+                let distance = if !self.is_walkable(&neighbour) {
+                    Distance::infinity()
                 }
                 else {
-                    None
+                    distance.map(|d| d + 1)
+                };
+                if distances.get(&neighbour).map_or(true, |d| d > &distance) {
+                    distances.insert(neighbour.clone(), distance);
+                    previous_point.insert(neighbour.clone(), point.clone());
+                    next_points.push(NextPoint {
+                        distance: Reverse(distance),
+                        point: neighbour,
+                    });
                 }
-            })
-            .into()
+            }
+
+            if &point == end {
+                let mut path = vec![point.clone()];
+                let mut point = point.clone();
+                while let Some(p) = previous_point.get(&point) {
+                    if p == start {
+                        path.reverse();
+                        return Some(path);
+                    }
+                    point = p.clone();
+                    path.push(point.clone());
+                }
+            }
+        }
+
+        None
     }
 
     fn neighbours<'a>(&'a self, point: Self::Point) -> Box<dyn Iterator<Item = Self::Point> + 'a> {
@@ -142,7 +205,7 @@ pub trait World: Clone {
     }
 }
 
-pub trait Tile: Clone {
+pub trait Tile: Clone + PartialEq + Eq {
     fn is_walkable(&self) -> bool;
 }
 
@@ -157,6 +220,50 @@ where
 
     fn get(&self, p: &Self::Point) -> Option<Self::Tile> {
         HashMap::get(self, p).cloned()
+    }
+
+    fn find(&self, tile: &Self::Tile) -> Option<Self::Point> {
+        self.iter()
+            .find(|(_, v)| v == &tile)
+            .map(|(k, _)| k.clone())
+    }
+}
+
+pub trait ReadExt: World {
+    fn from_file(path: impl AsRef<Path>) -> Result<Self, io::Error>
+    where
+        Self::Tile: TryFrom<char>,
+        <Self::Tile as TryFrom<char>>::Error: Debug;
+}
+
+impl<Point, Tile> ReadExt for FnvHashMap<Point, Tile>
+where
+    Point: self::Point + Eq + Hash + Cartesian,
+    Tile: self::Tile + TryFrom<char>,
+{
+    fn from_file(path: impl AsRef<Path>) -> Result<Self, io::Error>
+    where
+        <Self::Tile as TryFrom<char>>::Error: Debug,
+    {
+        let f = File::open(path)?;
+        let reader = BufReader::new(f);
+
+        let mut maze = Self::default();
+        for (y, line) in reader.lines().enumerate() {
+            for (x, c) in line?.chars().enumerate() {
+                maze.insert(
+                    Point::from_xy((x, y)),
+                    c.try_into().map_err(|err| {
+                        io::Error::new(
+                            io::ErrorKind::Other,
+                            format!("invalid char: {} ({:?})", c, err),
+                        )
+                    })?,
+                );
+            }
+        }
+
+        Ok(maze)
     }
 }
 
@@ -174,6 +281,10 @@ pub trait Point: PartialEq + Clone + Eq + Hash + Debug {
     fn neighbours(&self) -> Vec<Self>
     where
         Self: Sized;
+}
+
+pub trait Cartesian {
+    fn from_xy(xy: (usize, usize)) -> Self;
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Ord, PartialOrd, Default)]
@@ -219,6 +330,12 @@ impl Point for CartesianPoint {
     }
 }
 
+impl Cartesian for CartesianPoint {
+    fn from_xy((x, y): (usize, usize)) -> Self {
+        Self(x, y)
+    }
+}
+
 #[derive(Default, Debug, PartialOrd, Ord, PartialEq, Eq, Copy, Clone)]
 pub struct Distance(Reverse<Option<Reverse<u64>>>);
 
@@ -229,6 +346,10 @@ impl Distance {
 
     pub fn infinity() -> Distance {
         Self::default()
+    }
+
+    fn map(self, f: impl FnOnce(u64) -> u64) -> Self {
+        Distance(Reverse(self.0 .0.map(|Reverse(d)| Reverse(f(d)))))
     }
 }
 

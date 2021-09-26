@@ -1,24 +1,16 @@
 #![feature(entry_insert)]
 
 use std::{
-    convert::{
-        TryFrom,
-        TryInto,
-    },
-    fs::File,
-    io::{
-        self,
-        BufRead,
-        BufReader,
-    },
+    convert::TryFrom,
+    io,
     iter::from_fn,
-    path::Path,
 };
 
 use fnv::FnvHashMap;
 
 use graph::{
     CartesianPoint as Point,
+    ReadExt,
     World,
 };
 
@@ -127,20 +119,6 @@ impl From<io::Error> for Error {
     fn from(err: io::Error) -> Self {
         Error::IoError(err)
     }
-}
-
-fn read_input(path: impl AsRef<Path>) -> Result<FnvHashMap<Point, Tile>, Error> {
-    let f = File::open(path)?;
-    let reader = BufReader::new(f);
-
-    let mut maze = FnvHashMap::default();
-    for (y, line) in reader.lines().enumerate() {
-        for (x, c) in line?.chars().enumerate() {
-            maze.insert(Point(x, y), c.try_into()?);
-        }
-    }
-
-    Ok(maze)
 }
 
 fn dfs(
@@ -276,7 +254,6 @@ fn iter_set_bits(mut x: u32) -> impl Iterator<Item = u32> {
 mod tests {
     use super::{
         iter_set_bits,
-        read_input,
         solve_part_1,
         solve_part_2,
         Maze,
@@ -285,7 +262,7 @@ mod tests {
     #[test]
     fn test_1() {
         assert_eq!(
-            solve_part_1(&Maze::new(read_input("input_test_1").unwrap())),
+            solve_part_1(&Maze::new(FnvHashMap::from_file("input_test_1").unwrap())),
             8
         );
     }
@@ -293,7 +270,7 @@ mod tests {
     #[test]
     fn test_2() {
         assert_eq!(
-            solve_part_1(&Maze::new(read_input("input_test_2").unwrap())),
+            solve_part_1(&Maze::new(FnvHashMap::from_file("input_test_2").unwrap())),
             86
         );
     }
@@ -301,7 +278,7 @@ mod tests {
     #[test]
     fn test_3() {
         assert_eq!(
-            solve_part_1(&Maze::new(read_input("input_test_3").unwrap())),
+            solve_part_1(&Maze::new(FnvHashMap::from_file("input_test_3").unwrap())),
             132
         );
     }
@@ -309,7 +286,7 @@ mod tests {
     #[test]
     fn test_4() {
         assert_eq!(
-            solve_part_1(&Maze::new(read_input("input_test_4").unwrap())),
+            solve_part_1(&Maze::new(FnvHashMap::from_file("input_test_4").unwrap())),
             136
         );
     }
@@ -317,7 +294,7 @@ mod tests {
     #[test]
     fn test_5() {
         assert_eq!(
-            solve_part_1(&Maze::new(read_input("input_test_5").unwrap())),
+            solve_part_1(&Maze::new(FnvHashMap::from_file("input_test_5").unwrap())),
             81
         );
     }
@@ -325,7 +302,9 @@ mod tests {
     #[test]
     fn test_part_2_1() {
         assert_eq!(
-            solve_part_2(&Maze::new(read_input("input_test_part_2_1").unwrap())),
+            solve_part_2(&Maze::new(
+                FnvHashMap::from_file("input_test_part_2_1").unwrap()
+            )),
             8
         );
     }
@@ -333,7 +312,9 @@ mod tests {
     #[test]
     fn test_part_2_2() {
         assert_eq!(
-            solve_part_2(&Maze::new(read_input("input_test_part_2_2").unwrap())),
+            solve_part_2(&Maze::new(
+                FnvHashMap::from_file("input_test_part_2_2").unwrap()
+            )),
             24
         );
     }
@@ -341,7 +322,9 @@ mod tests {
     #[test]
     fn test_part_2_3() {
         assert_eq!(
-            solve_part_2(&Maze::new(read_input("input_test_part_2_3").unwrap())),
+            solve_part_2(&Maze::new(
+                FnvHashMap::from_file("input_test_part_2_3").unwrap()
+            )),
             32
         );
     }
@@ -349,7 +332,9 @@ mod tests {
     #[test]
     fn test_part_2_4() {
         assert_eq!(
-            solve_part_2(&Maze::new(read_input("input_test_part_2_4").unwrap())),
+            solve_part_2(&Maze::new(
+                FnvHashMap::from_file("input_test_part_2_4").unwrap()
+            )),
             72
         );
     }
@@ -361,7 +346,7 @@ mod tests {
 }
 
 fn main() {
-    let maze = Maze::new(read_input("input").unwrap());
+    let maze = Maze::new(FnvHashMap::from_file("input").unwrap());
     println!("{}", solve_part_1(&maze));
     println!("{}", solve_part_2(&maze));
 }
