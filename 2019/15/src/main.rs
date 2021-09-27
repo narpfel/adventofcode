@@ -1,5 +1,4 @@
 use std::{
-    cmp::Reverse,
     collections::{
         HashMap,
         HashSet,
@@ -20,8 +19,11 @@ use std::{
 use std::iter::repeat;
 
 use itertools::Itertools;
-use std::iter::once;
 
+use graph::{
+    Point as _,
+    World,
+};
 use intcode::{
     Cell,
     Computer,
@@ -29,7 +31,6 @@ use intcode::{
 };
 
 type Point = (i64, i64);
-type Hull = HashMap<Point, Tile>;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 enum Direction {
@@ -75,6 +76,7 @@ fn render(tile: Option<Tile>) -> char {
         Some(Wall) => '\u{2588}',
         Some(Empty) => '.',
         Some(Target) => 'X',
+        Some(Unknown) => ' ',
         None => ' ',
     }
 }
@@ -84,8 +86,21 @@ enum Tile {
     Wall,
     Empty,
     Target,
+    Unknown,
 }
 use Tile::*;
+
+impl Tile {
+    fn is_known(self) -> bool {
+        !matches!(self, Unknown)
+    }
+}
+
+impl graph::Tile for Tile {
+    fn is_walkable(&self) -> bool {
+        !matches!(self, Wall)
+    }
+}
 
 impl TryFrom<Cell> for Tile {
     type Error = InvalidTile;
@@ -102,6 +117,34 @@ impl TryFrom<Cell> for Tile {
 
 #[derive(Copy, Clone, Debug)]
 struct InvalidTile(Cell);
+
+#[derive(Clone, Debug, Default)]
+struct Hull {
+    map: HashMap<Point, Tile>,
+}
+
+impl Hull {
+    fn insert(&mut self, key: Point, value: Tile) -> Option<Tile> {
+        self.map.insert(key, value)
+    }
+
+    fn keys(&self) -> impl Iterator<Item = &Point> {
+        self.map.keys()
+    }
+}
+
+impl graph::World for Hull {
+    type Point = Point;
+    type Tile = Tile;
+
+    fn get(&self, p: &Self::Point) -> Option<Self::Tile> {
+        Some(self.map.get(p).cloned().unwrap_or(Unknown))
+    }
+
+    fn find(&self, _: &Self::Tile) -> Option<Self::Point> {
+        unimplemented!()
+    }
+}
 
 #[derive(Debug)]
 struct State {
@@ -144,7 +187,7 @@ impl State {
             (min_y..=max_y)
                 .rev()
                 .map(|y| (min_x..=max_x)
-                    .map(|x| render(self.hull.get(&(x, y)).cloned()))
+                    .map(|x| render(self.hull.get(&(x, y))))
                     .collect::<String>())
                 .join("\n")
         );
@@ -184,134 +227,23 @@ impl State {
     fn read_input(&mut self) -> Option<Direction> {
         if self.path.is_empty() {
             self.path = self
-                .find_path((self.x, self.y), self.next_unexplored_cell()?)
-                .iter()
-                .copied()
+                .hull
+                .path(&(self.x, self.y), &self.next_unexplored_cell()?)?
+                .into_iter()
+                .tuple_windows()
+                .map(|(from, to)| direction(from, to))
                 .collect();
         }
         self.path.pop_front()
     }
 
-    /// Dijkstra’s algorithm
-    fn find_path(&self, start: Point, end: Point) -> Vec<Direction> {
-        #[derive(Default, Debug, PartialOrd, Ord, PartialEq, Eq, Copy, Clone)]
-        struct Distance(Reverse<Option<Reverse<u64>>>);
-
-        impl Distance {
-            fn new(distance: u64) -> Distance {
-                Distance(Reverse(Some(Reverse(distance))))
-            }
-
-            fn infinity() -> Distance {
-                Self::default()
-            }
-
-            fn map(self, f: impl FnOnce(u64) -> u64) -> Self {
-                Distance(Reverse(self.0 .0.map(|Reverse(d)| Reverse(f(d)))))
-            }
-        }
-
-        let (bottom_left, top_right) = self.dimensions();
-        let size = (
-            top_right.0 - bottom_left.0 + 3,
-            top_right.1 - bottom_left.1 + 3,
-        );
-
-        let index = |(x, y)| ((y - bottom_left.1 + 1) * size.0 + x - bottom_left.0 + 1) as usize;
-        let reverse_index = |i| {
-            (
-                i as i64 % size.0 + bottom_left.0 - 1,
-                i as i64 / size.0 + bottom_left.1 - 1,
-            )
-        };
-
-        let mut distances: Vec<_> = (bottom_left.1 - 1..=top_right.1 + 1)
-            .flat_map(|y| {
-                (bottom_left.0 - 1..=top_right.0 + 1).map(move |x| {
-                    if (x, y) == start {
-                        Distance::new(0)
-                    }
-                    else {
-                        Distance::infinity()
-                    }
-                })
-            })
-            .collect();
-
-        let mut unvisited: Vec<_> = distances.iter().map(|_| true).collect();
-
-        let mut previous_point: Vec<_> = distances.iter().map(|_| None).collect();
-
-        while let Some(((current_index, _), _)) = unvisited
-            .iter()
-            .enumerate()
-            .zip(distances.iter())
-            .filter(|&((_, &unvisited), _)| unvisited)
-            .min_by_key(|(_, &distance)| distance)
-        {
-            let current = reverse_index(current_index);
-            unvisited[current_index] = false;
-
-            for neighbour in neighbours(&reverse_index(current_index))
-                .filter(|&p| *unvisited.get(index(p)).unwrap_or(&false))
-            {
-                let distance = if self.hull.get(&neighbour) == Some(&Wall) {
-                    Distance::infinity()
-                }
-                else {
-                    distances[current_index].map(|d| d + 1)
-                };
-                distances[index(neighbour)] = std::cmp::min(distances[index(neighbour)], distance);
-                previous_point[index(neighbour)] = Some(current_index);
-            }
-
-            if current == end {
-                let mut path = vec![current];
-
-                let mut current_index = current_index;
-                while let Some(&Some(index)) = previous_point.get(current_index) {
-                    path.push(reverse_index(index));
-                    current_index = index;
-                }
-                return path
-                    .into_iter()
-                    .rev()
-                    .tuple_windows()
-                    .map(|(from, to)| direction(from, to))
-                    .collect();
-            }
-        }
-
-        unreachable!();
-    }
-
-    fn floodfill(&self, start: Point) -> Option<u64> {
-        let mut queue = VecDeque::new();
-        queue.push_back((start, 0));
-        let mut seen = HashSet::new();
-
-        let mut last_distance = None;
-        while let Some((point, distance)) = queue.pop_front() {
-            last_distance = Some(distance);
-            seen.insert(point);
-            queue.extend(neighbours(&point).filter_map(|p| {
-                self.hull.get(&p).and_then(|&tile| {
-                    if tile == Wall || seen.contains(&p) {
-                        None
-                    }
-                    else {
-                        Some((p, distance + 1))
-                    }
-                })
-            }));
-        }
-        last_distance
-    }
-
     fn solve(&self) -> Option<(u64, u64)> {
         Some((
-            self.find_path(self.target?, (0, 0)).len() as _,
-            self.floodfill(self.target?)?,
+            self.hull.distance(&self.target?, &(0, 0)).try_into().ok()?,
+            self.hull
+                .walk_cells_breadth_first(&self.target?)
+                .last()?
+                .len() as _,
         ))
     }
 
@@ -319,7 +251,12 @@ impl State {
     fn next_unexplored_cell(&self) -> Option<Point> {
         // BFS around current position
 
-        let neighbours_with_tile = |ref point| neighbours(point).zip(repeat(self.hull.get(point)));
+        let neighbours_with_tile = |point: Point| {
+            point
+                .neighbours()
+                .into_iter()
+                .zip(repeat(self.hull.get(&point)))
+        };
 
         let mut queue: VecDeque<_> = neighbours_with_tile((self.x, self.y)).collect();
         let mut seen = HashSet::new();
@@ -327,11 +264,13 @@ impl State {
 
         while let Some((point, neighbour_tile)) = queue.pop_front() {
             let tile = self.hull.get(&point);
-            if neighbour_tile.map(|&tile| tile == Empty).unwrap_or(false) && tile.is_none() {
+            if neighbour_tile.map(|tile| tile == Empty).unwrap_or(false)
+                && !tile.map_or(false, Tile::is_known)
+            {
                 return Some(point);
             }
             seen.insert(point);
-            if tile == Some(&Empty) {
+            if tile == Some(Empty) {
                 queue.extend(neighbours_with_tile(point).filter(|(p, _)| !seen.contains(p)));
             }
         }
@@ -384,13 +323,6 @@ impl IO for State {
             std::thread::sleep(std::time::Duration::from_millis(10));
         }
     }
-}
-
-fn neighbours(&(x, y): &Point) -> impl Iterator<Item = Point> {
-    once((x - 1, y))
-        .chain(once((x + 1, y)))
-        .chain(once((x, y - 1)))
-        .chain(once((x, y + 1)))
 }
 
 fn direction((x, y): Point, (a, b): Point) -> Direction {

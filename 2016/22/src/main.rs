@@ -60,6 +60,7 @@ fn main() {
 
     let distance: u64 = goal_path
         .into_iter()
+        .skip(1)
         .map(|target_for_empty| {
             let goal = grid.find(&Tile::Goal).unwrap();
             let empty = grid.find(&Tile::Empty).unwrap();

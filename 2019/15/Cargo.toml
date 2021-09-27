@@ -15,5 +15,8 @@ interactive = ["console"]
 console = { version = "0", optional = true }
 itertools = "0"
 
+[dependencies.graph]
+path = "../18/graph"
+
 [dependencies.intcode]
 path = "../11/intcode"

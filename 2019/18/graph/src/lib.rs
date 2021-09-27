@@ -64,7 +64,8 @@ pub trait World: Clone {
     }
 
     fn distance(&self, start: &Self::Point, end: &Self::Point) -> Distance {
-        self.path(start, end).map(|path| path.len() as _).into()
+        // Don’t include start point
+        Distance::from(self.path(start, end).map(|path| path.len() as _)).map(|d| d - 1)
     }
 
     /// Dijkstra’s algorithm
@@ -122,12 +123,12 @@ pub trait World: Clone {
                 let mut path = vec![point.clone()];
                 let mut point = point.clone();
                 while let Some(p) = previous_point.get(&point) {
-                    if p == start {
+                    point = p.clone();
+                    path.push(point.clone());
+                    if &point == start {
                         path.reverse();
                         return Some(path);
                     }
-                    point = p.clone();
-                    path.push(point.clone());
                 }
             }
         }
@@ -333,6 +334,21 @@ impl Point for CartesianPoint {
 impl Cartesian for CartesianPoint {
     fn from_xy((x, y): (usize, usize)) -> Self {
         Self(x, y)
+    }
+}
+
+impl Point for (i64, i64) {
+    fn neighbours(&self) -> Vec<Self>
+    where
+        Self: Sized,
+    {
+        let (x, y) = *self;
+        vec![(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
+    }
+}
+impl Cartesian for (i64, i64) {
+    fn from_xy((x, y): (usize, usize)) -> Self {
+        (x as _, y as _)
     }
 }
 
