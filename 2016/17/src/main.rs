@@ -25,7 +25,7 @@ struct Position(i32, i32);
 impl Position {
     fn neighbours(self) -> impl Iterator<Item = (Position, Direction, bool)> {
         let Position(x, y) = self;
-        vec![
+        [
             (Position(x, y - 1), Up),
             (Position(x, y + 1), Down),
             (Position(x - 1, y), Left),

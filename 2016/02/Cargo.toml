@@ -2,5 +2,4 @@
 name = "solution"
 version = "0.1.0"
 authors = ["narpfel <narpfel@gmx.de>"]
-
-[dependencies]
+edition = "2021"

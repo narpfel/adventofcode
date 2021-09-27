@@ -195,7 +195,7 @@ pub fn format_digest(digest: [u8; DIGEST_BYTE_COUNT]) -> [u8; DIGEST_CHAR_LENGTH
     const HEX_DIGITS: &[u8] = b"0123456789abcdef";
 
     let mut result = [0; DIGEST_CHAR_LENGTH];
-    digest.iter().enumerate().for_each(|(i, byte)| {
+    digest.into_iter().enumerate().for_each(|(i, byte)| {
         let upper_nibble = byte >> 4;
         let lower_nibble = byte & 0xf;
         result[2 * i] = HEX_DIGITS[upper_nibble as usize];

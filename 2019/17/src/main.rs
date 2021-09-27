@@ -1,9 +1,5 @@
 use std::{
     collections::HashMap,
-    convert::{
-        TryFrom,
-        TryInto,
-    },
     error::Error,
     iter::once,
 };
@@ -431,10 +427,13 @@ fn is_newline(cell: Cell) -> bool {
 }
 
 fn neighbours(Point { x, y }: Point) -> impl Iterator<Item = Point> {
-    once(Point { x: x - 1, y })
-        .chain(once(Point { x: x + 1, y }))
-        .chain(once(Point { x, y: y - 1 }))
-        .chain(once(Point { x, y: y + 1 }))
+    [
+        Point { x: x - 1, y },
+        Point { x: x + 1, y },
+        Point { x, y: y - 1 },
+        Point { x, y: y + 1 },
+    ]
+    .into_iter()
 }
 
 fn main() -> Result<(), Box<dyn Error>> {

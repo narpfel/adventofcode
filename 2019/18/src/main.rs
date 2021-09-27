@@ -1,7 +1,6 @@
 #![feature(entry_insert)]
 
 use std::{
-    convert::TryFrom,
     io,
     iter::from_fn,
 };
@@ -216,21 +215,19 @@ fn solve_part_2(maze: &Maze) -> u64 {
         .unwrap();
     let maze = {
         let mut maze = maze.maze.clone();
-        IntoIterator::into_iter(REPLACEMENT)
-            .enumerate()
-            .for_each(|(dy, tiles)| {
-                IntoIterator::into_iter(tiles)
-                    .enumerate()
-                    .for_each(|(dx, tile)| {
-                        maze.insert(
-                            Point(
-                                bottom_right_tile.0 / 2 + dx - 1,
-                                bottom_right_tile.1 / 2 + dy - 1,
-                            ),
-                            tile,
-                        );
-                    })
-            });
+        REPLACEMENT.into_iter().enumerate().for_each(|(dy, tiles)| {
+            IntoIterator::into_iter(tiles)
+                .enumerate()
+                .for_each(|(dx, tile)| {
+                    maze.insert(
+                        Point(
+                            bottom_right_tile.0 / 2 + dx - 1,
+                            bottom_right_tile.1 / 2 + dy - 1,
+                        ),
+                        tile,
+                    );
+                })
+        });
         Maze::new(maze)
     };
 
@@ -252,6 +249,10 @@ fn iter_set_bits(mut x: u32) -> impl Iterator<Item = u32> {
 
 #[cfg(test)]
 mod tests {
+    use fnv::FnvHashMap;
+
+    use graph::ReadExt;
+
     use super::{
         iter_set_bits,
         solve_part_1,

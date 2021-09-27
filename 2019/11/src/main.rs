@@ -1,6 +1,5 @@
 use std::{
     collections::HashMap,
-    convert::TryInto,
     error::Error,
 };
 

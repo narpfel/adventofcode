@@ -13,6 +13,6 @@ pub const T: [Word; CHUNKSIZE] = ct_python::ct_python! {
     // when this ist possible.
     for i in range(1, 64 + 1):
         val = int(4294967296 * abs(sin(i)))
-        print(f"Wrapping({val}),")
+        print(f "Wrapping({val}),")
     print("]")
 };
