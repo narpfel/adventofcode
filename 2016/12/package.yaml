@@ -3,7 +3,6 @@ name: solution
 dependencies:
   - base >= 4.7 && < 5
   - mtl
-  - lens
   - vector
   - au
 
@@ -11,7 +10,7 @@ default-extensions:
   - LambdaCase
   - ParallelListComp
   - DeriveFunctor
-  - TemplateHaskell
+  - RecordWildCards
 
 ghc-options:
   -Wall

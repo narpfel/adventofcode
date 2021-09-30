@@ -1,77 +1,57 @@
 module Main (main) where
 
-import Control.Lens hiding (op)
-import Control.Monad.State.Strict
+import Control.Monad.State.Lazy
 import Data.Functor (($>))
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
 
 import Au.Parser
 
-type Register = Int
-type Offset = Int
-
-type Condition = RegisterFile -> Bool
-type RegisterOp = RegisterFile -> RegisterFile
-
-type RegisterAccessor f = (Register -> f Register) -> RegisterFile -> f RegisterFile
+data Register = A | B | C | D
+data ImmOrReg = Imm Int | Reg Register
 
 data Instruction
-  = Op RegisterOp
-  | Jmp Condition Offset
+  = Cpy ImmOrReg ImmOrReg
+  | Inc ImmOrReg
+  | Dec ImmOrReg
+  | Jnz ImmOrReg ImmOrReg
 
 type Rom = Vector Instruction
 
-data RegisterFile = RegisterFile
-  { _a :: !Register
-  , _b :: !Register
-  , _c :: !Register
-  , _d :: !Register
-  , _pc :: !Register
-  }
-
 data Cpu = Cpu
-  { _registerFile :: RegisterFile
-  , _rom :: Rom
+  { pc :: !Int
+  , a :: !Int
+  , b :: !Int
+  , c :: !Int
+  , d :: !Int
+  , rom :: Rom
   }
-
-makeLenses ''Instruction
-makeLenses ''RegisterFile
-makeLenses ''Cpu
 
 signedInteger :: (Read i, Integral i) => Parser Char i
 signedInteger = (optional' . char $ '+') >> integer
 
 cpy :: Parser Char Instruction
-cpy = do
-  src <- oneArg' "cpy" <* space
-  dst <- register
-  pure . Op $ (\rf -> rf & dst .~ (rf ^. src))
+cpy = Cpy <$> oneArg' "cpy" <* space <*> register
 
 inc :: Parser Char Instruction
-inc = Op . (+~ 1) <$> oneArg "inc"
+inc = Inc <$> oneArg "inc"
 
 dec :: Parser Char Instruction
-dec = Op . (-~ 1) <$> oneArg "dec"
+dec = Dec <$> oneArg "dec"
 
 jnz :: Parser Char Instruction
-jnz = conditionalJump "jnz" (/= 0)
+jnz = Jnz <$> oneArg' "jnz" <* space <*> (Imm <$> signedInteger)
 
-conditionalJump :: String -> (Register -> Bool) -> Parser Char Instruction
-conditionalJump mnemonic predicate = do
-  r <- oneArg' mnemonic <* space
-  Jmp (view $ r . to predicate) <$> signedInteger
+register :: Parser Char ImmOrReg
+register = Reg <$> (word "a" $> A) <> (word "b" $> B) <> (word "c" $> C) <> (word "d" $> D)
 
-register :: Functor f => Parser Char (RegisterAccessor f)
-register = (word "a" $> a) <> (word "b" $> b) <> (word "c" $> c) <> (word "d" $> d)
+immediateOrRegister :: Parser Char ImmOrReg
+immediateOrRegister = (Imm <$> signedInteger) <> register
 
-immediateOrRegister :: (Contravariant f, Functor f) => Parser Char (RegisterAccessor f)
-immediateOrRegister = (to . const <$> signedInteger) <> register
-
-oneArg :: Functor f => String -> Parser Char (RegisterAccessor f)
+oneArg :: String -> Parser Char ImmOrReg
 oneArg mnemonic = word mnemonic *> space *> register
 
-oneArg' :: (Contravariant f, Functor f) => String -> Parser Char (RegisterAccessor f)
+oneArg' :: String -> Parser Char ImmOrReg
 oneArg' mnemonic = word mnemonic *> space *> immediateOrRegister
 
 instruction :: Parser Char Instruction
@@ -81,20 +61,41 @@ program :: Parser Char [Instruction]
 program = perLine instruction
 
 execute :: Instruction -> State Cpu ()
-execute (Op operation) = modify $ (registerFile %~ operation) . (registerFile . pc +~ 1)
-execute (Jmp condition offset) = do
-  takeJump <- gets . view $ registerFile . to condition
-  modify (registerFile . pc +~ if takeJump then offset else 1)
+execute (Cpy src dst) = modify $ \cpu -> cpu←dst $ cpu→src
+execute (Inc reg) = modify $ \cpu -> cpu←reg $ cpu→reg + 1
+execute (Dec reg) = modify $ \cpu -> cpu←reg $ cpu→reg - 1
+execute (Jnz src offset) = modify $ \cpu -> cpu { pc = newPc cpu }
+  where
+    newPc cpu
+      | cpu→src /= 0 = pc cpu + cpu→offset - 1
+      | otherwise = pc cpu
+
+(→) :: Cpu -> ImmOrReg -> Int
+_ → Imm imm = imm
+Cpu { .. } → Reg A = a
+Cpu { .. } → Reg B = b
+Cpu { .. } → Reg C = c
+Cpu { .. } → Reg D = d
+
+(←) :: Cpu -> ImmOrReg -> Int -> Cpu
+(←) cpu (Imm _) _ = cpu
+(←) cpu (Reg A) value = cpu { a = value }
+(←) cpu (Reg B) value = cpu { b = value }
+(←) cpu (Reg C) value = cpu { c = value }
+(←) cpu (Reg D) value = cpu { d = value }
 
 runProgram :: State Cpu ()
 runProgram = do
   cpu <- get
-  case (cpu ^. rom) Vector.!? (cpu ^. registerFile . pc) of
-    Just instr -> execute instr >> runProgram
+  case rom cpu Vector.!? pc cpu of
+    Just instr -> execute instr >> updatePc >> runProgram
     Nothing -> return ()
 
-solve :: Register -> Rom -> Register
-solve n = view (registerFile . a) . execState runProgram . Cpu (RegisterFile 0 0 n 0 0)
+updatePc :: State Cpu ()
+updatePc = modify $ \cpu -> cpu { pc = pc cpu + 1 }
+
+solve :: Int -> Rom -> Int
+solve n = a . execState runProgram . Cpu 0 0 0 n 0
 
 main :: IO ()
 main = do
