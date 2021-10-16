@@ -1,11 +1,8 @@
-use md5::{
-    format_digest,
-    md5,
-};
-use std::fmt::{
-    self,
-    Write,
-};
+use std::fmt;
+use std::fmt::Write;
+
+use md5::format_digest;
+use md5::md5;
 
 const INPUT: &str = "iwrupvqb";
 

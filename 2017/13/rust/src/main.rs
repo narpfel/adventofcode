@@ -1,8 +1,6 @@
-use std::{
-    collections::HashMap,
-    fs::read_to_string,
-    path::Path,
-};
+use std::collections::HashMap;
+use std::fs::read_to_string;
+use std::path::Path;
 
 use failure::Fallible;
 use num::Integer;

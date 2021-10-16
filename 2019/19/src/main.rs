@@ -1,14 +1,11 @@
 use std::error::Error;
 
+use intcode::read_puzzle_input;
+use intcode::Cell;
+use intcode::Computer;
+use intcode::Memory;
+use intcode::IO;
 use itertools::Itertools;
-
-use intcode::{
-    read_puzzle_input,
-    Cell,
-    Computer,
-    Memory,
-    IO,
-};
 
 const SIZE: usize = 100;
 

@@ -1,22 +1,15 @@
-use std::{
-    collections::HashMap,
-    error::Error,
-    iter::once,
-};
-
+use std::collections::HashMap;
+use std::error::Error;
 #[cfg(feature = "visualise")]
-use std::{
-    io::Write,
-    time::Duration,
-};
+use std::io::Write;
+use std::iter::once;
+#[cfg(feature = "visualise")]
+use std::time::Duration;
 
+use intcode::Cell;
+use intcode::Computer;
+use intcode::IO;
 use itertools::Itertools;
-
-use intcode::{
-    Cell,
-    Computer,
-    IO,
-};
 
 type Scaffolding = HashMap<Point, Tile>;
 
@@ -170,8 +163,9 @@ impl<Iter: Iterator<Item = Cell>> State<Iter> {
 
         impl Possibility {
             fn iter() -> impl Iterator<Item = Self> {
-                use crate::Function::*;
                 use Possibility::*;
+
+                use crate::Function::*;
                 [
                     Function(A),
                     Function(B),

@@ -1,17 +1,12 @@
 #![feature(entry_insert)]
 
-use std::{
-    io,
-    iter::from_fn,
-};
+use std::io;
+use std::iter::from_fn;
 
 use fnv::FnvHashMap;
-
-use graph::{
-    CartesianPoint as Point,
-    ReadExt,
-    World,
-};
+use graph::CartesianPoint as Point;
+use graph::ReadExt;
+use graph::World;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord)]
 enum Tile {
@@ -250,15 +245,12 @@ fn iter_set_bits(mut x: u32) -> impl Iterator<Item = u32> {
 #[cfg(test)]
 mod tests {
     use fnv::FnvHashMap;
-
     use graph::ReadExt;
 
-    use super::{
-        iter_set_bits,
-        solve_part_1,
-        solve_part_2,
-        Maze,
-    };
+    use super::iter_set_bits;
+    use super::solve_part_1;
+    use super::solve_part_2;
+    use super::Maze;
 
     #[test]
     fn test_1() {

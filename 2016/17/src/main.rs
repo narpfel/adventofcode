@@ -1,14 +1,9 @@
-use std::{
-    collections::VecDeque,
-    iter::from_fn,
-};
+use std::collections::VecDeque;
+use std::iter::from_fn;
 
 use itertools::Itertools;
-
-use md5::{
-    format_digest,
-    md5,
-};
+use md5::format_digest;
+use md5::md5;
 
 #[repr(u8)]
 enum Direction {

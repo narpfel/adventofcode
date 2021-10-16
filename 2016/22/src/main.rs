@@ -1,16 +1,10 @@
-use std::{
-    collections::HashMap,
-    hash::{
-        BuildHasher,
-        Hash,
-    },
-};
+use std::collections::HashMap;
+use std::hash::BuildHasher;
+use std::hash::Hash;
 
-use graph::{
-    CartesianPoint as Point,
-    ReadExt,
-    World,
-};
+use graph::CartesianPoint as Point;
+use graph::ReadExt;
+use graph::World;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord)]
 enum Tile {

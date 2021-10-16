@@ -1,14 +1,10 @@
-use std::{
-    cmp::min,
-    fs::File,
-    io::{
-        self,
-        BufRead,
-        BufReader,
-    },
-    iter::repeat,
-    path::Path,
-};
+use std::cmp::min;
+use std::fs::File;
+use std::io;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::iter::repeat;
+use std::path::Path;
 
 use itertools::iproduct;
 

@@ -1,30 +1,18 @@
-use std::{
-    collections::{
-        HashMap,
-        HashSet,
-        VecDeque,
-    },
-    error::Error,
-    io::{
-        stdout,
-        Write,
-    },
-};
-
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::collections::VecDeque;
+use std::error::Error;
+use std::io::stdout;
+use std::io::Write;
 #[cfg(not(feature = "interactive"))]
 use std::iter::repeat;
 
+use graph::Point as _;
+use graph::World;
+use intcode::Cell;
+use intcode::Computer;
+use intcode::IO;
 use itertools::Itertools;
-
-use graph::{
-    Point as _,
-    World,
-};
-use intcode::{
-    Cell,
-    Computer,
-    IO,
-};
 
 type Point = (i64, i64);
 
