@@ -105,7 +105,7 @@ runProgram = do
   cpu <- get
   case rom cpu Vector.!? pc cpu of
     Just instr -> execute instr >> updatePc >> runProgram
-    Nothing -> return ()
+    Nothing -> pure ()
 
 updatePc :: State Cpu ()
 updatePc = modify $ \cpu -> cpu { pc = pc cpu + 1 }
