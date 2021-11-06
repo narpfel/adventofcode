@@ -2,7 +2,6 @@ resolver: lts-18.0
 
 packages:
 - .
-- ./cpu
 
 extra-deps:
   - github: narpfel/au
