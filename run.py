@@ -240,7 +240,13 @@ def main(argv):
         help="Show build output",
         action="store_const", const=None, default=subprocess.DEVNULL,
     )
-    parser.add_argument("solutions", help="Run specified solutions.", nargs="*", type=Path)
+    parser.add_argument(
+        "solutions",
+        help="Run specified solutions.",
+        nargs="*",
+        default=[Path(".")],
+        type=Path,
+    )
     parser.add_argument(
         "-t", "--time",
         help="Just measure execution time, don’t print result.",
