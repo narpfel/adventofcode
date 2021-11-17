@@ -232,7 +232,7 @@ def format_build_time(build_time):
         return f" (and {build_time} s of build time)."
 
 
-def main(argv):
+def main(argv=None):
     parser = argparse.ArgumentParser(description="Run solutions.")
     parser.add_argument("-a", "--all", help="Run all solutions.", action="store_true")
     parser.add_argument(
@@ -292,6 +292,6 @@ def main(argv):
 
 if __name__ == "__main__":
     try:
-        sys.exit(main(sys.argv[1:]))
+        sys.exit(main())
     except KeyboardInterrupt:
         print("\nAborted.", file=sys.stderr)
