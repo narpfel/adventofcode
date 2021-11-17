@@ -7,11 +7,12 @@ import subprocess
 import sys
 import time
 from contextlib import suppress
-from itertools import count
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from tempfile import TemporaryDirectory
 
+from attr import attrib
+from attr import attrs
 from identify import identify
 
 FG_BOLD = "\x1B[1m"
@@ -19,14 +20,50 @@ FG_RED = "\x1B[31m"
 RESET = "\x1B[m"
 
 
+@attrs
+class Statistics:
+    succeeded = attrib(default=0)
+    build_time = attrib(default=0)
+    execution_time = attrib(default=0)
+    failed = attrib(default=0)
+
+    def add(self, result):
+        result.add_to(self)
+
+    def add_to(self, stats):
+        stats.succeeded += self.succeeded
+        stats.build_time += self.build_time
+        stats.execution_time += self.execution_time
+        stats.failed += self.failed
+
+    def __bool__(self):
+        return any([self.succeeded, self.failed])
+
+
+@attrs(frozen=True)
+class Success:
+    build_time = attrib()
+    execution_time = attrib()
+
+    def add_to(self, stats):
+        stats.succeeded += 1
+        stats.build_time += self.build_time
+        stats.execution_time += self.execution_time
+
+
+@attrs(frozen=True)
+class Failed:
+    def add_to(self, stats):
+        stats.failed += 1
+
+
 class Runner:
     def __init__(self, *, build_output, solution_output):
         self.build_output = build_output
         self.solution_output = solution_output
-        self.failed_solutions = 0
 
     def run_all(self):
-        solution_count = count()
+        stats = Statistics()
         for year_dir in sorted(Path().iterdir()):
             if year_dir.is_dir() and str(year_dir).isdigit():
                 try:
@@ -34,9 +71,9 @@ class Runner:
                 except NotADirectoryError:
                     pass
                 else:
-                    for solution_dir, _ in zip(solutions, solution_count):
-                        self.run_solution(solution_dir)
-        return next(solution_count)
+                    for solution_dir in solutions:
+                        stats.add(self.run_solution(solution_dir))
+        return stats
 
     def run_solution(self, solution_dir):
         execution_time_prefix = f"\n{solution_dir}: " if self.solution_output is None else ""
@@ -45,15 +82,15 @@ class Runner:
             runner, path = self.find_executor(solution_dir)
         except FileNotFoundError:
             # See if multiple solutions are present
-            solutions_executed = 0
+            stats = Statistics()
             for sub_solution in sorted(solution_dir.iterdir()):
                 if sub_solution.is_dir():
                     with suppress(FileNotFoundError):
-                        solutions_executed += self.run_solution(sub_solution)
+                        stats.add(self.run_solution(sub_solution))
 
-            if not solutions_executed:
+            if not stats:
                 raise FileNotFoundError(f"`{solution_dir}` does not contain a solution.")
-            return solutions_executed
+            return stats
         else:
             if self.solution_output is not None:
                 print(
@@ -67,19 +104,13 @@ class Runner:
                 build_time, execution_time = runner(path)
             except subprocess.CalledProcessError:
                 print(f"{FG_BOLD}{FG_RED}failed!{RESET}", file=sys.stderr)
-                self.failed_solutions += 1
-                return 0
+                return Failed()
             else:
-                build_time_output = (
-                    f" (and {build_time} s of build time)."
-                    if build_time > 1
-                    else "."
-                )
                 print(
-                    f"{execution_time_prefix}{execution_time} s{build_time_output}",
+                    f"{execution_time_prefix}{execution_time} s{format_build_time(build_time)}",
                     file=sys.stderr,
                 )
-                return 1
+                return Success(build_time=build_time, execution_time=execution_time)
 
     def find_executor(self, solution_dir):
         for language_indicator, runner_name in self.RUNNERS.items():
@@ -178,6 +209,13 @@ def language_for(path):
         return "unknown"
 
 
+def format_build_time(build_time):
+    if build_time < 1:
+        return "."
+    else:
+        return f" (and {build_time} s of build time)."
+
+
 def main(argv):
     parser = argparse.ArgumentParser(description="Run solutions.")
     parser.add_argument("-a", "--all", help="Run all solutions.", action="store_true")
@@ -200,19 +238,25 @@ def main(argv):
     )
     start_time = time.perf_counter()
     if args.all:
-        solution_count = runner.run_all()
+        stats = runner.run_all()
     else:
-        solution_count = 0
+        stats = Statistics()
         for solution in args.solutions:
-            solution_count += runner.run_solution(solution)
+            stats.add(runner.run_solution(solution))
+    total_duration = time.perf_counter() - start_time
     print(
-        f"Found {solution_count} solutions in {time.perf_counter() - start_time} s.",
+        f"Found {stats.succeeded} solutions in {stats.execution_time} s"
+        f"{format_build_time(stats.build_time)}",
         file=sys.stderr,
     )
-    if runner.failed_solutions:
-        print(f"{runner.failed_solutions} solutions failed executing.", file=sys.stderr)
+    print(f"wall time elapsed: {total_duration} s", file=sys.stderr)
+    if stats.failed:
+        print(
+            f"{FG_BOLD}{FG_RED}{stats.failed} solutions failed executing.{RESET}",
+            file=sys.stderr,
+        )
 
-    return runner.failed_solutions
+    return stats.failed
 
 
 if __name__ == "__main__":
