@@ -2,11 +2,13 @@
 
 import argparse
 import os
+import re
 import shlex
 import subprocess
 import sys
 import time
 from contextlib import suppress
+from functools import partial
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from tempfile import TemporaryDirectory
@@ -17,6 +19,7 @@ from identify import identify
 
 FG_BOLD = "\x1B[1m"
 FG_RED = "\x1B[31m"
+FG_YELLOW = "\x1B[33m"
 RESET = "\x1B[m"
 
 
@@ -25,6 +28,7 @@ class Statistics:
     succeeded = attrib(default=0)
     build_time = attrib(default=0)
     execution_time = attrib(default=0)
+    skipped = attrib(default=0)
     failed = attrib(default=0)
 
     def add(self, result):
@@ -34,10 +38,11 @@ class Statistics:
         stats.succeeded += self.succeeded
         stats.build_time += self.build_time
         stats.execution_time += self.execution_time
+        stats.skipped += self.skipped
         stats.failed += self.failed
 
     def __bool__(self):
-        return any([self.succeeded, self.failed])
+        return any([self.succeeded, self.skipped, self.failed])
 
 
 @attrs(frozen=True)
@@ -52,15 +57,22 @@ class Success:
 
 
 @attrs(frozen=True)
+class Skipped:
+    def add_to(self, stats):
+        stats.skipped += 1
+
+
+@attrs(frozen=True)
 class Failed:
     def add_to(self, stats):
         stats.failed += 1
 
 
 class Runner:
-    def __init__(self, *, build_output, solution_output):
+    def __init__(self, *, build_output, solution_output, languages):
         self.build_output = build_output
         self.solution_output = solution_output
+        self.languages = languages
 
     def run_all(self):
         stats = Statistics()
@@ -92,13 +104,17 @@ class Runner:
                 raise FileNotFoundError(f"`{solution_dir}` does not contain a solution.")
             return stats
         else:
+            language = language_for(path)
+            if self.languages.search(language) is None:
+                return Skipped()
+
             if self.solution_output is not None:
                 print(
-                    f"{solution_dir} [{language_for(path)}]: ",
+                    f"{solution_dir} [{language}]: ",
                     end="", flush=True, file=sys.stderr,
                 )
             else:
-                print(f"\n\nExecuting `{path}` [{language_for(path)}]...\n", file=sys.stderr)
+                print(f"\n\nExecuting `{path}` [{language}]...\n", file=sys.stderr)
 
             try:
                 build_time, execution_time = runner(path)
@@ -230,11 +246,18 @@ def main(argv):
         help="Just measure execution time, don’t print result.",
         action="store_const", const=subprocess.DEVNULL, default=None,
     )
+    parser.add_argument(
+        "-l", "--languages",
+        help="Filter to languages matching the given regular expression",
+        default=re.compile(""),
+        type=partial(re.compile, flags=re.I),
+    )
     args = parser.parse_args(argv)
 
     runner = Runner(
         build_output=args.time if args.time is not None else args.build_output,
         solution_output=args.time,
+        languages=args.languages,
     )
     start_time = time.perf_counter()
     if args.all:
@@ -255,6 +278,8 @@ def main(argv):
             f"{FG_BOLD}{FG_RED}{stats.failed} solutions failed executing.{RESET}",
             file=sys.stderr,
         )
+    if stats.skipped:
+        print(f"{FG_YELLOW}{stats.skipped} solutions were skipped.{RESET}", file=sys.stderr)
 
     return stats.failed
 
