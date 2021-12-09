@@ -1,8 +1,5 @@
 #!/usr/bin/env pypy3
 
-from pathlib import Path
-
-
 def fuel_consumption_part_1(start, end):
     return abs(start - end)
 
@@ -13,7 +10,9 @@ def fuel_consumption_part_2(start, end):
 
 
 def main():
-    positions = list(map(int, Path("input").read_text().split(",")))
+    with open("input") as file:
+        positions = list(map(int, file.read().split(",")))
+
     for fuel_consumption in [fuel_consumption_part_1, fuel_consumption_part_2]:
         print(
             min(
