@@ -176,28 +176,30 @@ pub trait World: Clone {
         let pool = unsafe { POOL.get_or_insert_with(|| Erased(FnvHashMap::default())) };
 
         let mut visited = FnvHashSet::default();
-        visited.insert(start.clone());
 
         let mut next_points = VecDeque::new();
         next_points.push_back((start.clone(), Vector::with_pool(pool.get())));
 
         Box::new(from_fn(move || {
-            next_points.pop_front().map(|(point, path)| {
-                visited.insert(point.clone());
-                let neighbours = self
-                    .neighbours(point)
-                    .filter(|p| !visited.contains(p))
-                    .map(|p| self.canonicalise_point(&p))
-                    .map(|p| {
-                        (p.clone(), {
-                            let mut path = path.clone();
-                            path.push_back(p);
-                            path
-                        })
-                    });
-                next_points.extend(neighbours);
-                path
-            })
+            while let Some((point, path)) = next_points.pop_front() {
+                if !visited.contains(&point) {
+                    visited.insert(point.clone());
+                    let neighbours = self
+                        .neighbours(point)
+                        .filter(|p| !visited.contains(p))
+                        .map(|p| self.canonicalise_point(&p))
+                        .map(|p| {
+                            (p.clone(), {
+                                let mut path = path.clone();
+                                path.push_back(p);
+                                path
+                            })
+                        });
+                    next_points.extend(neighbours);
+                    return Some(path);
+                }
+            }
+            None
         }))
     }
 }

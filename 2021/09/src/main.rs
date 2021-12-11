@@ -1,8 +1,12 @@
-use std::collections::HashMap;
+use std::{
+    cmp::Reverse,
+    collections::HashMap,
+};
 
 use graph::{
     CartesianPoint as Point,
     ReadExt,
+    Tile as _,
     World,
 };
 
@@ -13,7 +17,7 @@ struct Tile {
 
 impl graph::Tile for Tile {
     fn is_walkable(&self) -> bool {
-        true
+        self.height < 9
     }
 }
 
@@ -30,19 +34,35 @@ impl TryFrom<char> for Tile {
 
 fn main() {
     let height_map: HashMap<Point, Tile, _> = HashMap::from_file("input").unwrap();
-    let risk_level = height_map
+    let low_points: Vec<_> = height_map
         .iter()
-        .map(|(&point, &tile)| {
-            if height_map
-                .neighbours(point)
-                .all(|neighbour| height_map[&neighbour] > tile)
+        .filter_map(|(&point, &tile)| {
+            if tile.is_walkable()
+                && height_map
+                    .neighbours(point)
+                    .all(|neighbour| height_map[&neighbour] > tile)
             {
-                usize::from(tile.height) + 1
+                Some(point)
             }
             else {
-                0
+                None
             }
         })
+        .collect();
+    let total_risk_level = low_points
+        .iter()
+        .map(|point| usize::from(height_map[point].height) + 1)
         .sum::<usize>();
-    println!("{}", risk_level);
+    let mut region_sizes: Vec<_> = low_points
+        .iter()
+        .map(|point| {
+            height_map
+                .walk_cells_breadth_first(point)
+                .map(|_| 1_u64)
+                .sum::<u64>()
+        })
+        .collect();
+    region_sizes.sort_by_key(|&size| Reverse(size));
+    println!("{}", total_risk_level);
+    println!("{}", region_sizes[0] * region_sizes[1] * region_sizes[2]);
 }
