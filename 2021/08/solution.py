@@ -4,19 +4,6 @@ from collections import defaultdict
 
 EASY_DIGITS = {1: 2, 4: 4, 7: 3, 8: 7}
 
-SEVEN_SEGMENT_DIGITS = {
-    frozenset("abcefg"): 0,
-    frozenset("cf"): 1,
-    frozenset("acdeg"): 2,
-    frozenset("acdfg"): 3,
-    frozenset("bcdf"): 4,
-    frozenset("abdfg"): 5,
-    frozenset("abdefg"): 6,
-    frozenset("acf"): 7,
-    frozenset("abcdefg"): 8,
-    frozenset("abcdfg"): 9,
-}
-
 
 def unpack(xs):
     result, = xs
@@ -37,44 +24,32 @@ def main():
         patterns_by_len = defaultdict(list)
         for pattern in patterns:
             patterns_by_len[len(pattern)].append(pattern)
-        one, four, seven, eight = (
-            unpack(patterns_by_len[length])
-            for length in EASY_DIGITS.values()
-        )
 
-        wire_map = {unpack(seven - one): "a"}
+        mapping = {
+            digit: unpack(patterns_by_len[length])
+            for digit, length in EASY_DIGITS.items()
+        }
 
-        overlap_4_7 = four | seven
         for pattern in patterns_by_len[6]:
-            if pattern.issuperset(overlap_4_7):
-                g = unpack(pattern - overlap_4_7)
-                wire_map[g] = "g"
+            if pattern.issuperset(mapping[4] | mapping[7]):
+                mapping[9] = pattern
+            elif not pattern.issuperset(mapping[1]):
+                mapping[6] = pattern
+            else:
+                mapping[0] = pattern
 
-        seven_and_g = seven.union(g)
         for pattern in patterns_by_len[5]:
-            if pattern.issuperset(seven_and_g):
-                wire_map[unpack(pattern - seven_and_g)] = "d"
+            if pattern.issuperset(mapping[1]):
+                mapping[3] = pattern
+            elif pattern.issubset(mapping[6]):
+                mapping[5] = pattern
+            else:
+                mapping[2] = pattern
 
-        one_and_adg = one.union(wire_map)
-        for pattern in patterns_by_len[6]:
-            if pattern.issuperset(one_and_adg):
-                wire_map[unpack(pattern - one_and_adg)] = "b"
+        mapping = {v: k for k, v in mapping.items()}
 
-        one_and_adgb = one.union(wire_map)
-        for pattern in patterns_by_len[6]:
-            if len(pattern - one_and_adgb) == 1:
-                wire_map[unpack(pattern - one_and_adgb)] = "e"
+        number = "".join(str(mapping[digit]) for digit in digits)
 
-        for pattern in patterns_by_len[6]:
-            if pattern.issuperset(wire_map):
-                wire_map[unpack(pattern - set(wire_map))] = "f"
-
-        wire_map[unpack(eight - set(wire_map))] = "c"
-
-        number = "".join(
-            str(SEVEN_SEGMENT_DIGITS[frozenset("".join(wire_map[wire] for wire in wires))])
-            for wires in digits
-        )
         solution_part_1 += sum(int(digit) in EASY_DIGITS for digit in number)
         solution_part_2 += int(number)
 
