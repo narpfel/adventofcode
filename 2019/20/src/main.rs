@@ -45,7 +45,7 @@ impl graph::Tile for Tile {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialOrd, Ord)]
 struct WarpedPoint {
     inner: CartesianPoint,
     additional_neighbour: Option<CartesianPoint>,
@@ -120,7 +120,7 @@ impl World for WarpedMaze {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct FractalPoint {
     inner: WarpedPoint,
     level: u64,

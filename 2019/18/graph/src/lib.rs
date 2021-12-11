@@ -6,7 +6,6 @@ use std::{
     collections::{
         BinaryHeap,
         HashMap,
-        HashSet,
         VecDeque,
     },
     fmt::Debug,
@@ -66,37 +65,15 @@ pub trait World: Clone {
 
     /// Dijkstra’s algorithm
     fn path(&self, start: &Self::Point, end: &Self::Point) -> Option<Vec<Self::Point>> {
-        #[derive(Eq, PartialEq)]
-        struct NextPoint<P> {
-            distance: Reverse<Distance>,
-            point: P,
-        }
-        impl<P: Eq> PartialOrd for NextPoint<P> {
-            fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-                self.distance.partial_cmp(&other.distance)
-            }
-        }
-        impl<P: Eq> Ord for NextPoint<P> {
-            fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-                self.distance.cmp(&other.distance)
-            }
-        }
-
-        let mut distances = HashMap::new();
+        let mut distances = FnvHashMap::default();
         distances.insert(self.canonicalise_point(start), Distance::new(0));
-        let mut visited = HashSet::new();
-        let mut previous_point = HashMap::new();
+        let mut previous_point = FnvHashMap::default();
         let mut next_points = BinaryHeap::new();
-        next_points.push(NextPoint {
-            distance: Reverse(Distance::new(0)),
-            point: self.canonicalise_point(start),
-        });
+        next_points.push(Reverse((Distance::new(0), self.canonicalise_point(start))));
 
-        while let Some(NextPoint { distance: Reverse(distance), point }) = next_points.pop() {
-            visited.insert(point.clone());
+        while let Some(Reverse((distance, point))) = next_points.pop() {
             for neighbour in self
                 .neighbours(point.clone())
-                .filter(|p| self.get(p).is_some() && !visited.contains(p))
                 .map(|p| self.canonicalise_point(&p))
             {
                 let distance = if !self.is_walkable(&neighbour) {
@@ -108,10 +85,7 @@ pub trait World: Clone {
                 if distances.get(&neighbour).map_or(true, |d| d > &distance) {
                     distances.insert(neighbour.clone(), distance);
                     previous_point.insert(neighbour.clone(), point.clone());
-                    next_points.push(NextPoint {
-                        distance: Reverse(distance),
-                        point: neighbour,
-                    });
+                    next_points.push(Reverse((distance, neighbour)));
                 }
             }
 
@@ -276,7 +250,7 @@ where
 //     // ...
 // }
 
-pub trait Point: PartialEq + Clone + Eq + Hash + Debug {
+pub trait Point: PartialEq + Clone + Eq + Hash + Debug + PartialOrd + Ord {
     fn neighbours(&self) -> Vec<Self>
     where
         Self: Sized;
@@ -367,17 +341,23 @@ impl Distance {
     }
 }
 
+impl From<usize> for Distance {
+    fn from(value: usize) -> Self {
+        Distance::new(value.try_into().unwrap())
+    }
+}
+
 impl From<Option<u64>> for Distance {
     fn from(value: Option<u64>) -> Self {
         value.map_or_else(Distance::infinity, Distance::new)
     }
 }
 
-impl TryInto<u64> for Distance {
+impl TryFrom<Distance> for u64 {
     type Error = Unreachable;
 
-    fn try_into(self) -> Result<u64, Self::Error> {
-        Ok(self.0 .0.ok_or(Unreachable)?.0)
+    fn try_from(distance: Distance) -> Result<Self, Self::Error> {
+        Ok(distance.0 .0.ok_or(Unreachable)?.0)
     }
 }
 
