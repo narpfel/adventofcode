@@ -60,7 +60,10 @@ pub trait World: Clone {
 
     fn distance(&self, start: &Self::Point, end: &Self::Point) -> Distance {
         // Don’t include start point
-        Distance::from(self.path(start, end).map(|path| path.len() as _)).map(|d| d - 1)
+        Distance::from(
+            self.path(start, end)
+                .map(|path| path.iter().skip(1).map(|p| self.cost(p)).sum()),
+        )
     }
 
     /// Dijkstra’s algorithm
@@ -80,7 +83,7 @@ pub trait World: Clone {
                     Distance::infinity()
                 }
                 else {
-                    distance.map(|d| d + 1)
+                    distance.map(|d| d + self.cost(&point))
                 };
                 if distances.get(&neighbour).map_or(true, |d| d > &distance) {
                     distances.insert(neighbour.clone(), distance);
@@ -175,6 +178,10 @@ pub trait World: Clone {
             }
             None
         }))
+    }
+
+    fn cost(&self, _: &Self::Point) -> u64 {
+        1
     }
 }
 
