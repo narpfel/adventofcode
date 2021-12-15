@@ -15,7 +15,7 @@ fn fuel_consumption_part_2(start: u64, end: u64) -> u64 {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let positions: Vec<_> = read_to_string("input")?
+    let positions = read_to_string("input")?
         .trim()
         .split(',')
         .map(str::parse)
