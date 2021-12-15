@@ -55,12 +55,7 @@ fn main() {
         .sum::<usize>();
     let mut region_sizes: Vec<_> = low_points
         .iter()
-        .map(|point| {
-            height_map
-                .walk_cells_breadth_first(point)
-                .map(|_| 1_u64)
-                .sum::<u64>()
-        })
+        .map(|point| height_map.walk_cells_breadth_first(point).count() as u64)
         .collect();
     region_sizes.sort_by_key(|&size| Reverse(size));
     println!("{}", total_risk_level);
