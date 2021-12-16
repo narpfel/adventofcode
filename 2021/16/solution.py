@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+from math import prod
+from operator import eq
+from operator import gt
+from operator import lt
+
 import pytest
 from attr import attrib
 from attr import attrs
@@ -23,8 +28,26 @@ class Operator:
     sub_packets = attrib()
 
     @property
+    def value(self):
+        return {
+            0: sum,
+            1: prod,
+            2: min,
+            3: max,
+            5: uncurry(gt),
+            6: uncurry(lt),
+            7: uncurry(eq),
+        }[self.type_id](packet.value for packet in self.sub_packets)
+
+    @property
     def version_sum(self):
         return self.version + sum(packet.version_sum for packet in self.sub_packets)
+
+
+def uncurry(f):
+    def uncurried_f(args):
+        return f(*args)
+    return uncurried_f
 
 
 def to_int(bits):
@@ -98,11 +121,29 @@ def test_parse_version_sum(transmission, expected):
     assert parse_transmission(transmission).version_sum == expected
 
 
+@pytest.mark.parametrize(
+    "transmission, expected", [
+        ("C200B40A82", 3),
+        ("04005AC33890", 54),
+        ("880086C3E88112", 7),
+        ("CE00C43D881120", 9),
+        ("D8005AC2A8F0", 1),
+        ("F600BC2D8F", 0),
+        ("9C005AC2F8F0", 0),
+        ("9C0141080250320F1802104A08", 1),
+    ],
+)
+def test_evaluate(transmission, expected):
+    assert parse_transmission(transmission).value == expected
+
+
 def main():
     with open("input") as file:
         transmission = file.read().strip()
 
-    print(parse_transmission(transmission).version_sum)
+    packet = parse_transmission(transmission)
+    print(packet.version_sum)
+    print(packet.value)
 
 
 if __name__ == "__main__":
