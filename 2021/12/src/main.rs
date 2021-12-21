@@ -11,51 +11,50 @@ use std::{
 
 use itertools::Itertools;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-struct Cave {
-    name: String,
-}
-
-impl Cave {
-    fn is_small(&self) -> bool {
-        self.name.chars().next().map_or(false, char::is_lowercase)
-    }
-}
-
-impl<S> From<S> for Cave
-where
-    S: Into<String>,
-{
-    fn from(name: S) -> Self {
-        Self { name: name.into() }
-    }
-}
-
 fn dfs(
-    adjecency: &HashMap<Cave, Vec<Cave>>,
-    path: Vec<Cave>,
-    allow_small_cave: &impl Fn(&[Cave], &Cave) -> bool,
+    cave_count: usize,
+    adjecency: &[bool],
+    is_small: &[bool],
+    start: usize,
+    end: usize,
+    path: &mut Vec<usize>,
+    allow_small_cave: &mut impl FnMut(&[usize], usize) -> bool,
 ) -> u64 {
-    adjecency[path.last().unwrap()]
+    adjecency[path.last().unwrap() * cave_count..]
         .iter()
+        .take(cave_count)
+        .enumerate()
+        .filter_map(|(cave, connected)| connected.then(|| cave))
         .filter_map(|cave| {
-            if cave == &"end".into() {
+            if cave == end {
                 Some(1)
             }
-            else if cave == &"start".into() || (cave.is_small() && !allow_small_cave(&path, cave))
-            {
+            else if cave == start || (is_small[cave] && !allow_small_cave(path, cave)) {
                 None
             }
             else {
-                let mut path = path.clone();
                 path.push(cave.to_owned());
-                Some(dfs(adjecency, path, allow_small_cave))
+                let result = Some(dfs(
+                    cave_count,
+                    adjecency,
+                    is_small,
+                    start,
+                    end,
+                    path,
+                    allow_small_cave,
+                ));
+                path.pop();
+                result
             }
         })
         .sum()
 }
 
-fn read_input(path: impl AsRef<Path>) -> io::Result<HashMap<Cave, Vec<Cave>>> {
+#[allow(clippy::type_complexity)]
+fn read_input(path: impl AsRef<Path>) -> io::Result<(usize, Vec<bool>, Vec<bool>, usize, usize)> {
+    let mut caves = HashMap::new();
+    let mut cave_count = 0usize;
+
     let file = File::open(path)?;
     let connections = BufReader::new(file)
         .lines()
@@ -63,34 +62,100 @@ fn read_input(path: impl AsRef<Path>) -> io::Result<HashMap<Cave, Vec<Cave>>> {
             line?
                 .trim()
                 .split('-')
-                .map(str::to_owned)
+                .map(|cave| {
+                    *caves.entry(cave.to_owned()).or_insert_with(|| {
+                        let idx = cave_count;
+                        cave_count += 1;
+                        idx
+                    })
+                })
                 .collect_tuple()
                 .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "no parse"))
         })
         .collect::<io::Result<Vec<(_, _)>>>()?;
 
-    let mut adjecency = HashMap::<Cave, Vec<Cave>>::default();
+    let is_small = (0..cave_count)
+        .map(|idx| {
+            caves
+                .iter()
+                .find(|(_, i)| **i == idx)
+                .unwrap()
+                .0
+                .chars()
+                .next()
+                .unwrap()
+                .is_lowercase()
+        })
+        .collect();
+
+    let mut adjecency = vec![false; dbg!(cave_count) * cave_count];
     for (start, end) in &connections {
-        adjecency.entry(start.into()).or_default().push(end.into());
-        adjecency.entry(end.into()).or_default().push(start.into());
+        adjecency[start + end * cave_count] = true;
+        adjecency[end + start * cave_count] = true;
     }
 
-    Ok(adjecency)
+    Ok((
+        cave_count,
+        adjecency,
+        is_small,
+        caves["start"],
+        caves["end"],
+    ))
 }
 
-fn part_1(adjecency: &HashMap<Cave, Vec<Cave>>) -> u64 {
-    dfs(adjecency, vec!["start".into()], &|path, cave| {
-        !path.contains(cave)
-    })
+fn part_1(
+    cave_count: usize,
+    adjecency: &[bool],
+    is_small: &[bool],
+    start: usize,
+    end: usize,
+) -> u64 {
+    dfs(
+        cave_count,
+        adjecency,
+        is_small,
+        start,
+        end,
+        &mut vec![start],
+        &mut |path, cave| !path.contains(&cave),
+    )
 }
 
-fn part_2(adjecency: &HashMap<Cave, Vec<Cave>>) -> u64 {
-    dfs(adjecency, vec!["start".into()], &|path, cave| {
-        let mut small_cave_counts = path.iter().filter(|cave| cave.is_small()).counts();
-        *small_cave_counts.entry(cave).or_default() += 1;
-        let counts = small_cave_counts.into_values().counts();
-        counts.get(&2).map_or(true, |&count| count <= 1) && counts.keys().max().unwrap_or(&0) <= &2
-    })
+fn part_2(
+    cave_count: usize,
+    adjecency: &[bool],
+    is_small: &[bool],
+    start: usize,
+    end: usize,
+) -> u64 {
+    let mut small_cave_counts = vec![0; cave_count];
+    dfs(
+        cave_count,
+        adjecency,
+        is_small,
+        start,
+        end,
+        &mut vec![start],
+        &mut |path, cave| {
+            small_cave_counts.iter_mut().for_each(|count| *count = 0);
+            for &c in path.iter().filter(|&&c| is_small[c]) {
+                small_cave_counts[c] += 1;
+            }
+            small_cave_counts[cave] += 1;
+            let mut twos = 0;
+
+            for &count in &small_cave_counts {
+                if count == 2 {
+                    twos += 1;
+                }
+                if count > 2 {
+                    return false;
+                }
+            }
+
+            twos <= 1
+        },
+    )
 }
 
 #[cfg(test)]
@@ -103,38 +168,44 @@ mod tests {
 
     #[test]
     fn test_part_1_1() {
-        assert_eq!(part_1(&read_input("input_test_1").unwrap()), 10);
+        let (cave_count, adjecency, is_small, start, end) = read_input("input_test_1").unwrap();
+        assert_eq!(part_1(cave_count, &adjecency, &is_small, start, end), 10);
     }
 
     #[test]
     fn test_part_1_2() {
-        assert_eq!(part_1(&read_input("input_test_2").unwrap()), 19);
+        let (cave_count, adjecency, is_small, start, end) = read_input("input_test_2").unwrap();
+        assert_eq!(part_1(cave_count, &adjecency, &is_small, start, end), 19);
     }
 
     #[test]
     fn test_part_1_3() {
-        assert_eq!(part_1(&read_input("input_test_3").unwrap()), 226);
+        let (cave_count, adjecency, is_small, start, end) = read_input("input_test_3").unwrap();
+        assert_eq!(part_1(cave_count, &adjecency, &is_small, start, end), 226);
     }
 
     #[test]
     fn test_part_2_1() {
-        assert_eq!(part_2(&read_input("input_test_1").unwrap()), 36);
+        let (cave_count, adjecency, is_small, start, end) = read_input("input_test_1").unwrap();
+        assert_eq!(part_2(cave_count, &adjecency, &is_small, start, end), 36);
     }
 
     #[test]
     fn test_part_2_2() {
-        assert_eq!(part_2(&read_input("input_test_2").unwrap()), 103);
+        let (cave_count, adjecency, is_small, start, end) = read_input("input_test_2").unwrap();
+        assert_eq!(part_2(cave_count, &adjecency, &is_small, start, end), 103);
     }
 
     #[test]
     fn test_part_2_3() {
-        assert_eq!(part_2(&read_input("input_test_3").unwrap()), 3509);
+        let (cave_count, adjecency, is_small, start, end) = read_input("input_test_3").unwrap();
+        assert_eq!(part_2(cave_count, &adjecency, &is_small, start, end), 3509);
     }
 }
 
 fn main() -> io::Result<()> {
-    let adjecency = read_input("input")?;
-    println!("{}", part_1(&adjecency));
-    println!("{}", part_2(&adjecency));
+    let (cave_count, adjecency, is_small, start, end) = read_input("input")?;
+    println!("{}", part_1(cave_count, &adjecency, &is_small, start, end));
+    println!("{}", part_2(cave_count, &adjecency, &is_small, start, end));
     Ok(())
 }
