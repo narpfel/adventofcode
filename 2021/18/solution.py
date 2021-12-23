@@ -36,78 +36,57 @@ def parse(nested_number):
 
 
 def reduce_step_explode(number):
-    new_number = []
     changed = False
-    number_iter = iter(number)
-    for x, level in number_iter:
+
+    i = 0
+    while i < len(number):
+        x, level = number[i]
         if level >= 4:
             assert level == 4
             changed = True
 
-            y, other_level = next(number_iter)
+            y, other_level = number[i + 1]
             assert other_level == 4
 
-            try:
-                rightmost_before, level_before = new_number.pop()
-            except IndexError:
-                pass
-            else:
-                new_number.append((rightmost_before + x, level_before))
+            if i > 0:
+                rightmost_before, level_before = number[i - 1]
+                number[i - 1] = rightmost_before + x, level_before
 
-            assert level == 4
-            new_number.append((0, level - 1))
+            if i < len(number) - 2:
+                leftmost_after, level_after = number[i + 2]
+                number[i + 2] = leftmost_after + y, level_after
 
-            try:
-                leftmost_after, level_after = next(number_iter)
-            except StopIteration:
-                pass
-            else:
-                new_number.append((leftmost_after + y, level_after))
-
-            break
+            number[i:i + 2] = [(0, level - 1)]
         else:
-            new_number.append((x, level))
+            i += 1
 
-    if changed:
-        new_number.extend(number_iter)
-
-    return changed, new_number
+    return changed
 
 
 def reduce_step_split(number):
-    new_number = []
-    changed = False
-    number_iter = iter(number)
-    for x, level in number_iter:
+    for i, (x, level) in enumerate(number):
         if x >= 10:
-            changed = True
-            new_number.append((x // 2, level + 1))
-            new_number.append(((x + 1) // 2, level + 1))
-            break
-        else:
-            new_number.append((x, level))
+            number[i:i + 1] = [
+                (x // 2, level + 1),
+                ((x + 1) // 2, level + 1),
+            ]
+            return True
 
-    if changed:
-        new_number.extend(number_iter)
-
-    return changed, new_number
+    return False
 
 
 def reduce_step(number):
-    changed, new_number = reduce_step_explode(number)
+    changed = reduce_step_explode(number)
     if not changed:
-        changed, new_number = reduce_step_split(new_number)
-
-    return changed, new_number
+        changed = reduce_step_split(number)
+    return changed
 
 
 def reduce(number):
     while True:
-        changed, new_number = reduce_step(number)
+        changed = reduce_step(number)
         if not changed:
-            assert new_number == number
-            return new_number
-        number = new_number
+            return number
 
 
 def add(a, b):
@@ -115,32 +94,25 @@ def add(a, b):
 
 
 def unflatten(number):
-    lengths = []
+    lengths = [0]
     result = ["["]
 
-    for x, target_level in number:
-        while lengths and lengths[-1] == 2:
-            result.append("],")
-            lengths.pop()
-        while len(lengths) < target_level:
-            if lengths:
-                lengths[-1] += 1
-            result.append("[")
-            lengths.append(0)
-        while len(lengths) > target_level:
+    for x, level in number:
+        nesting_level = level + 1
+
+        while len(lengths) > nesting_level or lengths[-1] == 2:
             result.append("],")
             lengths.pop()
 
-        while len(lengths) < target_level:
-            if lengths:
-                lengths[-1] += 1
-            result.append("[")
-            lengths.append(0)
-        result.append(f"{x},")
-        if lengths:
+        while len(lengths) < nesting_level:
             lengths[-1] += 1
+            result.append("[")
+            lengths.append(0)
 
-    for _ in lengths:
+        result.append(f"{x},")
+        lengths[-1] += 1
+
+    for _ in lengths[1:]:
         result.append("],")
 
     result.append("]")
