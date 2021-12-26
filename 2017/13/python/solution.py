@@ -27,7 +27,14 @@ def severity(firewall, time):
 
 
 def find_delay(firewall):
-    return next(time for time in count() if not severity(firewall, time))
+    return next(
+        time
+        for time in count()
+        if not any(
+            is_caught(depth, position + time)
+            for (position, depth) in firewall.items()
+        )
+    )
 
 
 def main():

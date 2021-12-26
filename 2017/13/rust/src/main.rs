@@ -1,30 +1,25 @@
 use std::{
-    collections::HashMap,
     fs::read_to_string,
+    io,
     path::Path,
 };
-
-use failure::Fallible;
-use num::Integer;
 
 type Depth = u64;
 type Position = u64;
 type Time = u64;
-
-type Firewall = HashMap<Position, Depth>;
 
 fn position(depth: Depth, time: Time) -> Position {
     if depth == 0 {
         return 0;
     }
 
-    let (d, m) = time.div_mod_floor(&(depth - 1));
+    let (div, r#mod) = (time / (depth - 1), time % (depth - 1));
 
-    if d.is_even() {
-        m
+    if div % 2 == 0 {
+        r#mod
     }
     else {
-        depth - m - 1
+        depth - r#mod - 1
     }
 }
 
@@ -32,20 +27,31 @@ fn is_caught(depth: Depth, time: Time) -> bool {
     position(depth, time) == 0
 }
 
-fn severity(delay: Time, firewall: &Firewall) -> u64 {
+fn caught_positions(
+    time: Time,
+    firewall: &[Option<Depth>],
+) -> impl Iterator<Item = (u64, u64)> + '_ {
     firewall
         .iter()
-        .filter(|(&position, &depth)| is_caught(depth, position + delay))
+        .enumerate()
+        .filter_map(|(idx, &opt)| Some((idx as u64, opt?)))
+        .filter(move |(position, depth)| is_caught(*depth, time + position))
+}
+
+fn severity(delay: Time, firewall: &[Option<Depth>]) -> u64 {
+    caught_positions(delay, firewall)
         .map(|(position, depth)| (position + delay) * depth)
         .sum()
 }
 
-fn find_delay(firewall: &Firewall) -> Time {
-    (0..).find(|&t| severity(t, firewall) == 0).unwrap()
+fn find_delay(firewall: &[Option<Depth>]) -> Time {
+    (0..)
+        .find(|&time| caught_positions(time, firewall).next().is_none())
+        .unwrap()
 }
 
-fn read_input(path: impl AsRef<Path>) -> Fallible<Firewall> {
-    Ok(read_to_string(path)?
+fn read_input(path: impl AsRef<Path>) -> io::Result<Vec<Option<Depth>>> {
+    let numbers: Vec<_> = read_to_string(path)?
         .lines()
         .flat_map(|line| {
             line.split(": ")
@@ -53,10 +59,16 @@ fn read_input(path: impl AsRef<Path>) -> Fallible<Firewall> {
                 .collect::<Result<Vec<u64>, _>>()
                 .map(|numbers| (numbers[0], numbers[1]))
         })
-        .collect())
+        .collect();
+
+    let mut result = vec![None; numbers.last().unwrap().0 as usize + 1];
+    for (idx, n) in numbers {
+        result[idx as usize] = Some(n);
+    }
+    Ok(result)
 }
 
-fn main() -> Fallible<()> {
+fn main() -> io::Result<()> {
     let firewall = read_input("input")?;
 
     println!("{}", severity(0, &firewall));
