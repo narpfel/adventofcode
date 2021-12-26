@@ -89,10 +89,9 @@ auto possible_combinations(int64_t const n, Ingredients const& ingredients) -> C
             return ranges::accumulate(amount_per_ingredient, 0) == 100;
         })
         | ranges::views::transform([&](auto const& amount_per_ingredient) {
-            auto const amount_per_ingredient2 = amount_per_ingredient | ranges::to_vector;
             return std::tuple{
-                amount_per_ingredient2,
-                score(amount_per_ingredient2, transposed_ingredients)
+                amount_per_ingredient | ranges::to_vector,
+                score(amount_per_ingredient, transposed_ingredients)
             };
         })
         | ranges::to_vector;
