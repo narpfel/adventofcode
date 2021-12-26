@@ -1,12 +1,8 @@
-use std::{
-    collections::HashMap,
-    hash::BuildHasher,
-};
-
 use graph::{
     CartesianPoint,
     Point as _,
     ReadExt,
+    RectangularWorld,
     World,
 };
 use itertools::Itertools;
@@ -101,6 +97,10 @@ impl graph::Cartesian for Point {
     fn from_xy(xy: (usize, usize)) -> Self {
         Self(CartesianPoint::from_xy(xy))
     }
+
+    fn to_xy(&self) -> (usize, usize) {
+        self.0.to_xy()
+    }
 }
 
 impl PartialOrd for Point {
@@ -115,10 +115,10 @@ impl Ord for Point {
     }
 }
 
-fn find_units(dungeon: &HashMap<Point, Tile, impl BuildHasher + Clone>) -> Vec<(Point, Tile)> {
+fn find_units(dungeon: &RectangularWorld<Point, Tile>) -> Vec<(Point, Tile)> {
     let mut result: Vec<_> = dungeon
         .iter()
-        .map(|(p, t)| (*p, *t))
+        .map(|(p, t)| (p, *t))
         .filter(|(_, t)| t.is_unit())
         .collect();
     result.sort();
@@ -148,7 +148,7 @@ fn print_dungeon(dungeon: &HashMap<Point, Tile, impl BuildHasher>) {
 }
 
 fn simulate_combat(
-    mut dungeon: HashMap<Point, Tile, impl BuildHasher + Clone>,
+    mut dungeon: RectangularWorld<Point, Tile>,
     attack_strength: impl Fn(Tile) -> usize,
 ) -> (Winner, usize, usize) {
     let mut elf_died = false;
@@ -160,11 +160,11 @@ fn simulate_combat(
         }
         let units = find_units(&dungeon);
         for (mut point, _unit) in &units {
-            let unit = *dungeon.get(&point).unwrap();
+            let unit = dungeon.get(&point).unwrap();
             if !matches!(unit, Tile::Empty) {
-                if !dungeon.values().any(|tile| unit.is_enemy(tile)) {
+                if !dungeon.tiles().any(|tile| unit.is_enemy(tile)) {
                     let remaining_units: Vec<_> =
-                        dungeon.values().filter(|tile| tile.is_unit()).collect();
+                        dungeon.tiles().filter(|tile| tile.is_unit()).collect();
                     let winners = match remaining_units[0] {
                         Tile::Goblin(_) => Winner::Goblins,
                         Tile::Elf(_) if elf_died => Winner::ElvesWithLosses,
@@ -180,11 +180,11 @@ fn simulate_combat(
                 if !point.neighbours().into_iter().any(|neighbour| {
                     dungeon
                         .get(&neighbour)
-                        .map_or(false, |enemy| unit.is_enemy(enemy))
+                        .map_or(false, |enemy| unit.is_enemy(&enemy))
                 }) {
                     if let Some(path) = dungeon
                         .iter()
-                        .map(|(p, t)| (*p, *t))
+                        .map(|(p, t)| (p, *t))
                         .filter(|(_, tile)| unit.is_enemy(tile))
                         .flat_map(|(p, _)| dungeon.neighbours(p))
                         .unique()
@@ -199,10 +199,10 @@ fn simulate_combat(
                 if let Some(enemy_point) = point
                     .neighbours()
                     .into_iter()
-                    .filter(|p| dungeon.get(p).map_or(false, |enemy| unit.is_enemy(enemy)))
+                    .filter(|p| dungeon.get(p).map_or(false, |enemy| unit.is_enemy(&enemy)))
                     .min_by_key(|p| (dungeon.get(p).unwrap().health(), *p))
                 {
-                    let enemy = dungeon.get_mut(&enemy_point).unwrap();
+                    let enemy = dungeon.get_mut(enemy_point).unwrap();
                     let is_elf = matches!(enemy, Tile::Elf(_));
                     enemy.apply_damage(attack_strength(unit)).unwrap();
                     elf_died |= is_elf && matches!(enemy, Tile::Empty);
@@ -213,12 +213,12 @@ fn simulate_combat(
     unreachable!()
 }
 
-fn part_1(dungeon: HashMap<Point, Tile, impl BuildHasher + Clone>) -> (usize, usize) {
+fn part_1(dungeon: RectangularWorld<Point, Tile>) -> (usize, usize) {
     let (_winners, turns, remaining_hp) = simulate_combat(dungeon, |_| ATTACK_STRENGTH);
     (turns, remaining_hp)
 }
 
-fn part_2(dungeon: HashMap<Point, Tile, impl BuildHasher + Clone>) -> (usize, usize, usize) {
+fn part_2(dungeon: RectangularWorld<Point, Tile>) -> (usize, usize, usize) {
     for attack_strength in ATTACK_STRENGTH + 1.. {
         if let (Winner::Elves, turns, remaining_hp) =
             simulate_combat(dungeon.clone(), |tile| match tile {
@@ -235,9 +235,10 @@ fn part_2(dungeon: HashMap<Point, Tile, impl BuildHasher + Clone>) -> (usize, us
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
-    use graph::ReadExt;
+    use graph::{
+        ReadExt,
+        RectangularWorld,
+    };
 
     use super::{
         part_2,
@@ -249,7 +250,7 @@ mod tests {
     #[test]
     fn test_simulate_combat_1() {
         assert!(matches!(
-            simulate_combat(HashMap::from_file("input_test_1").unwrap(), |_| {
+            simulate_combat(RectangularWorld::from_file("input_test_1").unwrap(), |_| {
                 ATTACK_STRENGTH
             }),
             (Winner::Goblins, 47, 590)
@@ -259,7 +260,7 @@ mod tests {
     #[test]
     fn test_simulate_combat_2() {
         assert!(matches!(
-            simulate_combat(HashMap::from_file("input_test_2").unwrap(), |_| {
+            simulate_combat(RectangularWorld::from_file("input_test_2").unwrap(), |_| {
                 ATTACK_STRENGTH
             }),
             (Winner::Elves | Winner::ElvesWithLosses, 37, 982)
@@ -269,7 +270,7 @@ mod tests {
     #[test]
     fn test_simulate_combat_3() {
         assert!(matches!(
-            simulate_combat(HashMap::from_file("input_test_3").unwrap(), |_| {
+            simulate_combat(RectangularWorld::from_file("input_test_3").unwrap(), |_| {
                 ATTACK_STRENGTH
             }),
             (Winner::Elves | Winner::ElvesWithLosses, 46, 859)
@@ -279,7 +280,7 @@ mod tests {
     #[test]
     fn test_simulate_combat_4() {
         assert!(matches!(
-            simulate_combat(HashMap::from_file("input_test_4").unwrap(), |_| {
+            simulate_combat(RectangularWorld::from_file("input_test_4").unwrap(), |_| {
                 ATTACK_STRENGTH
             }),
             (Winner::Goblins, 35, 793)
@@ -289,7 +290,7 @@ mod tests {
     #[test]
     fn test_simulate_combat_5() {
         assert!(matches!(
-            simulate_combat(HashMap::from_file("input_test_5").unwrap(), |_| {
+            simulate_combat(RectangularWorld::from_file("input_test_5").unwrap(), |_| {
                 ATTACK_STRENGTH
             }),
             (Winner::Goblins, 54, 536)
@@ -299,7 +300,7 @@ mod tests {
     #[test]
     fn test_simulate_combat_6() {
         assert!(matches!(
-            simulate_combat(HashMap::from_file("input_test_6").unwrap(), |_| {
+            simulate_combat(RectangularWorld::from_file("input_test_6").unwrap(), |_| {
                 ATTACK_STRENGTH
             }),
             (Winner::Goblins, 20, 937)
@@ -309,7 +310,7 @@ mod tests {
     #[test]
     fn test_part_2_1() {
         assert_eq!(
-            part_2(HashMap::from_file("input_test_1").unwrap()),
+            part_2(RectangularWorld::from_file("input_test_1").unwrap()),
             (15, 29, 172)
         );
     }
@@ -317,7 +318,7 @@ mod tests {
     #[test]
     fn test_part_2_3() {
         assert_eq!(
-            part_2(HashMap::from_file("input_test_3").unwrap()),
+            part_2(RectangularWorld::from_file("input_test_3").unwrap()),
             (4, 33, 948)
         );
     }
@@ -325,7 +326,7 @@ mod tests {
     #[test]
     fn test_part_2_4() {
         assert_eq!(
-            part_2(HashMap::from_file("input_test_4").unwrap()),
+            part_2(RectangularWorld::from_file("input_test_4").unwrap()),
             (15, 37, 94)
         );
     }
@@ -333,7 +334,7 @@ mod tests {
     #[test]
     fn test_part_2_5() {
         assert_eq!(
-            part_2(HashMap::from_file("input_test_5").unwrap()),
+            part_2(RectangularWorld::from_file("input_test_5").unwrap()),
             (12, 39, 166)
         );
     }
@@ -341,14 +342,14 @@ mod tests {
     #[test]
     fn test_part_2_6() {
         assert_eq!(
-            part_2(HashMap::from_file("input_test_6").unwrap()),
+            part_2(RectangularWorld::from_file("input_test_6").unwrap()),
             (34, 30, 38)
         );
     }
 }
 
 fn main() {
-    let dungeon = HashMap::from_file("input").unwrap();
+    let dungeon = RectangularWorld::from_file("input").unwrap();
     let (turns, remaining_hp) = part_1(dungeon.clone());
     println!("{}", turns * remaining_hp);
     let (_attack_strength, turns, remaining_hp) = part_2(dungeon);

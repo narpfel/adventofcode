@@ -20,6 +20,7 @@ use std::{
         BufReader,
     },
     iter::from_fn,
+    marker::PhantomData,
     path::Path,
 };
 
@@ -247,15 +248,143 @@ where
     }
 }
 
-// struct<Tile> RectancularWorld {
-//     world: Vec<Tile>,
-//     width: usize,
-//     height: usize;
-// }
-//
-// impl World for RectancularWorld<Tile> {
-//     // ...
-// }
+#[derive(Debug, Clone)]
+pub struct RectangularWorld<Point, Tile> {
+    world: Vec<Tile>,
+    width: usize,
+    point: PhantomData<Point>,
+}
+
+impl<Point, Tile> RectangularWorld<Point, Tile>
+where
+    Point: Cartesian,
+    Tile: crate::Tile,
+{
+    pub fn from_map(world: FnvHashMap<CartesianPoint, Tile>) -> Self {
+        let width = world.keys().map(|CartesianPoint(x, _)| x).max().unwrap() + 1;
+        let height = world.keys().map(|CartesianPoint(_, y)| y).max().unwrap() + 1;
+        let mut tiles = vec![];
+        for y in 0..height {
+            for x in 0..width {
+                tiles.push(
+                    World::get(&world, &CartesianPoint(x, y))
+                        .unwrap()
+                        .to_owned(),
+                );
+            }
+        }
+        Self { world: tiles, width, point: PhantomData }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (Point, &Tile)> {
+        self.world
+            .iter()
+            .enumerate()
+            .map(|(i, tile)| (Point::from_xy((i % self.width, i / self.width)), tile))
+    }
+
+    pub fn tiles(&self) -> impl Iterator<Item = &Tile> {
+        self.world.iter()
+    }
+
+    pub fn insert(&mut self, p: Point, tile: Tile) -> Option<Tile> {
+        let old = self.get_mut(p);
+        old.map(|old_tile| std::mem::replace(old_tile, tile))
+    }
+
+    pub fn get_mut(&mut self, p: Point) -> Option<&mut Tile> {
+        let index = self.index(&p);
+        self.world.get_mut(index)
+    }
+
+    fn index(&self, p: &Point) -> usize {
+        let (x, y) = p.to_xy();
+        x + y * self.width
+    }
+
+    fn len(&self) -> usize {
+        self.world.len()
+    }
+}
+
+impl<Point, Tile> World for RectangularWorld<Point, Tile>
+where
+    Point: Cartesian + crate::Point,
+    Tile: crate::Tile,
+{
+    type Point = Point;
+    type Tile = Tile;
+
+    fn get(&self, p: &Self::Point) -> Option<Self::Tile> {
+        self.world.get(self.index(p)).cloned()
+    }
+
+    fn find(&self, tile: &Self::Tile) -> Option<Self::Point> {
+        self.world.iter().enumerate().find_map(|(i, t)| {
+            if t == tile {
+                Some(Point::from_xy((i % self.width, i / self.width)))
+            }
+            else {
+                None
+            }
+        })
+    }
+
+    fn path(&self, start: &Self::Point, end: &Self::Point) -> Option<Vec<Self::Point>> {
+        let mut distances = vec![None; self.len()];
+        distances[self.index(&self.canonicalise_point(start))] = Some(Distance::new(0));
+        let mut previous_point = vec![None; self.len()];
+        let mut next_points = BinaryHeap::new();
+        next_points.push(Reverse((Distance::new(0), self.canonicalise_point(start))));
+
+        while let Some(Reverse((distance, point))) = next_points.pop() {
+            for neighbour in self
+                .neighbours(point.clone())
+                .map(|p| self.canonicalise_point(&p))
+            {
+                let distance = if !self.is_walkable(&neighbour) {
+                    Distance::infinity()
+                }
+                else {
+                    distance.map(|d| d + self.cost(&point))
+                };
+                if distances[self.index(&neighbour)].map_or(true, |d| d > distance) {
+                    distances[self.index(&neighbour)] = Some(distance);
+                    previous_point[self.index(&neighbour)] = Some(point.clone());
+                    next_points.push(Reverse((distance, neighbour)));
+                }
+            }
+
+            if &point == end {
+                let mut path = vec![point.clone()];
+                let mut point = point.clone();
+                while let Some(p) = &previous_point[self.index(&point)] {
+                    point = p.clone();
+                    path.push(point.clone());
+                    if &point == start {
+                        path.reverse();
+                        return Some(path);
+                    }
+                }
+            }
+        }
+
+        None
+    }
+}
+
+impl<Point, Tile> ReadExt for RectangularWorld<Point, Tile>
+where
+    Point: Cartesian + crate::Point,
+    Tile: crate::Tile + TryFrom<char>,
+{
+    fn from_file(path: impl AsRef<Path>) -> Result<Self, io::Error>
+    where
+        <Self::Tile as TryFrom<char>>::Error: Debug,
+    {
+        HashMap::<CartesianPoint, Tile, _>::from_file(path).map(Self::from_map)
+    }
+}
 
 pub trait Point: PartialEq + Clone + Eq + Hash + Debug + PartialOrd + Ord {
     fn neighbours(&self) -> Vec<Self>
@@ -265,6 +394,7 @@ pub trait Point: PartialEq + Clone + Eq + Hash + Debug + PartialOrd + Ord {
 
 pub trait Cartesian {
     fn from_xy(xy: (usize, usize)) -> Self;
+    fn to_xy(&self) -> (usize, usize);
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Ord, PartialOrd, Default)]
@@ -314,6 +444,10 @@ impl Cartesian for CartesianPoint {
     fn from_xy((x, y): (usize, usize)) -> Self {
         Self(x, y)
     }
+
+    fn to_xy(&self) -> (usize, usize) {
+        (self.0, self.1)
+    }
 }
 
 impl Point for (i64, i64) {
@@ -325,9 +459,14 @@ impl Point for (i64, i64) {
         vec![(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
     }
 }
+
 impl Cartesian for (i64, i64) {
     fn from_xy((x, y): (usize, usize)) -> Self {
         (x as _, y as _)
+    }
+
+    fn to_xy(&self) -> (usize, usize) {
+        todo!()
     }
 }
 
