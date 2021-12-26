@@ -53,20 +53,12 @@ def solve(reactions, target_amount):
     return stuff["ORE"]
 
 
-class FakeContainer:
-    def __init__(self, f):
-        self.f = f
-
-    def __getitem__(self, index):
-        return self.f(index)
-
-
 def part1(reactions):
     return solve(reactions, 1)
 
 
 def part2(reactions):
-    return bisect(FakeContainer(partial(solve, reactions)), ONE_TRILLION, 0, ONE_TRILLION) - 1
+    return bisect(range(1, ONE_TRILLION + 1), ONE_TRILLION, key=partial(solve, reactions))
 
 
 @mark.parametrize(
