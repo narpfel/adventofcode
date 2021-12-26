@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 codes :: [Integer]
 codes = iterate ((`rem` 33554393) . (* 252533)) 20151125

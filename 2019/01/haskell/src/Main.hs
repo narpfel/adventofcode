@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 fuelRequirement :: Int -> Int
 fuelRequirement x

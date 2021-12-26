@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import Data.Function (on)
 import qualified Data.Map.Strict as Map

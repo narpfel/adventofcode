@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import Control.Lens hiding (Const)
 import Control.Monad.State
@@ -13,8 +13,8 @@ import Data.Maybe (fromJust)
 import Au.Parser
 
 data Transaction
-  = Const { value :: Int, target :: Target }
-  | Transfer { fromBot :: Int, low :: Target, high :: Target }
+  = Const Int Target
+  | Transfer Int Target Target
 
 data Target
   = Bot Int

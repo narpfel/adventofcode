@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import Au.Parser
 import Control.Monad.State

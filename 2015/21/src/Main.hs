@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 data Fighter = Fighter
   { health :: Int

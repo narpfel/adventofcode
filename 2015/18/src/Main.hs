@@ -1,15 +1,11 @@
 {-# OPTIONS_GHC -Wall -Wextra -O2 #-}
 {-# LANGUAGE ParallelListComp, Strict #-}
 
-module Main where
+module Main (main) where
 
-import Data.Bool (bool)
 import Data.List (transpose)
 
 type Universe = [[Bool]]
-
-showUniverse :: Universe -> String
-showUniverse = unlines . (map . map) (bool '.' '#')
 
 readBool :: Char -> Maybe Bool
 readBool '.' = Just False

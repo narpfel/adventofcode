@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import qualified Data.Set as Set
 
@@ -12,12 +12,6 @@ data Point = Point
 
 instance Semigroup Point where
   p1 <> p2 = Point (x p1 + x p2) (y p1 + y p2)
-
-invert :: Point -> Point
-invert p = Point (negate . x $ p) (negate . y $ p)
-
-(<->) :: Point -> Point -> Point
-p1 <-> p2 = p1 <> invert p2
 
 data Rectangle = Rectangle
   { idNumber :: Int
@@ -36,20 +30,9 @@ rectangle = do
 point :: String -> Parser Char Point
 point sep = Point <$> integer <*> (word sep >> integer)
 
-isFlipped :: Rectangle -> Bool
-isFlipped r = bottomRight r `isTopLeftOf` topLeft r
-
-isTopLeftOf :: Point -> Point -> Bool
-p1 `isTopLeftOf` p2 = x p1 < x p2 && y p1 < y p2
-
 pairs :: [a] -> [(a, a)]
 pairs [] = []
 pairs (a:as) = map (a,) as ++ pairs as
-
-area :: Rectangle -> Int
-area r = x diagonal * y diagonal
-  where
-    diagonal = bottomRight r <-> topLeft r
 
 overlap :: Rectangle -> Rectangle -> Rectangle
 overlap (Rectangle _ p1 p2) (Rectangle _ p1' p2') = Rectangle 0 p q

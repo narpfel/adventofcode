@@ -1,8 +1,10 @@
-module Main where
+module Main (main) where
 
 import Data.Char (toLower, isSpace)
 import Data.List (dropWhileEnd, foldl')
 import qualified Data.Set as Set
+import System.Environment (lookupEnv)
+
 import Criterion.Main
 
 annihilate :: String -> String
@@ -38,4 +40,6 @@ main = do
   input <- dropWhileEnd isSpace <$> readFile "input"
   print . part1 $ input
   print . part2 $ input
-  benchmark input
+  lookupEnv "RUN_BENCHMARKS" >>= \case
+    Just _ -> benchmark input
+    Nothing -> pure ()

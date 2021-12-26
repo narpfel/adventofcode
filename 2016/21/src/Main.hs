@@ -137,7 +137,7 @@ readInput filename
 main :: IO ()
 main = do
   runTests >>= \case
-    Success { .. } -> pure ()
+    Success {} -> pure ()
     failure -> error $ "QuickCheck failed with " <> show failure
 
   inputTest <- readInput "input_test"

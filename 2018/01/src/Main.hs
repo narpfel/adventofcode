@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import Data.Foldable (asum)
 import qualified Data.IntSet as IntSet

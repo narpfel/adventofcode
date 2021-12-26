@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import Au.Parser
 import Control.Applicative (some)
@@ -62,20 +62,6 @@ part1 patterns' generationCount
   . IntSet.toAscList
   . (!! generationCount)
   . iterate (nextGeneration patterns')
-
-printInfosForGeneration :: Int -> IO ()
-printInfosForGeneration n = do
-  Just (state, patterns') <- parse input <$> readFile "input"
-  putStrLn ""
-  print n
-  let finalGeneration = (!! n) . iterate (nextGeneration patterns') $ state
-  print . sum . IntSet.toAscList $ finalGeneration
-  let min' = IntSet.findMin finalGeneration
-      max' = IntSet.findMax finalGeneration
-  print min'
-  print max'
-  print $ max' - min'
-  putStrLn ""
 
 -- This was found by examining the range of pots with plants for generations
 -- 500, 5_000 and 50_000. The solution for 50_000_000_000 is extrapolated from there.

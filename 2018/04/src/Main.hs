@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import Control.Applicative (many, some)
 import Data.List (sort)
