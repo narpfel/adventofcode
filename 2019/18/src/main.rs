@@ -1,5 +1,3 @@
-#![feature(entry_insert)]
-
 use std::{
     io,
     iter::from_fn,
@@ -139,7 +137,7 @@ fn dfs(
         std::collections::hash_map::Entry::Occupied(entry) if *entry.get() <= distance =>
             return None,
         entry => {
-            entry.insert(distance);
+            entry.insert_entry(distance);
         }
     }
 
