@@ -1,6 +1,7 @@
 #include <cstdint>
 
 #include <algorithm>
+#include <ranges>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -50,10 +51,10 @@ auto calculate_weight_and_quantum_entanglement(
 auto find_best_solution_of_length(
     uint64_t const target_weight,
     std::span<Value const> const weights,
-    size_t const r
+    size_t const length
 ) {
     auto const n = weights.size();
-    auto indices = std::vector<size_t>(r);
+    auto indices = std::vector<size_t>(length);
     std::iota(std::begin(indices), std::end(indices), 0);
     auto min_quantum_entanglement = std::numeric_limits<uint64_t>::max();
 
@@ -67,9 +68,9 @@ auto find_best_solution_of_length(
     }
 
     while (true) {
-        auto i = r - 1;
+        auto i = length - 1;
 
-        while (indices[i] == i + n - r) {
+        while (indices[i] == i + n - length) {
             if (i > 0) {
                 i -= 1;
             }
@@ -79,7 +80,7 @@ auto find_best_solution_of_length(
         }
         indices[i] += 1;
         auto j = i + 1;
-        while (j < r) {
+        while (j < length) {
             indices[j] = indices[j - 1] + 1;
             j += 1;
         }
@@ -96,14 +97,12 @@ auto find_best_solution_of_length(
 }
 
 auto solve(uint64_t const target_weight, std::span<Value const> const weights) -> uint64_t {
-    auto min_quantum_entanglement = std::numeric_limits<uint64_t>::max();
-    for (auto r = decltype(weights.size()){1}; r < weights.size(); ++r) {
-        auto const q = find_best_solution_of_length(target_weight, weights, r);
-        if (q < min_quantum_entanglement) {
-            min_quantum_entanglement = q;
-        }
-    }
-    return min_quantum_entanglement;
+    return std::ranges::min(
+        std::ranges::views::iota(1uz, std::ranges::size(weights))
+            | std::ranges::views::transform([&](auto const length) {
+                return find_best_solution_of_length(target_weight, weights, length);
+            })
+    );
 }
 
 

@@ -1,4 +1,4 @@
-CXX = clang++
+CXX = g++
 
 run: build
 	@./solution
@@ -8,7 +8,7 @@ build: solution
 
 solution: solution.cxx
 	$(CXX) \
-		-std=c++2a \
+		-std=c++23 \
 		-Wall \
 		-Wextra \
 		-pedantic \

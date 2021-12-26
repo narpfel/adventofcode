@@ -37,10 +37,10 @@ auto calculate_weight_and_quantum_entaglement(
 auto find_best_solution_of_length(
     uint64_t const target_weight,
     std::vector<Value> const &weights,
-    size_t const r
+    size_t const length
 ) {
     auto const n = weights.size();
-    auto indices = std::vector<size_t>(r);
+    auto indices = std::vector<size_t>(length);
     std::iota(std::begin(indices), std::end(indices), 0);
     auto min_quantum_entanglement = std::numeric_limits<uint64_t>::max();
 
@@ -50,9 +50,9 @@ auto find_best_solution_of_length(
             min_quantum_entanglement = q;
         }
 
-        auto i = r - 1;
+        auto i = length - 1;
 
-        while (indices[i] == i + n - r) {
+        while (indices[i] == i + n - length) {
             if (i > 0) {
                 i -= 1;
             }
@@ -62,7 +62,7 @@ auto find_best_solution_of_length(
         }
 
         indices[i] += 1;
-        for (auto j = i + 1; j < r; ++j) {
+        for (auto j = i + 1; j < length; ++j) {
             indices[j] = indices[j - 1] + 1;
         }
     }
@@ -70,8 +70,8 @@ auto find_best_solution_of_length(
 
 auto solve(uint64_t const target_weight, std::vector<Value> const &weights) -> uint64_t {
     auto min_quantum_entanglement = std::numeric_limits<uint64_t>::max();
-    for (auto r = size_t{1}; r < weights.size(); ++r) {
-        auto const q = find_best_solution_of_length(target_weight, weights, r);
+    for (auto length = size_t{1}; length < weights.size(); ++length) {
+        auto const q = find_best_solution_of_length(target_weight, weights, length);
         if (q < min_quantum_entanglement) {
             min_quantum_entanglement = q;
         }

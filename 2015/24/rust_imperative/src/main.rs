@@ -19,9 +19,9 @@ fn calculate_weight_and_quantum_entanglement(indices: &[usize], weights: &[Value
     (total_weight, quantum_entanglement.0)
 }
 
-fn find_best_solution_of_length(target_weight: u64, weights: &[Value], r: usize) -> u64 {
+fn find_best_solution_of_length(target_weight: u64, weights: &[Value], length: usize) -> u64 {
     let n = weights.len();
-    let mut indices: Vec<_> = (0..r).collect();
+    let mut indices: Vec<_> = (0..length).collect();
     let mut min_quantum_entanglement = std::u64::MAX;
 
     // Moving this to the top of the loop increases run time by ~1.7 s (17 %).
@@ -31,9 +31,9 @@ fn find_best_solution_of_length(target_weight: u64, weights: &[Value], r: usize)
     }
 
     loop {
-        let mut i = r - 1;
+        let mut i = length - 1;
 
-        while indices[i] == i + n - r {
+        while indices[i] == i + n - length {
             if i > 0 {
                 i -= 1;
             }
@@ -42,9 +42,9 @@ fn find_best_solution_of_length(target_weight: u64, weights: &[Value], r: usize)
             }
         }
         indices[i] += 1;
-        // writing this a a `for` loop increases run time by ~ 0.5 s (5 %).
+        // writing this as a `for` loop increases run time by ~ 0.5 s (5 %).
         let mut j = i + 1;
-        while j < r {
+        while j < length {
             indices[j] = indices[j - 1] + 1;
             j += 1;
         }
@@ -58,8 +58,8 @@ fn find_best_solution_of_length(target_weight: u64, weights: &[Value], r: usize)
 
 fn solve(target_weight: u64, weights: &[Value]) -> u64 {
     let mut min_quantum_entanglement = std::u64::MAX;
-    for r in 1..weights.len() + 1 {
-        let q = find_best_solution_of_length(target_weight, weights, r);
+    for length in 1..weights.len() + 1 {
+        let q = find_best_solution_of_length(target_weight, weights, length);
         if q < min_quantum_entanglement {
             min_quantum_entanglement = q;
         }

@@ -70,10 +70,10 @@ struct Pair calculate_weight_and_quantum_entanglement(
 uint64_t find_best_solution_of_length(
     uint64_t const target_weight,
     struct ValueSpan const weights,
-    size_t const r
+    size_t const length
 ) {
     size_t const n = weights.length;
-    struct IndexSpan indices = index_span_new(r);
+    struct IndexSpan indices = index_span_new(length);
     uint64_t min_quantum_entanglement = UINT64_MAX;
 
     while (true) {
@@ -82,9 +82,9 @@ uint64_t find_best_solution_of_length(
             min_quantum_entanglement = result.quantum_entanglement;
         }
 
-        size_t i = r - 1;
+        size_t i = length - 1;
 
-        while (indices.data[i] == i + n - r) {
+        while (indices.data[i] == i + n - length) {
             if (i > 0) {
                 i -= 1;
             }
@@ -94,7 +94,7 @@ uint64_t find_best_solution_of_length(
             }
         }
         indices.data[i] += 1;
-        for (size_t j = i + 1; j < r; ++j) {
+        for (size_t j = i + 1; j < length; ++j) {
             indices.data[j] = indices.data[j - 1] + 1;
         }
     }
@@ -102,8 +102,8 @@ uint64_t find_best_solution_of_length(
 
 uint64_t solve(uint64_t const target_weight, struct ValueSpan const weights) {
     uint64_t min_quantum_entanglement = UINT64_MAX;
-    for (size_t r = 1; r < weights.length; ++r) {
-        uint64_t const q = find_best_solution_of_length(target_weight, weights, r);
+    for (size_t length = 1; length < weights.length; ++length) {
+        uint64_t const q = find_best_solution_of_length(target_weight, weights, length);
         if (q < min_quantum_entanglement) {
             min_quantum_entanglement = q;
         }
