@@ -5,7 +5,7 @@ build: solution-c
 	@:
 
 solution-c: ../python/solution.py pypy
-	pypy pypy/rpython/bin/rpython --lto $<
+	pypy pypy/rpython/bin/rpython --lto -O2 $<
 
 pypy:
 	hg clone https://foss.heptapod.net/pypy/pypy

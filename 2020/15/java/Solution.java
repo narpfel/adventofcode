@@ -1,11 +1,11 @@
+import java.util.Arrays;
+
 public final class Solution {
     final static int[] INPUT = {16, 12, 1, 0, 15, 7, 11};
 
     private static int solve(final int[] startingNumbers, final int turnCount) {
         final var numberToTurn = new int[turnCount];
-        for (int i = 0; i < turnCount; ++i) {
-            numberToTurn[i] = -1;
-        }
+        Arrays.fill(numberToTurn, -1);
         for (int i = 0; i < startingNumbers.length; ++i) {
             numberToTurn[startingNumbers[i]] = i;
         }

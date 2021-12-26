@@ -14,7 +14,7 @@ let solve starting_numbers turn_count =
     done;
     !last_spoken
 
-let main =
+let () =
     solve input 2020 |> print_int;
     print_newline ();
     solve input 30000000 |> print_int;
