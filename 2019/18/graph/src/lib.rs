@@ -69,9 +69,8 @@ pub trait World: Clone {
 
     /// Dijkstra’s algorithm
     fn path(&self, start: &Self::Point, end: &Self::Point) -> Option<Vec<Self::Point>> {
-        let mut distances = FnvHashMap::default();
-        distances.insert(self.canonicalise_point(start), Distance::new(0));
-        let mut previous_point = FnvHashMap::default();
+        let mut distance_prev = FnvHashMap::default();
+        distance_prev.insert(self.canonicalise_point(start), (Distance::new(0), None));
         let mut next_points = BinaryHeap::new();
         next_points.push(Reverse((Distance::new(0), self.canonicalise_point(start))));
 
@@ -86,9 +85,11 @@ pub trait World: Clone {
                 else {
                     distance.map(|d| d + self.cost(&point))
                 };
-                if distances.get(&neighbour).map_or(true, |d| d > &distance) {
-                    distances.insert(neighbour.clone(), distance);
-                    previous_point.insert(neighbour.clone(), point.clone());
+                if distance_prev
+                    .get(&neighbour)
+                    .map_or(true, |(d, _)| d > &distance)
+                {
+                    distance_prev.insert(neighbour.clone(), (distance, Some(point.clone())));
                     next_points.push(Reverse((distance, neighbour)));
                 }
             }
@@ -96,7 +97,7 @@ pub trait World: Clone {
             if &point == end {
                 let mut path = vec![point.clone()];
                 let mut point = point.clone();
-                while let Some(p) = previous_point.get(&point) {
+                while let Some((_, Some(p))) = distance_prev.get(&point) {
                     point = p.clone();
                     path.push(point.clone());
                     if &point == start {
@@ -331,9 +332,8 @@ where
     }
 
     fn path(&self, start: &Self::Point, end: &Self::Point) -> Option<Vec<Self::Point>> {
-        let mut distances = vec![None; self.len()];
-        distances[self.index(&self.canonicalise_point(start))] = Some(Distance::new(0));
-        let mut previous_point = vec![None; self.len()];
+        let mut distance_prev = vec![None; self.len()];
+        distance_prev[self.index(&self.canonicalise_point(start))] = Some((Distance::new(0), None));
         let mut next_points = BinaryHeap::new();
         next_points.push(Reverse((Distance::new(0), self.canonicalise_point(start))));
 
@@ -348,9 +348,11 @@ where
                 else {
                     distance.map(|d| d + self.cost(&point))
                 };
-                if distances[self.index(&neighbour)].map_or(true, |d| d > distance) {
-                    distances[self.index(&neighbour)] = Some(distance);
-                    previous_point[self.index(&neighbour)] = Some(point.clone());
+                if distance_prev[self.index(&neighbour)]
+                    .as_ref()
+                    .map_or(true, |(d, _)| d > &distance)
+                {
+                    distance_prev[self.index(&neighbour)] = Some((distance, Some(point.clone())));
                     next_points.push(Reverse((distance, neighbour)));
                 }
             }
@@ -358,7 +360,7 @@ where
             if &point == end {
                 let mut path = vec![point.clone()];
                 let mut point = point.clone();
-                while let Some(p) = &previous_point[self.index(&point)] {
+                while let Some((_, Some(p))) = &distance_prev[self.index(&point)] {
                     point = p.clone();
                     path.push(point.clone());
                     if &point == start {
