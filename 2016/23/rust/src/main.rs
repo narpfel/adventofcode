@@ -24,6 +24,8 @@ enum Instruction {
     Dec(ImmOrReg),
     Jnz(ImmOrReg, ImmOrReg),
     Tgl(ImmOrReg),
+    Add(Register, Register),
+    Nop,
 }
 
 #[derive(Debug)]
@@ -31,6 +33,10 @@ struct Cpu {
     pc: i64,
     registers: [i64; 4],
     rom: Vec<Instruction>,
+    original_rom: Vec<Instruction>,
+    optimised: bool,
+    can_optimise: bool,
+    poisoned: Vec<bool>,
 }
 
 mod parse {
@@ -103,6 +109,8 @@ impl Instruction {
             Instruction::Dec(a) => Instruction::Inc(a),
             Instruction::Jnz(a, b) => Instruction::Cpy(a, b),
             Instruction::Tgl(a) => Instruction::Inc(a),
+            Instruction::Add(_, _) => unreachable!(),
+            Instruction::Nop => unreachable!(),
         }
     }
 }
@@ -137,24 +145,85 @@ impl Cpu {
             Instruction::Jnz(src, offset) =>
                 if self.get(src) != 0 {
                     self.pc += self.get(offset) - 1;
+                    self.deoptimise_if_poisoned(self.pc);
+                    if self.can_optimise && !self.optimised {
+                        (self.optimised, self.poisoned, self.rom) = optimise(&self.original_rom);
+                        self.can_optimise = self.optimised;
+                    }
                 },
-            Instruction::Tgl(src) =>
+            Instruction::Tgl(src) => {
                 if let Some(instr) = usize::try_from(self.pc + self.get(src))
                     .ok()
-                    .and_then(|idx| self.rom.get_mut(idx))
+                    .and_then(|idx| {
+                        self.deoptimise_if_poisoned(idx);
+                        self.rom.get_mut(idx)
+                    })
                 {
                     *instr = instr.toggle();
-                },
+                    self.can_optimise = true;
+                }
+            }
+            Instruction::Add(dst, src) => {
+                *self.get_mut(dst) += self.get(ImmOrReg::Reg(src));
+                *self.get_mut(src) = 0;
+            }
             _ => (),
+        }
+    }
+
+    fn deoptimise_if_poisoned<T>(&mut self, idx: T)
+    where
+        usize: TryFrom<T>,
+    {
+        if let Some(true) = usize::try_from(idx)
+            .ok()
+            .and_then(|idx| self.poisoned.get(idx))
+        {
+            self.rom = self.original_rom.clone();
+            self.poisoned.iter_mut().for_each(|x| *x = false);
+            self.optimised = false;
         }
     }
 }
 
+fn optimise(original_program: &[Instruction]) -> (bool, Vec<bool>, Vec<Instruction>) {
+    use ImmOrReg::*;
+    use Instruction::*;
+
+    let mut program = original_program.to_vec();
+
+    for i in 0..program.len() - 2 {
+        match program[i..=i + 2] {
+            [Inc(Reg(dst)), Dec(Reg(src)), Jnz(Reg(c), Imm(-2))]
+            | [Dec(Reg(src)), Inc(Reg(dst)), Jnz(Reg(c), Imm(-2))]
+                if src == c =>
+            {
+                program[i] = Add(dst, src);
+                program[i + 1] = Nop;
+                program[i + 2] = Nop;
+            }
+            _ => {}
+        }
+    }
+
+    let poisoned: Vec<_> = program
+        .iter()
+        .zip(original_program)
+        .map(|(a, b)| a != b)
+        .collect();
+    (poisoned.iter().any(|&p| p), poisoned, program)
+}
+
 fn solve(a: i64, program: &[Instruction]) -> i64 {
+    let (optimised, poisoned, rom) = optimise(program);
     let mut cpu = Cpu {
         pc: 0,
         registers: [a, 0, 0, 0],
-        rom: program.to_owned(),
+        rom,
+        original_rom: program.to_vec(),
+        optimised,
+        can_optimise: optimised,
+        poisoned,
     };
     cpu.run();
     cpu.get(ImmOrReg::Reg(Register::A))

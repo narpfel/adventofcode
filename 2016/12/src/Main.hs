@@ -5,10 +5,10 @@ import qualified Data.Vector as Vector
 
 import Au.Parser (parse)
 
-import Cpu (Cpu(..), Rom, program, runProgram)
+import Cpu (Cpu(a), Rom, makeCpu, program, runProgram)
 
 solve :: Int -> Rom -> Int
-solve n = a . execState runProgram . Cpu 0 0 0 n 0
+solve n = a . execState runProgram . makeCpu 0 0 n 0
 
 main :: IO ()
 main = do
