@@ -1,7 +1,7 @@
-module Cpu (Cpu(..), Rom, makeCpu, program, runProgram) where
+module Cpu (Cpu(a, b, c, d), Rom, makeCpu, program, runProgram) where
 
 import Control.Monad (when)
-import Control.Monad.State.Lazy (State, modify, get, gets)
+import Control.Monad.State.Lazy (State, modify', get, gets)
 import Data.Functor (($>))
 import Data.Maybe (fromMaybe)
 import Data.Vector (Vector)
@@ -20,6 +20,12 @@ data Instruction
   | Jnz ImmOrReg ImmOrReg
   | Tgl ImmOrReg
   | Add Register Register
+  | Mul
+    { target :: Register
+    , unchangedFactor :: Register
+    , mutatedFactor :: Register
+    , scratch :: Register
+    }
   | Nop
   deriving Eq
 
@@ -53,7 +59,7 @@ makeCpu a b c d rom = Cpu
 optimise :: Rom -> (Rom, Vector Bool)
 optimise rom = (optimisedRom, poisoned')
   where
-    optimisedRom = Vector.fromList . go . Vector.toList $ rom
+    optimisedRom = Vector.fromList . go . go . Vector.toList $ rom
     poisoned' = Vector.zipWith shouldBePoisoned rom optimisedRom
 
     go [] = []
@@ -61,6 +67,16 @@ optimise rom = (optimisedRom, poisoned')
       = Add dst src : Nop : Nop : go rest
     go (Dec (Reg src) : Inc (Reg dst) : Jnz (Reg c) (Imm (-2)) : rest) | src == c
       = Add dst src : Nop : Nop : go rest
+    go
+      ( (Cpy (Reg unchangedFactor) (Reg scratch))
+      : (Add target alsoScratch)
+      : Nop
+      : Nop
+      : Dec (Reg mutatedFactor)
+      : jump@(Jnz (Reg alsoMutatedFactor) (Imm (-5)))
+      : rest )
+      | scratch == alsoScratch && mutatedFactor == alsoMutatedFactor
+      = Mul target unchangedFactor mutatedFactor scratch : Nop : Nop : Nop : Nop : jump : go rest
     go (instr : rest) = instr : go rest
 
     shouldBePoisoned instr optimisedInstr
@@ -70,6 +86,7 @@ optimise rom = (optimisedRom, poisoned')
     isOptimisedInstr = \case
       (Add _ _) -> True
       Nop -> True
+      Mul {} -> True
       _ -> False
 
 signedInteger :: (Read i, Integral i) => Parser Char i
@@ -106,15 +123,19 @@ program :: Parser Char [Instruction]
 program = perLine instruction
 
 execute :: Instruction -> State Cpu ()
-execute (Cpy src dst) = modify $ \cpu -> cpu←dst $ cpu→src
-execute (Inc reg) = modify $ \cpu -> cpu←reg $ cpu→reg + 1
-execute (Dec reg) = modify $ \cpu -> cpu←reg $ cpu→reg - 1
+execute (Cpy src dst) = modify' $ \cpu -> cpu←dst $ cpu→src
+execute (Inc reg) = modify' $ \cpu -> cpu←reg $ cpu→reg + 1
+execute (Dec reg) = modify' $ \cpu -> cpu←reg $ cpu→reg - 1
 execute (Jnz src offset) = do
   newPc <- gets $ \cpu -> pc cpu + cpu→offset - 1
   shouldJump <- gets $ (/= 0) . (→src)
-  when shouldJump $ deoptimiseIfPoisoned newPc >> modify (\cpu -> cpu { pc = newPc })
-execute (Tgl src) = modify $ \cpu -> cpu { rom = toggle (pc cpu + cpu→src) $ rom cpu }
-execute (Add dst src) = modify $ \cpu -> cpu←Reg dst $ cpu→Reg src + cpu→Reg dst
+  when shouldJump $ deoptimiseIfPoisoned newPc >> modify' (\cpu -> cpu { pc = newPc })
+execute (Tgl src) = modify' $ \cpu -> cpu { rom = toggle (pc cpu + cpu→src) $ rom cpu }
+execute (Add dst src) = modify' $ \cpu -> cpu←Reg dst $ cpu→Reg src + cpu→Reg dst
+execute Mul { .. } = do
+  modify' $ \cpu -> cpu←Reg target $ cpu→Reg unchangedFactor * cpu→Reg mutatedFactor
+  modify' $ \cpu -> cpu←Reg scratch $ 0
+  modify' $ \cpu -> cpu←Reg mutatedFactor $ 0
 execute Nop = pure ()
 
 (→) :: Cpu -> ImmOrReg -> Int
@@ -148,7 +169,7 @@ toggle idx rom
 deoptimiseIfPoisoned :: Int -> State Cpu ()
 deoptimiseIfPoisoned idx = do
   isPoisoned <- gets (fromMaybe False . (Vector.!? idx) . poisoned)
-  when isPoisoned $ modify (\cpu -> cpu
+  when isPoisoned $ modify' (\cpu -> cpu
     { rom = originalRom cpu
     , poisoned = Vector.replicate (Vector.length (poisoned cpu)) False
     })
@@ -161,4 +182,4 @@ runProgram = do
     Nothing -> pure ()
 
 updatePc :: State Cpu ()
-updatePc = modify $ \cpu -> cpu { pc = pc cpu + 1 }
+updatePc = modify' $ \cpu -> cpu { pc = pc cpu + 1 }

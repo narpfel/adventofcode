@@ -25,6 +25,12 @@ enum Instruction {
     Jnz(ImmOrReg, ImmOrReg),
     Tgl(ImmOrReg),
     Add(Register, Register),
+    Mul {
+        target: Register,
+        unchanged_factor: Register,
+        mutated_factor: Register,
+        scratch: Register,
+    },
     Nop,
 }
 
@@ -110,6 +116,7 @@ impl Instruction {
             Instruction::Jnz(a, b) => Instruction::Cpy(a, b),
             Instruction::Tgl(a) => Instruction::Inc(a),
             Instruction::Add(_, _) => unreachable!(),
+            Instruction::Mul { .. } => unreachable!(),
             Instruction::Nop => unreachable!(),
         }
     }
@@ -167,6 +174,17 @@ impl Cpu {
                 *self.get_mut(dst) += self.get(ImmOrReg::Reg(src));
                 *self.get_mut(src) = 0;
             }
+            Instruction::Mul {
+                target,
+                unchanged_factor,
+                mutated_factor,
+                scratch,
+            } => {
+                *self.get_mut(target) =
+                    *self.get_mut(unchanged_factor) * *self.get_mut(mutated_factor);
+                *self.get_mut(scratch) = 0;
+                *self.get_mut(mutated_factor) = 0;
+            }
             _ => (),
         }
     }
@@ -201,6 +219,26 @@ fn optimise(original_program: &[Instruction]) -> (bool, Vec<bool>, Vec<Instructi
                 program[i] = Add(dst, src);
                 program[i + 1] = Nop;
                 program[i + 2] = Nop;
+            }
+            _ => {}
+        }
+    }
+
+    for i in 0..program.len() - 5 {
+        match program[i..=i + 5] {
+            [Cpy(Reg(unchanged_factor), Reg(scratch)), Add(target, also_scratch), Nop, Nop, Dec(Reg(mutated_factor)), Jnz(Reg(also_mutated_factor), Imm(-5))]
+                if scratch == also_scratch && mutated_factor == also_mutated_factor =>
+            {
+                program[i] = Mul {
+                    target,
+                    unchanged_factor,
+                    mutated_factor,
+                    scratch,
+                };
+                program[i + 1] = Nop;
+                program[i + 2] = Nop;
+                program[i + 3] = Nop;
+                program[i + 4] = Nop;
             }
             _ => {}
         }
