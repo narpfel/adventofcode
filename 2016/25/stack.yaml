@@ -1,0 +1,9 @@
+resolver: lts-18.0
+
+packages:
+- .
+- ../12/haskell/cpu
+
+extra-deps:
+  - github: narpfel/au
+    commit: 3b3635bcd73b23d76571cf06bb373b2638c58f76

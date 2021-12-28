@@ -1,7 +1,8 @@
 module Cpu (Cpu(a, b, c, d), Rom, makeCpu, program, runProgram) where
 
 import Control.Monad (when)
-import Control.Monad.State.Lazy (State, modify', get, gets)
+import Control.Monad.State.Lazy (State, modify', get, gets, lift)
+import Control.Monad.Writer.Lazy (WriterT, tell)
 import Data.Functor (($>))
 import Data.Maybe (fromMaybe)
 import Data.Vector (Vector)
@@ -27,6 +28,7 @@ data Instruction
     , scratch :: Register
     }
   | Nop
+  | Out ImmOrReg
   deriving Eq
 
 type Rom = Vector Instruction
@@ -41,6 +43,16 @@ data Cpu = Cpu
   , originalRom :: Rom
   , poisoned :: Vector Bool
   }
+
+instance Eq Cpu where
+  lhs == rhs = (==)
+    (sequence [pc, a, b, c, d] lhs)
+    (sequence [pc, a, b, c, d] rhs)
+
+instance Ord Cpu where
+  compare lhs rhs = compare
+    (sequence [pc, a, b, c, d] lhs)
+    (sequence [pc, a, b, c, d] rhs)
 
 makeCpu :: Int -> Int -> Int -> Int -> Rom -> Cpu
 makeCpu a b c d rom = Cpu
@@ -107,6 +119,9 @@ jnz = Jnz <$> oneArg "jnz" <* space <*> immediateOrRegister
 tgl :: Parser Char Instruction
 tgl = Tgl <$> oneArg "tgl"
 
+out :: Parser Char Instruction
+out = Out <$> oneArg "out"
+
 register :: Parser Char ImmOrReg
 register = Reg <$> (word "a" $> A) <> (word "b" $> B) <> (word "c" $> C) <> (word "d" $> D)
 
@@ -117,19 +132,19 @@ oneArg :: String -> Parser Char ImmOrReg
 oneArg mnemonic = word mnemonic *> space *> immediateOrRegister
 
 instruction :: Parser Char Instruction
-instruction = choice [cpy, inc, dec, jnz, tgl]
+instruction = choice [cpy, inc, dec, jnz, tgl, out]
 
 program :: Parser Char [Instruction]
 program = perLine instruction
 
-execute :: Instruction -> State Cpu ()
+execute :: Instruction -> WriterT [(Cpu, Int)] (State Cpu) ()
 execute (Cpy src dst) = modify' $ \cpu -> cpu←dst $ cpu→src
 execute (Inc reg) = modify' $ \cpu -> cpu←reg $ cpu→reg + 1
 execute (Dec reg) = modify' $ \cpu -> cpu←reg $ cpu→reg - 1
 execute (Jnz src offset) = do
   newPc <- gets $ \cpu -> pc cpu + cpu→offset - 1
   shouldJump <- gets $ (/= 0) . (→src)
-  when shouldJump $ deoptimiseIfPoisoned newPc >> modify' (\cpu -> cpu { pc = newPc })
+  lift . when shouldJump $ deoptimiseIfPoisoned newPc >> modify' (\cpu -> cpu { pc = newPc })
 execute (Tgl src) = modify' $ \cpu -> cpu { rom = toggle (pc cpu + cpu→src) $ rom cpu }
 execute (Add dst src) = modify' $ \cpu -> cpu←Reg dst $ cpu→Reg src + cpu→Reg dst
 execute Mul { .. } = do
@@ -137,6 +152,9 @@ execute Mul { .. } = do
   modify' $ \cpu -> cpu←Reg scratch $ 0
   modify' $ \cpu -> cpu←Reg mutatedFactor $ 0
 execute Nop = pure ()
+execute (Out val) = do
+  cpu <- get
+  tell [(cpu, cpu→val)]
 
 (→) :: Cpu -> ImmOrReg -> Int
 _ → Imm imm = imm
@@ -174,11 +192,11 @@ deoptimiseIfPoisoned idx = do
     , poisoned = Vector.replicate (Vector.length (poisoned cpu)) False
     })
 
-runProgram :: State Cpu ()
+runProgram :: WriterT [(Cpu, Int)] (State Cpu) ()
 runProgram = do
   cpu <- get
   case rom cpu Vector.!? pc cpu of
-    Just instr -> execute instr >> updatePc >> runProgram
+    Just instr -> execute instr >> lift updatePc >> runProgram
     Nothing -> pure ()
 
 updatePc :: State Cpu ()
