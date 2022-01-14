@@ -104,15 +104,15 @@ def solve(input_filename: str, step_count: int, work: Mapping[Node, Node]) -> in
     return infections_caused
 
 
-def test_part1_with_test_input():
+def test_part1_with_test_input() -> None:
     assert solve("input_test", STEP_COUNT_PART1, NODE_TRANSITION_PART1) == 5587
 
 
-def test_part2_with_test_input():
+def test_part2_with_test_input() -> None:
     assert solve("input_test", 100, NODE_TRANSITION_PART2) == 26
     assert solve("input_test", STEP_COUNT_PART2, NODE_TRANSITION_PART2) == 2511944
 
 
-def main():
+def main() -> None:
     print(solve("input", STEP_COUNT_PART1, NODE_TRANSITION_PART1))
     print(solve("input", STEP_COUNT_PART2, NODE_TRANSITION_PART2))
