@@ -1,6 +1,8 @@
 #!/usr/bin/env hy
 
-(import [intcode [IntcodeComputer read-puzzle-input]])
+(import intcode [IntcodeComputer read-puzzle-input])
+
+(require hyrule [-> ->> assoc defmain])
 
 
 (setv TARGET-OUTPUT 19690720)
@@ -24,7 +26,7 @@
       (+ (* 100 noun) verb))))
 
 
-(defmain [&rest _]
+(defmain []
   (->>
     (read-puzzle-input "input")
     (setv memory))

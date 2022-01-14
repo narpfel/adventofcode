@@ -1,6 +1,6 @@
-(import [pytest [mark]])
+(import pytest [mark])
 
-(import [intcode [IntcodeComputer parse]])
+(import intcode [IntcodeComputer parse])
 
 
 (with-decorator

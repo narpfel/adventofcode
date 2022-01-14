@@ -1,7 +1,9 @@
 #!/usr/bin/env hy
 
-(import [collections [deque]])
-(import [itertools [combinations islice]])
+(import collections [deque])
+(import itertools [combinations islice])
+
+(require hyrule [-> ->> defmain])
 
 (defn is-sum-of? [k numbers needle]
   (->
@@ -34,9 +36,9 @@
         numbers
         (fn [last-numbers _] (= needle (sum last-numbers)))
         (fn [last-numbers _] (+ (min last-numbers) (max last-numbers)))))
-    (lif solution (return solution))))
+    (if solution (return solution))))
 
-(defmain [&rest _]
+(defmain []
   (setv
     numbers (with [lines (open "input")] (->> lines (map int) list))
     part1 (solve-part-1 25 numbers))

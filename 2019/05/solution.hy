@@ -1,9 +1,11 @@
 #!/usr/bin/env hy
 
-(import [intcode [IntcodeComputer read-puzzle-input]])
+(require hyrule [defmain])
+
+(import intcode [IntcodeComputer read-puzzle-input])
 
 
-(defmain [&rest _]
+(defmain []
   (setv computer (.from-file IntcodeComputer "input" :input 1))
   (.run-program computer)
   (if (any (cut (. computer outputs) None -1)) (raise (Exception "error in program exection")))

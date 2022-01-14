@@ -1,9 +1,11 @@
-(import [collections [namedtuple UserList]])
-(import [enum [IntEnum]])
-(import [inspect [signature]])
+(import collections [namedtuple UserList])
+(import collections.abc [Iterable])
+(import enum [IntEnum])
+(import inspect [signature])
 (import logging)
-(import [logging [debug]])
+(import logging [debug])
 
+(require hyrule [-> ->> assoc lif])
 
 (logging.basicConfig
   :style "{"
@@ -13,7 +15,11 @@
 ; Remove `debug` calls at compile time for performance reasons: Even no-op function
 ; calls take a significant amount of time if they are in a hot loop. PyPy helps a bit,
 ; but even on PyPy the code is > 10 % slower without this hack.
-(defmacro debug [&rest _])
+(defmacro debug [#* _])
+
+
+(defn iterable? [value]
+  (isinstance value Iterable))
 
 
 (defclass Mode [IntEnum]
@@ -56,28 +62,28 @@
 
 (defclass InfiniteList [UserList]
 
-  (defn -fill [self length]
+  (defn _fill [self length]
     (.extend self (* [0] (- (+ length 1) (len self)))))
 
-  (defn --getitem-- [self index]
+  (defn __getitem__ [self index]
     (try
-      (.--getitem-- (super) index)
+      (.__getitem__ (super) index)
       (except [IndexError]
               (do
-                (.-fill self index)
+                (._fill self index)
                 (return 0)))))
 
-  (defn --setitem-- [self index value]
+  (defn __setitem__ [self index value]
     (try
-      (.--setitem-- (super) index value)
+      (.__setitem__ (super) index value)
       (except [IndexError]
               (do
-                (.-fill self index)
+                (._fill self index)
                 (assoc self index value))))))
 
 
 (defclass Cell []
-  (defn --init-- [self computer address mode]
+  (defn __init__ [self computer address mode]
     (setv self.computer computer
           self.address address
           self.mode mode)
@@ -128,20 +134,20 @@
 
   (setv OUTPUTS-TYPE list)
 
-  (defn --init-- [self memory &optional [input 0] outputs]
-    (setv self.inputs (if-not (iterable? input) (iter [input])
-                              (iter input))
+  (defn __init__ [self memory * [input 0] [outputs None]]
+    (setv self.inputs (if (iterable? input) (iter input)
+                          (iter [input]))
           self.memory (InfiniteList memory)
           self.instruction-pointer 0
           self.outputs (lif outputs outputs (self.OUTPUTS-TYPE))
           self.relative-base 0))
 
   (with-decorator classmethod
-    (defn from-string [cls string &rest args &kwargs kwargs]
+    (defn from-string [cls string #* args #** kwargs]
       (cls (parse string) #* args #** kwargs)))
 
   (with-decorator classmethod
-    (defn from-file [cls path &rest args &kwargs kwargs]
+    (defn from-file [cls path #* args #** kwargs]
       (with [f (open path)]
         (.from-string cls (.read f) #* args #** kwargs))))
 
@@ -167,7 +173,7 @@
            (setv command (% opcode 100))
            (if (= command 99) (break))
            (setv operation (get self.OPERATIONS command))
-           (debug "instruction: %s (%s): %s" command opcode operation.function.--name--)
+           (debug "instruction: %s (%s): %s" command opcode operation.function.__name__)
            (debug "state: ip: %s" self.instruction-pointer)
            (debug "state: rb: %s" self.relative-base)
            (setv parameter-modes
@@ -211,7 +217,7 @@
     (debug
       "jump-if-false from %s on value %s to %s"
       self.instruction-pointer value.value target.value)
-    (if-not value.value (setv self.instruction-pointer target.value)))
+    (if (not value.value) (setv self.instruction-pointer target.value)))
 
   (defn less-than [self lhs rhs addr]
     (debug "less-than %s < %s => %s" lhs.value rhs.value (< lhs.value rhs.value))

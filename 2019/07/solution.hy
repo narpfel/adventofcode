@@ -1,13 +1,16 @@
 #!/usr/bin/env hy
 
-(import [collections [deque]])
-(import [itertools [permutations]])
-(import [queue [Queue]])
-(import [threading [Thread]])
+(import collections [deque])
+(import itertools [permutations])
+(import queue [Queue])
+(import threading [Thread])
 
-(import [pytest [mark]])
+(import more-itertools [last])
+(import pytest [mark])
 
-(import [intcode [IntcodeComputer]])
+(import intcode [IntcodeComputer])
+
+(require hyrule [defmain])
 
 
 (defclass YieldingComputer [IntcodeComputer]
@@ -52,7 +55,7 @@
                     (, input output) (zip input-queues output-queues)
                     (.from-file YieldingComputer "input"
                                 :input (iter
-                                         (fn [&optional [input input]]
+                                         (fn [* [input input]]
                                              (.get input :timeout 1))
                                          None)
                                 :outputs output))
@@ -66,6 +69,6 @@
   (return (max (map run-amplifiers (permutations inputs)))))
 
 
-(defmain [&rest _]
+(defmain []
   (print (solve (range 5)))
   (print (solve (range 5 10))))

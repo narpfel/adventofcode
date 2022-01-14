@@ -1,9 +1,11 @@
 #!/usr/bin/env hy
 
-(import [intcode [IntcodeComputer]])
+(require hyrule [defmain])
+
+(import intcode [IntcodeComputer])
 
 
-(defmain [&rest _]
+(defmain []
   (setv computer (.from-file IntcodeComputer "input" :input 1))
   (.run-program computer)
   (print computer.output)
