@@ -1,8 +1,11 @@
 #!/usr/bin/env pypy3
 
 from collections import Counter
+from functools import lru_cache
 from itertools import cycle
 from itertools import product
+
+DICE = sorted(Counter(map(sum, product(range(1, 4), repeat=3))).items())
 
 
 class Player:
@@ -37,27 +40,28 @@ def part_1(players):
     return i * 3 * min(player.score for player in players)
 
 
-# removing all abstractions improves performance by ~15x on PyPy
-def part_2(n1, n2, p1, p2, s1, s2, dice, n=1):
-    result = [0, 0]
-    for roll, multiplicity in dice:
+@lru_cache(maxsize=None)
+def part_2(p1, p2, s1, s2):
+    wins1, wins2 = 0, 0
+    for roll, multiplicity in DICE:
         position = (p1 + roll) % 10
         score = s1 + position + 1
         if score >= 21:
-            result[n1] += multiplicity * n
+            wins1 += multiplicity
         else:
-            results = part_2(n2, n1, p2, position, s2, score, dice, n=n * multiplicity)
-            for name, val in enumerate(results):
-                result[name] += val
-    return result
+            w2, w1 = part_2(p2, position, s2, score)
+            wins1 += w1 * multiplicity
+            wins2 += w2 * multiplicity
+    return wins1, wins2
 
 
 def main():
     print(part_1(read_input("input")))
 
-    dice = sorted(Counter(map(sum, product(range(1, 4), repeat=3))).items())
     p1, p2 = read_input("input")
-    result = part_2(0, 1, p1.position, p2.position, 0, 0, dice)
+    # clear cache to not influence benchmarking
+    part_2.cache_clear()
+    result = part_2(p1.position, p2.position, 0, 0)
     print(max(result))
 
 
