@@ -1,6 +1,5 @@
 #!/usr/bin/env pypy3
 
-import ast
 import json
 from functools import reduce as fold
 from itertools import chain
@@ -93,49 +92,30 @@ def add(a, b):
     return reduce([(x, level + 1) for x, level in chain(a, b)])
 
 
-def unflatten(number):
+def magnitude(number):
+    magnitude_stack = []
     lengths = [0]
-    result = ["["]
 
     for x, level in number:
-        nesting_level = level + 1
-
-        while len(lengths) > nesting_level or lengths[-1] == 2:
-            result.append("],")
+        level += 1
+        while len(lengths) > level or lengths[-1] == 2:
+            rhs = magnitude_stack.pop()
+            lhs = magnitude_stack.pop()
+            magnitude_stack.append(3 * lhs + 2 * rhs)
             lengths.pop()
-
-        while len(lengths) < nesting_level:
+        while len(lengths) < level:
             lengths[-1] += 1
-            result.append("[")
             lengths.append(0)
-
-        result.append(f"{x},")
+        magnitude_stack.append(x)
         lengths[-1] += 1
 
-    for _ in lengths[1:]:
-        result.append("],")
+    for _ in lengths:
+        rhs = magnitude_stack.pop()
+        lhs = magnitude_stack.pop()
+        magnitude_stack.append(3 * lhs + 2 * rhs)
 
-    result.append("]")
-
-    return ast.literal_eval("".join(result))
-
-
-def magnitude(number):
-    def go(number):
-        # match number:
-        #     case int():
-        #         return number
-        #     case [x, y]:
-        #         return 3 * go(x) + 2 * go(y)
-        #     case _:
-        #         assert False
-        if isinstance(number, int):
-            return number
-        elif isinstance(number, list) and len(number) == 2:
-            return 3 * go(number[0]) + 2 * go(number[1])
-        else:
-            assert False
-    return go(unflatten(number))
+    assert len(magnitude_stack) == 1
+    return magnitude_stack[0]
 
 
 def main():
