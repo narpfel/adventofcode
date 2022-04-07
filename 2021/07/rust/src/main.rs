@@ -1,5 +1,3 @@
-#![feature(int_abs_diff)]
-
 use std::{
     error::Error,
     fs::read_to_string,
