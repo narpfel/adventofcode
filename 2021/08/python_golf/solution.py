@@ -1,7 +1,6 @@
 E={1:2,4:4,7:3,8:7}
 f=frozenset;D=[(map(f,(a:=l.split())[:10]),map(f,a[11:]))for l in open("i")]
-q=0
-Q=0
+Q=q=0
 for P,d in D:
  l={k:[]for k in range(9)}
  for p in P:l[len(p)]+=[p]
