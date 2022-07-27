@@ -21,10 +21,6 @@ impl Player {
     }
 }
 
-fn swap<T: Copy>(ts: [T; 2]) -> [T; 2] {
-    [ts[1], ts[0]]
-}
-
 fn part_1(mut players: [Player; 2]) -> u64 {
     let mut die = (1..=100).cycle();
     let rolls = from_fn(|| Some(die.next()? + die.next()? + die.next()?));
@@ -38,22 +34,22 @@ fn part_1(mut players: [Player; 2]) -> u64 {
     unreachable!()
 }
 
-fn part_2(players: [Player; 2], universe_count: u64) -> [u64; 2] {
-    let mut result = [0, 0];
+fn part_2(position_1: u64, position_2: u64, score_1: u64, score_2: u64) -> [u64; 2] {
+    let mut wins_1 = 0;
+    let mut wins_2 = 0;
     for &(roll, multiplicity) in &DICE {
-        let mut players = players;
-        let player = &mut players[0];
-        player.roll(roll as _);
-        if player.score >= 21 {
-            result[player.name as usize] += universe_count * multiplicity;
+        let position = (position_1 + roll as u64) % 10;
+        let score = score_1 + position + 1;
+        if score >= 21 {
+            wins_1 += multiplicity;
         }
         else {
-            let results = part_2(swap(players), universe_count * multiplicity);
-            result[0] += results[0];
-            result[1] += results[1];
+            let [w2, w1] = part_2(position_2, position, score_2, score);
+            wins_1 += w1 * multiplicity;
+            wins_2 += w2 * multiplicity;
         }
     }
-    result
+    [wins_1, wins_2]
 }
 
 fn main() {
@@ -62,6 +58,11 @@ fn main() {
         Player::new(1, STARTING_POSITIONS.1),
     ];
     println!("{}", part_1(players));
-    let win_counts = part_2(players, 1);
+    let win_counts = part_2(
+        STARTING_POSITIONS.0 as u64 - 1,
+        STARTING_POSITIONS.1 as u64 - 1,
+        0,
+        0,
+    );
     println!("{}", win_counts.into_iter().max().unwrap());
 }
