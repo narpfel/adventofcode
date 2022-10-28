@@ -1,3 +1,5 @@
+#![feature(entry_insert)]
+
 use std::{
     io,
     iter::from_fn,
