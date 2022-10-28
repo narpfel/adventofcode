@@ -2,6 +2,7 @@
 
 use std::{
     collections::{
+        BTreeMap,
         BinaryHeap,
         HashMap,
     },
@@ -155,7 +156,7 @@ impl Ord for NextStep {
 fn put_possible_next_steps<const N: usize>(
     next_steps: &mut BinaryHeap<NextStep>,
     burrow: &Burrow,
-    seen: &mut HashMap<Vec<(CartesianPoint, Tile)>, u64>,
+    seen: &mut HashMap<BTreeMap<CartesianPoint, Tile>, u64>,
     previous_distance: u64,
     side_room_y_positions: [usize; N],
 ) {
@@ -176,12 +177,11 @@ fn put_possible_next_steps<const N: usize>(
                 let from_tile = new_burrow[&from];
                 new_burrow.insert(to, from_tile);
                 new_burrow.insert(from, Tile::Empty);
-                let mut amphipods = new_burrow
+                let amphipods = new_burrow
                     .iter()
                     .filter(|(_, &tile)| tile.is_amphipod())
                     .map(|(&p, &t)| (p, t))
-                    .collect::<Vec<_>>();
-                amphipods.sort();
+                    .collect();
                 let total_distance = distance * from_tile.cost() + previous_distance;
                 match seen.get_mut(&amphipods) {
                     None => {
@@ -213,12 +213,11 @@ fn solve<const N: usize>(burrow: &Burrow, target_positions: [usize; N]) -> u64 {
 
     loop {
         let NextStep(distance, burrow) = next_steps.pop().unwrap();
-        let mut amphipods = burrow
+        let amphipods = burrow
             .iter()
             .filter(|(_, &tile)| tile.is_amphipod())
             .map(|(&p, &t)| (p, t))
-            .collect::<Vec<_>>();
-        amphipods.sort();
+            .collect();
         if seen.get(&amphipods) > Some(&distance) {
             continue;
         }
