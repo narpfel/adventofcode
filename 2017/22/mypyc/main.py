@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from collections import defaultdict
+from collections.abc import Mapping
+from collections.abc import MutableMapping
 from enum import Enum
 from typing import Callable
-from typing import Mapping
-from typing import MutableMapping
 
 STEP_COUNT_PART1 = 10_000
 STEP_COUNT_PART2 = 10_000_000

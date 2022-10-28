@@ -88,7 +88,7 @@ fn read_input(path: impl AsRef<Path>) -> io::Result<(usize, Vec<bool>, Vec<bool>
         })
         .collect();
 
-    let mut adjecency = vec![false; dbg!(cave_count) * cave_count];
+    let mut adjecency = vec![false; cave_count * cave_count];
     for (start, end) in &connections {
         adjecency[start + end * cave_count] = true;
         adjecency[end + start * cave_count] = true;

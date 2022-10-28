@@ -51,7 +51,7 @@ where
             }
         }
 
-        impl<'a> std::iter::FromIterator<i64> for AsInt {
+        impl std::iter::FromIterator<i64> for AsInt {
             fn from_iter<It: IntoIterator<Item = i64>>(it: It) -> AsInt {
                 AsInt(it.into_iter().fold(0, |acc, x| acc * 10 + x))
             }

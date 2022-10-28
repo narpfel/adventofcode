@@ -49,7 +49,7 @@ fn move_(p: &mut Point, direction: Direction) {
 }
 
 fn manhattan_distance(p: Point) -> u64 {
-    p.0.abs() as u64 + p.1.abs() as u64
+    p.0.unsigned_abs() + p.1.unsigned_abs()
 }
 
 fn track(steps: impl Iterator<Item = (Direction, usize)>) -> HashMap<Point, (u64, usize)> {

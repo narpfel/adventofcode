@@ -55,7 +55,13 @@ repos:
             -q
             -f warning
             --
-            cargo clippy --manifest-path {} --color=always -- -D warnings -D clippy::dbg_macro
+            cargo clippy
+              --manifest-path {}
+              --color=always
+              --
+              -D warnings
+              -D clippy::dbg_macro
+              -A clippy::uninlined-format-args
             ---
         require_serial: true
         language: script

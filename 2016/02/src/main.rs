@@ -56,7 +56,7 @@ fn main() -> io::Result<()> {
         "{}",
         solve(&keypad, |position, _| {
             for p in position {
-                *p = max(min(*p, 2), 0);
+                *p = (*p).clamp(0, 2);
             }
         })?
     );

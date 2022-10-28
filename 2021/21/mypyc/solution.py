@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Iterable
 from itertools import cycle
 from itertools import product
-from typing import Iterable
 from typing import TypeVar
 
 T = TypeVar("T")

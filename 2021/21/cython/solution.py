@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from itertools import cycle
-from typing import Iterable
 from typing import TypeVar
 
 import cython

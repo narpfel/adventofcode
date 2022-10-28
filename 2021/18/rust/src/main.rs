@@ -6,7 +6,7 @@ fn parse(number: &str) -> Number {
     for c in number.chars() {
         match c {
             '[' => level += 1,
-            c if c.is_digit(10) => flat_number.push((c.to_digit(10).unwrap() as u8, level - 1)),
+            c if c.is_ascii_digit() => flat_number.push((c.to_digit(10).unwrap() as u8, level - 1)),
             ']' => level -= 1,
             ',' => (),
             _ => unreachable!(),
