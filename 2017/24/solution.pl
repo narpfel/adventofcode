@@ -1,5 +1,7 @@
 #!/usr/bin/env -S swipl -g main -t halt
 
+:- table bridge/4.
+
 read_input(Filename, Pieces) :-
     open(Filename, read, Input),
     read_string(Input, "", "\n", _, String),
@@ -13,17 +15,17 @@ read_input(Filename, Pieces) :-
         Pieces
     ).
 
-bridge(Pieces, End, Ports, Result) :-
+bridge(Pieces, End, Length, Strength) :-
     (Piece = NextEnd-End; Piece = End-NextEnd),
     select(Piece, Pieces, Rest),
-    bridge(Rest, NextEnd, [End, End | Ports], Result).
+    bridge(Rest, NextEnd, L, S),
+    Length is L + 2,
+    Strength is S + 2 * End.
 
-bridge(_, End, Ports, [End | Ports]).
+bridge(_, End, 1, End).
 
 bridge(Pieces, Length-Strength) :-
-    bridge(Pieces, 0, [], Ports),
-    sum_list(Ports, Strength),
-    length(Ports, Length).
+    bridge(Pieces, 0, Length, Strength).
 
 main :-
     read_input("input", Pieces),
