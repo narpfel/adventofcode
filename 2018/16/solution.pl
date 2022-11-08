@@ -110,7 +110,38 @@ part1(Examples, Solution) :-
     ),
     length(MatchesThreeOrMoreOpcodes, Solution).
 
+execute_with_mapping(OpcodeMapping, example(Before, Instr, After)) :-
+    execute_with_mapping(OpcodeMapping, Instr, Before, After).
+execute_with_mapping(OpcodeMapping, [A, B, C, D], Before, After) :-
+    member(Opcode-A, OpcodeMapping),
+    execute(Opcode, B, C, D, Before, After).
+
+part2(Examples, Instrs, Solution) :-
+    Opcodes = [
+        addr-_,
+        addi-_,
+        mulr-_,
+        muli-_,
+        banr-_,
+        bani-_,
+        borr-_,
+        bori-_,
+        setr-_,
+        seti-_,
+        gtir-_,
+        gtri-_,
+        gtrr-_,
+        eqir-_,
+        eqri-_,
+        eqrr-_
+    ],
+    maplist(execute_with_mapping(Opcodes), Examples),
+    foldl(execute_with_mapping(Opcodes), Instrs, [0, 0, 0, 0], Registers),
+    nth0(0, Registers, Solution).
+
 main :-
-    phrase_from_file(input(Examples, _Instrs), input),
+    phrase_from_file(input(Examples, Instrs), input),
     part1(Examples, Part1),
-    write(Part1), nl.
+    write(Part1), nl,
+    part2(Examples, Instrs, Part2),
+    write(Part2), nl.
