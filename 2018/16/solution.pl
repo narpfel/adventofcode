@@ -1,5 +1,6 @@
 #!/usr/bin/env -S swipl -g main -t halt
 
+:- use_module(library(assoc)).
 :- use_module(library(dcg/basics)).
 :- use_module(library(dcg/high_order)).
 
@@ -112,28 +113,18 @@ part1(Examples, Solution) :-
 execute_with_mapping(OpcodeMapping, example(Before, Instr, After)) :-
     execute_with_mapping(OpcodeMapping, Instr, Before, After).
 execute_with_mapping(OpcodeMapping, [A, B, C, D], Before, After) :-
-    member(Opcode-A, OpcodeMapping),
+    gen_assoc(Opcode, OpcodeMapping, A),
     execute(Opcode, B, C, D, Before, After).
 
 part2(Examples, Instrs, Solution) :-
-    Opcodes = [
-        addr-_,
-        addi-_,
-        mulr-_,
-        muli-_,
-        banr-_,
-        bani-_,
-        borr-_,
-        bori-_,
-        setr-_,
-        seti-_,
-        gtir-_,
-        gtri-_,
-        gtrr-_,
-        eqir-_,
-        eqri-_,
-        eqrr-_
-    ],
+    list_to_assoc(
+        [
+            addr-_, addi-_, mulr-_, muli-_, banr-_, bani-_,
+            borr-_, bori-_, setr-_, seti-_, gtir-_, gtri-_,
+            gtrr-_, eqir-_, eqri-_, eqrr-_
+        ],
+        Opcodes
+    ),
     maplist(execute_with_mapping(Opcodes), Examples),
     foldl(execute_with_mapping(Opcodes), Instrs, [0, 0, 0, 0], Registers),
     nth0(0, Registers, Solution).
