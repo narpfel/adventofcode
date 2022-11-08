@@ -2,7 +2,6 @@
 
 :- use_module(library(dcg/basics)).
 :- use_module(library(dcg/high_order)).
-:- use_module(library(clpfd)).
 
 instruction([A, B, C, D]) -->
     integer(A), " ",
@@ -22,38 +21,38 @@ input(Examples, Instrs) -->
 execute(addr, Lhs, Rhs, Output, Before, After) :-
     nth0(Lhs, Before, LhsValue),
     nth0(Rhs, Before, RhsValue),
-    Result #= LhsValue + RhsValue,
+    Result is LhsValue + RhsValue,
     set_reg(Output, Result, Before, After).
 execute(addi, Lhs, Rhs, Output, Before, After) :-
     nth0(Lhs, Before, LhsValue),
-    Result #= LhsValue + Rhs,
+    Result is LhsValue + Rhs,
     set_reg(Output, Result, Before, After).
 execute(mulr, Lhs, Rhs, Output, Before, After) :-
     nth0(Lhs, Before, LhsValue),
     nth0(Rhs, Before, RhsValue),
-    Result #= LhsValue * RhsValue,
+    Result is LhsValue * RhsValue,
     set_reg(Output, Result, Before, After).
 execute(muli, Lhs, Rhs, Output, Before, After) :-
     nth0(Lhs, Before, LhsValue),
-    Result #= LhsValue * Rhs,
+    Result is LhsValue * Rhs,
     set_reg(Output, Result, Before, After).
 execute(banr, Lhs, Rhs, Output, Before, After) :-
     nth0(Lhs, Before, LhsValue),
     nth0(Rhs, Before, RhsValue),
-    Result #= LhsValue /\ RhsValue,
+    Result is LhsValue /\ RhsValue,
     set_reg(Output, Result, Before, After).
 execute(bani, Lhs, Rhs, Output, Before, After) :-
     nth0(Lhs, Before, LhsValue),
-    Result #= LhsValue /\ Rhs,
+    Result is LhsValue /\ Rhs,
     set_reg(Output, Result, Before, After).
 execute(borr, Lhs, Rhs, Output, Before, After) :-
     nth0(Lhs, Before, LhsValue),
     nth0(Rhs, Before, RhsValue),
-    Result #= LhsValue \/ RhsValue,
+    Result is LhsValue \/ RhsValue,
     set_reg(Output, Result, Before, After).
 execute(bori, Lhs, Rhs, Output, Before, After) :-
     nth0(Lhs, Before, LhsValue),
-    Result #= LhsValue \/ Rhs,
+    Result is LhsValue \/ Rhs,
     set_reg(Output, Result, Before, After).
 execute(setr, Lhs, _Rhs, Output, Before, After) :-
     nth0(Lhs, Before, LhsValue),
@@ -92,10 +91,10 @@ set_reg(1, Val, [W, _, Y, Z], [W, Val, Y, Z]) :- !.
 set_reg(2, Val, [W, X, _, Z], [W, X, Val, Z]) :- !.
 set_reg(3, Val, [W, X, Y, _], [W, X, Y, Val]) :- !.
 
-greater(X, Y, 1) :- X #> Y, !.
+greater(X, Y, 1) :- X > Y, !.
 greater(_, _, 0).
 
-equals(X, Y, 1) :- X #= Y, !.
+equals(X, X, 1) :-  !.
 equals(_, _, 0).
 
 part1(Examples, Solution) :-
@@ -103,7 +102,7 @@ part1(Examples, Solution) :-
         [example(Before, [_, B, C, D], After)] >> (
             findall(Opcode, execute(Opcode, B, C, D, Before, After), Opcodes),
             length(Opcodes, N),
-            N #>= 3
+            N >= 3
         ),
         Examples,
         MatchesThreeOrMoreOpcodes
