@@ -71,18 +71,12 @@ set_reg(reg(y), Val, [W, X, _, Z], [W, X, Val, Z]) :- !.
 set_reg(reg(z), Val, [W, X, Y, _], [W, X, Y, Val]) :- !.
 set_reg(Reg, _, _, _) :- throw(invalid_reg(Reg)).
 
-reverse_digits_int([A], A).
-reverse_digits_int([A | Rest], Result) :-
-    reverse_digits_int(Rest, B),
-    Result #= A + 10 * B.
-
 solve(Predicate, Solution) :-
     phrase_from_file(instructions(Instructions), "input"),
     evaluate([0, 0, 0, 0], Instructions, [_, _, _, Z], Digits),
     Z #= 0,
     labeling([Predicate], Digits),
-    reverse(ReverseDigits, Digits),
-    reverse_digits_int(ReverseDigits, Solution).
+    atomic_list_concat(Digits, Solution).
 
 main :-
     solve(down, Part1),
