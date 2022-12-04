@@ -26,11 +26,18 @@ def parse(line):
 
 
 def run(instrs, ip):
+    seen = set()
+    last = None
     registers = [0] * 6
     while True:
         if registers[ip] == 28:
-            print(registers[1])
-            return
+            if not seen:
+                print(registers[1])
+            if registers[1] in seen:
+                print(last)
+                return
+            seen.add(registers[1])
+            last = registers[1]
         if registers[ip] not in range(len(instrs)):
             raise AssertionError("unreachable")
         instr, lhs, rhs, tgt = instrs[registers[ip]]
