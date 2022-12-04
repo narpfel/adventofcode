@@ -1,28 +1,29 @@
 #!/usr/bin/env pypy3
 
 EXECUTE = {
-    "addr": lambda registers, lhs, rhs: registers[lhs] + registers[rhs],
-    "addi": lambda registers, lhs, rhs: registers[lhs] + rhs,
-    "mulr": lambda registers, lhs, rhs: registers[lhs] * registers[rhs],
-    "muli": lambda registers, lhs, rhs: registers[lhs] * rhs,
-    "banr": lambda registers, lhs, rhs: registers[lhs] & registers[rhs],
-    "bani": lambda registers, lhs, rhs: registers[lhs] & rhs,
-    "borr": lambda registers, lhs, rhs: registers[lhs] | registers[rhs],
-    "bori": lambda registers, lhs, rhs: registers[lhs] | rhs,
-    "setr": lambda registers, lhs, _: registers[lhs],
-    "seti": lambda __, lhs, _: lhs,
-    "gtir": lambda registers, lhs, rhs: int(lhs > registers[rhs]),
-    "gtri": lambda registers, lhs, rhs: int(registers[lhs] > rhs),
-    "gtrr": lambda registers, lhs, rhs: int(registers[lhs] > registers[rhs]),
-    "eqir": lambda registers, lhs, rhs: int(lhs == registers[rhs]),
-    "eqri": lambda registers, lhs, rhs: int(registers[lhs] == rhs),
-    "eqrr": lambda registers, lhs, rhs: int(registers[lhs] == registers[rhs]),
+    "addr": "lambda registers: registers.__setitem__({tgt}, registers[{lhs}] + registers[{rhs}])",
+    "addi": "lambda registers: registers.__setitem__({tgt}, registers[{lhs}] + {rhs})",
+    "mulr": "lambda registers: registers.__setitem__({tgt}, registers[{lhs}] * registers[{rhs}])",
+    "muli": "lambda registers: registers.__setitem__({tgt}, registers[{lhs}] * {rhs})",
+    "banr": "lambda registers: registers.__setitem__({tgt}, registers[{lhs}] & registers[{rhs}])",
+    "bani": "lambda registers: registers.__setitem__({tgt}, registers[{lhs}] & {rhs})",
+    "borr": "lambda registers: registers.__setitem__({tgt}, registers[{lhs}] | registers[{rhs}])",
+    "bori": "lambda registers: registers.__setitem__({tgt}, registers[{lhs}] | {rhs})",
+    "setr": "lambda registers: registers.__setitem__({tgt}, registers[{lhs}])",
+    "seti": "lambda registers: registers.__setitem__({tgt}, {lhs})",
+    "gtir": "lambda registers: registers.__setitem__({tgt}, int({lhs} > registers[{rhs}]))",
+    "gtri": "lambda registers: registers.__setitem__({tgt}, int(registers[{lhs}] > {rhs}))",
+    "gtrr": "lambda registers: registers.__setitem__({tgt}, int(registers[{lhs}] > registers[{rhs}]))",  # noqa: E501
+    "eqir": "lambda registers: registers.__setitem__({tgt}, int({lhs} == registers[{rhs}]))",
+    "eqri": "lambda registers: registers.__setitem__({tgt}, int(registers[{lhs}] == {rhs}))",
+    "eqrr": "lambda registers: registers.__setitem__({tgt}, int(registers[{lhs}] == registers[{rhs}]))",  # noqa: E501
 }
 
 
 def parse(line):
     instr, *args = line.split()
-    return EXECUTE[instr], *[int(arg) for arg in args]
+    lhs, rhs, tgt = (int(arg) for arg in args)
+    return eval(EXECUTE[instr].format(lhs=lhs, rhs=rhs, tgt=tgt))
 
 
 def run(instrs, ip):
@@ -40,8 +41,7 @@ def run(instrs, ip):
             last = registers[1]
         if registers[ip] not in range(len(instrs)):
             raise AssertionError("unreachable")
-        instr, lhs, rhs, tgt = instrs[registers[ip]]
-        registers[tgt] = instr(registers, lhs, rhs)
+        instrs[registers[ip]](registers)
         registers[ip] += 1
 
 
