@@ -4,6 +4,7 @@ from attr import attrib
 from attr import attrs
 
 EXPECTED_PART_1 = "CMZ"
+EXPECTED_PART_2 = "MCD"
 
 
 @attrs(frozen=True)
@@ -41,6 +42,10 @@ def test_part_1():
     assert part_1(*read_input("input_test")) == EXPECTED_PART_1
 
 
+def test_part_2():
+    assert part_2(*read_input("input_test")) == EXPECTED_PART_2
+
+
 def part_1(stacks, moves):
     for move in moves:
         for _ in range(move.amount):
@@ -48,8 +53,16 @@ def part_1(stacks, moves):
     return "".join(stack[-1] for stack in stacks)
 
 
+def part_2(stacks, moves):
+    for move in moves:
+        stacks[move.to].extend(stacks[move.from_][-move.amount:])
+        del stacks[move.from_][-move.amount:]
+    return "".join(stack[-1] for stack in stacks)
+
+
 def main():
     print(part_1(*read_input("input")))
+    print(part_2(*read_input("input")))
 
 
 if __name__ == "__main__":
