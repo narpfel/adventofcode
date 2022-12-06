@@ -3,6 +3,10 @@
 from more_itertools import windowed
 
 EXPECTED_PART_1 = 6
+EXPECTED_PART_2 = 23
+
+WINDOW_LENGTH_PART_1 = 4
+WINDOW_LENGTH_PART_2 = 14
 
 
 def read_input(filename):
@@ -18,12 +22,18 @@ def solve(puzzle_input, start_of_package_marker_length):
 
 def test_part_1():
     puzzle_input = read_input("input_test")
-    assert solve(puzzle_input, 4) == EXPECTED_PART_1
+    assert solve(puzzle_input, WINDOW_LENGTH_PART_1) == EXPECTED_PART_1
+
+
+def test_part_2():
+    puzzle_input = read_input("input_test")
+    assert solve(puzzle_input, WINDOW_LENGTH_PART_2) == EXPECTED_PART_2
 
 
 def main():
     puzzle_input = read_input("input")
-    print(solve(puzzle_input, start_of_package_marker_length=4))
+    print(solve(puzzle_input, start_of_package_marker_length=WINDOW_LENGTH_PART_1))
+    print(solve(puzzle_input, start_of_package_marker_length=WINDOW_LENGTH_PART_2))
 
 
 if __name__ == "__main__":
