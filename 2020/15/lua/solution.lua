@@ -1,4 +1,4 @@
-#!/usr/bin/env lua5.4
+#!/usr/bin/env luajit
 
 INPUT = "16,12,1,0,15,7,11"
 
