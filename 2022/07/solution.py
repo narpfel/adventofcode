@@ -8,6 +8,9 @@ from attr import attrs
 EXPECTED_PART_1 = 95437
 EXPECTED_PART_2 = 24933642
 
+AVAILABLE_DISK_SPACE = 70000000
+NEEDED_FOR_UPDATE = 30000000
+
 
 @attrs(frozen=True)
 class Directory:
@@ -66,14 +69,26 @@ def part_1(root):
     return sum(size for size in iter_sizes(root) if size <= 100_000)
 
 
+def part_2(root):
+    unused = AVAILABLE_DISK_SPACE - root.total_size
+    need_to_delete = NEEDED_FOR_UPDATE - unused
+    return min(size for size in iter_sizes(root) if size >= need_to_delete)
+
+
 def test_part_1():
     puzzle_input = read_input("input_test")
     assert part_1(puzzle_input) == EXPECTED_PART_1
 
 
+def test_part_2():
+    puzzle_input = read_input("input_test")
+    assert part_2(puzzle_input) == EXPECTED_PART_2
+
+
 def main():
     root = read_input("input")
     print(part_1(root))
+    print(part_2(root))
 
 
 if __name__ == "__main__":
