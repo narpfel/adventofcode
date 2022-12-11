@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import math
 import re
 from collections import Counter
 from functools import partial
@@ -10,6 +11,7 @@ from attr import attrib
 from attr import attrs
 
 EXPECTED_PART_1 = 10605
+EXPECTED_PART_2 = 2713310158
 
 MONKEY_RE = re.compile(
     r"""
@@ -68,16 +70,16 @@ def read_input(filename):
         return [Monkey.parse(part) for part in file.read().split("\n\n")]
 
 
-def part_1(monkeys):
+def solve(monkeys, round_count, worry_level_update):
     item_inspections = Counter()
-    for _ in range(20):
+    for _ in range(round_count):
         for monkey in monkeys:
             items = monkey.items
             monkey.items = []
             for item in items:
                 item_inspections[monkey.number] += 1
                 worry_level = monkey.operation(item)
-                worry_level //= 3
+                worry_level = worry_level_update(worry_level)
                 target = monkey.target[monkey.test(worry_level)]
                 assert target != monkey.number
                 monkeys[target].items.append(worry_level)
@@ -86,13 +88,36 @@ def part_1(monkeys):
     return most_active[0][1] * most_active[1][1]
 
 
+def part_1(monkeys):
+    return solve(
+        monkeys,
+        round_count=20,
+        worry_level_update=lambda worry_level: worry_level // 3,
+    )
+
+
+def part_2(monkeys):
+    lcm = math.lcm(*(monkey.test_number for monkey in monkeys))
+    return solve(
+        monkeys,
+        round_count=10_000,
+        worry_level_update=lambda worry_level: worry_level % lcm,
+    )
+
+
 def test_part_1():
     monkeys = read_input("input_test")
     assert part_1(monkeys) == EXPECTED_PART_1
 
 
+def test_part_2():
+    monkeys = read_input("input_test")
+    assert part_2(monkeys) == EXPECTED_PART_2
+
+
 def main():
     print(part_1(read_input("input")))
+    print(part_2(read_input("input")))
 
 
 if __name__ == "__main__":
