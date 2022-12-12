@@ -43,8 +43,8 @@ impl World for Cave {
         self.risk_levels.get(p).cloned()
     }
 
-    fn find(&self, tile: &Self::Tile) -> Option<Self::Point> {
-        self.risk_levels.find(tile)
+    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_> {
+        World::iter(&self.risk_levels)
     }
 
     fn cost(&self, p: &Self::Point) -> u64 {

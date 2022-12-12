@@ -137,7 +137,7 @@ impl graph::World for Hull {
         Some(self.map.get(p).cloned().unwrap_or(Unknown))
     }
 
-    fn find(&self, _: &Self::Tile) -> Option<Self::Point> {
+    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_> {
         unimplemented!()
     }
 }

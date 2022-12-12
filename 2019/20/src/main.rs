@@ -109,14 +109,14 @@ impl World for WarpedMaze {
         self.inner.get(p).cloned()
     }
 
+    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_> {
+        World::iter(&self.inner)
+    }
+
     fn canonicalise_point(&self, p: &Self::Point) -> Self::Point {
         self.inner
             .get_key_value(p)
             .map_or_else(|| unreachable!(), |(p, _)| *p)
-    }
-
-    fn find(&self, tile: &Self::Tile) -> Option<Self::Point> {
-        self.inner.find(tile)
     }
 }
 
@@ -161,6 +161,13 @@ impl World for FractalMaze {
         self.inner.get(&p.inner)
     }
 
+    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_> {
+        Box::new(
+            World::iter(&self.inner)
+                .map(|(point, tile)| (FractalPoint { inner: point, level: 0 }, tile)),
+        )
+    }
+
     fn canonicalise_point(&self, point: &Self::Point) -> Self::Point {
         FractalPoint {
             inner: self.inner.canonicalise_point(&point.inner),
@@ -174,12 +181,6 @@ impl World for FractalMaze {
             point,
             points: self.inner.neighbours(point.inner),
         })
-    }
-
-    fn find(&self, tile: &Self::Tile) -> Option<Self::Point> {
-        self.inner
-            .find(tile)
-            .map(|inner| FractalPoint { inner, level: 0 })
     }
 }
 

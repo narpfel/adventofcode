@@ -41,7 +41,22 @@ pub trait World: Clone {
     type Tile: Tile;
 
     fn get(&self, p: &Self::Point) -> Option<Self::Tile>;
-    fn find(&self, tile: &Self::Tile) -> Option<Self::Point>;
+    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_>;
+
+    fn find_all<'a>(&'a self, tile: &'a Self::Tile) -> Box<dyn Iterator<Item = Self::Point> + 'a> {
+        Box::new(self.iter().filter_map(move |(p, t)| {
+            if t == tile {
+                Some(p)
+            }
+            else {
+                None
+            }
+        }))
+    }
+
+    fn find(&self, tile: &Self::Tile) -> Option<Self::Point> {
+        self.find_all(tile).next()
+    }
 
     fn contains(&self, p: &Self::Point) -> bool {
         self.get(p).is_some()
@@ -60,15 +75,31 @@ pub trait World: Clone {
     }
 
     fn distance(&self, start: &Self::Point, end: &Self::Point) -> Distance {
+        self.distance_with(start, |p| p == end)
+    }
+
+    fn distance_with(
+        &self,
+        start: &Self::Point,
+        is_at_end: impl FnMut(&Self::Point) -> bool,
+    ) -> Distance {
         // Don’t include start point
         Distance::from(
-            self.path(start, end)
+            self.path_with(start, is_at_end)
                 .map(|path| path.iter().skip(1).map(|p| self.cost(p)).sum()),
         )
     }
 
-    /// Dijkstra’s algorithm
     fn path(&self, start: &Self::Point, end: &Self::Point) -> Option<Vec<Self::Point>> {
+        self.path_with(start, |p| p == end)
+    }
+
+    /// Dijkstra’s algorithm
+    fn path_with(
+        &self,
+        start: &Self::Point,
+        mut is_at_end: impl FnMut(&Self::Point) -> bool,
+    ) -> Option<Vec<Self::Point>> {
         let mut distance_prev = FnvHashMap::default();
         distance_prev.insert(self.canonicalise_point(start), (Distance::new(0), None));
         let mut next_points = BinaryHeap::new();
@@ -94,7 +125,7 @@ pub trait World: Clone {
                 }
             }
 
-            if &point == end {
+            if is_at_end(&point) {
                 let mut path = vec![point.clone()];
                 let mut point = point.clone();
                 while let Some((_, Some(p))) = distance_prev.get(&point) {
@@ -204,10 +235,8 @@ where
         HashMap::get(self, p).cloned()
     }
 
-    fn find(&self, tile: &Self::Tile) -> Option<Self::Point> {
-        self.iter()
-            .find(|(_, v)| v == &tile)
-            .map(|(k, _)| k.clone())
+    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_> {
+        Box::new(HashMap::iter(self).map(|(point, tile)| (point.clone(), tile)))
     }
 }
 
@@ -236,10 +265,7 @@ where
                 maze.insert(
                     Point::from_xy((x, y)),
                     c.try_into().map_err(|err| {
-                        io::Error::new(
-                            io::ErrorKind::Other,
-                            format!("invalid char: {} ({:?})", c, err),
-                        )
+                        io::Error::new(io::ErrorKind::Other, format!("invalid char: {c} ({err:?})"))
                     })?,
                 );
             }
@@ -320,15 +346,8 @@ where
         self.world.get(self.index(p)).cloned()
     }
 
-    fn find(&self, tile: &Self::Tile) -> Option<Self::Point> {
-        self.world.iter().enumerate().find_map(|(i, t)| {
-            if t == tile {
-                Some(Point::from_xy((i % self.width, i / self.width)))
-            }
-            else {
-                None
-            }
-        })
+    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_> {
+        Box::new(RectangularWorld::iter(self))
     }
 
     fn path(&self, start: &Self::Point, end: &Self::Point) -> Option<Vec<Self::Point>> {

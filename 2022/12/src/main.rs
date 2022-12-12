@@ -53,11 +53,15 @@ impl TryFrom<char> for Tile {
 }
 
 #[derive(Debug, Clone)]
-struct Map {
+struct Map<F: Clone + Fn(Tile, Tile) -> bool> {
     map: FnvHashMap<CartesianPoint, Tile>,
+    can_walk: F,
 }
 
-impl World for Map {
+impl<F> World for Map<F>
+where
+    F: Clone + Fn(Tile, Tile) -> bool,
+{
     type Point = CartesianPoint;
     type Tile = Tile;
 
@@ -65,25 +69,39 @@ impl World for Map {
         World::get(&self.map, p)
     }
 
-    fn find(&self, tile: &Self::Tile) -> Option<Self::Point> {
-        self.map.find(tile)
+    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_> {
+        World::iter(&self.map)
     }
 
     fn neighbours<'a>(&'a self, point: Self::Point) -> Box<dyn Iterator<Item = Self::Point> + 'a> {
-        let max_height = self.map[&point].height() + 1;
+        let tile = self.map[&point];
         Box::new(
             self.map
                 .neighbours(point)
-                .filter(move |p| max_height >= self.map[p].height()),
+                .filter(move |p| (self.can_walk)(tile, self.map[p])),
         )
     }
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let map = Map { map: FnvHashMap::from_file("input")? };
+    let map = Map {
+        map: FnvHashMap::from_file("input")?,
+        can_walk: |a, b| a.height() + 1 >= b.height(),
+    };
     let start = map.find(&Tile::Start).unwrap();
     let end = map.find(&Tile::Destination).unwrap();
     let part_1 = u64::try_from(map.distance(&start, &end)).unwrap();
     println!("{part_1}");
+    let map = Map {
+        map: map.map,
+        can_walk: |a, b| a.height() <= b.height() + 1,
+    };
+    println!(
+        "{}",
+        u64::try_from(
+            map.distance_with(&end, |p| map.get(p) == Some(Tile::try_from('a').unwrap()))
+        )
+        .unwrap(),
+    );
     Ok(())
 }
