@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
 import json
+from functools import cmp_to_key
+from itertools import chain
 
 EXPECTED_PART_1 = 13
+EXPECTED_PART_2 = 140
 
 
 def read_input(filename):
@@ -42,13 +45,23 @@ def part_1(packets):
     )
 
 
+def part_2(packets):
+    packets = sorted(chain(packets, [[[2]], [[6]]]), key=cmp_to_key(compare))
+    return (packets.index([[2]]) + 1) * (packets.index([[6]]) + 1)
+
+
 def test_part_1():
     assert part_1(read_input("input_test")) == EXPECTED_PART_1
 
 
+def test_part_2():
+    assert part_2(read_input("input_test")) == EXPECTED_PART_2
+
+
 def main():
-    packets = read_input("input")
+    packets = list(read_input("input"))
     print(part_1(packets))
+    print(part_2(packets))
 
 
 if __name__ == "__main__":
