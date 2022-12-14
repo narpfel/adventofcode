@@ -3,6 +3,7 @@
 from itertools import tee
 
 EXPECTED_PART_1 = 24
+EXPECTED_PART_2 = 93
 
 FULL = object()
 
@@ -39,6 +40,9 @@ def read_input(filename):
 
 
 def drop(tiles, x, y, max_y):
+    if (500, 0) in tiles:
+        return FULL
+
     while (x, y + 1) not in tiles and y + 1 < max_y:
         y += 1
 
@@ -54,11 +58,23 @@ def drop(tiles, x, y, max_y):
     return None
 
 
-def part_1(tiles):
+def drop_until_full(tiles):
     max_y = max(y for _, y in tiles)
     while drop(tiles, 500, 0, max_y) is not FULL:
         pass
     return sum(tile == "o" for tile in tiles.values())
+
+
+def part_1(tiles):
+    return drop_until_full(tiles)
+
+
+def part_2(tiles):
+    max_y = max(y for _, y in tiles) + 2
+    for x in range(-1_000, 1_000):
+        tiles[x, max_y] = "#"
+
+    return drop_until_full(tiles)
 
 
 def test_part_1():
@@ -66,8 +82,14 @@ def test_part_1():
     assert part_1(tiles) == EXPECTED_PART_1
 
 
+def test_part_2():
+    tiles = read_input("input_test")
+    assert part_2(tiles) == EXPECTED_PART_2
+
+
 def main():
     print(part_1(read_input("input")))
+    print(part_2(read_input("input")))
 
 
 if __name__ == "__main__":
