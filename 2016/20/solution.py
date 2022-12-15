@@ -32,9 +32,17 @@ def compactify(firewall):
     yield last
 
 
-def closed_ip_count(filters):
+def length(filters):
     filters = iter(filters)
     return sum(high - (low - 1) for low, high in zip(filters, filters))
+
+
+def contains(sparse_range, value):
+    sparse_range = iter(sparse_range)
+    return any(
+        value in range(low, high + 1)
+        for low, high in zip(sparse_range, sparse_range)
+    )
 
 
 def main():
@@ -54,7 +62,7 @@ def main():
     else:
         print(0)
 
-    print(2 ** 32 - closed_ip_count(firewall))
+    print(2 ** 32 - length(firewall))
 
 
 if __name__ == "__main__":
