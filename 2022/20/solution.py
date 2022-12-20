@@ -1,6 +1,9 @@
 #!/usr/bin/env pypy3
 
 EXPECTED_PART_1 = 3
+EXPECTED_PART_2 = 1623178306
+
+DECRYPTION_KEY = 811589153
 
 
 def read_input(filename):
@@ -58,27 +61,28 @@ class Node:
                 return
 
 
-def part_1(numbers):
+def mix(numbers, *, repeat=1):
     numbers = Node.from_iter(numbers)
     nodes = list(numbers)
     max_swaps = len(nodes) - 1
 
-    for node in nodes:
-        target = node
-        if node.value > 0:
-            swaps = node.value % max_swaps
-            for _ in range(swaps):
-                target = target.next
-            if swaps != 0:
-                node.remove()
-                target.insert_after(node)
-        elif node.value < 0:
-            swaps = -node.value % max_swaps
-            for _ in range(swaps):
-                target = target.prev
-            if swaps != 0:
-                node.remove()
-                target.insert_before(node)
+    for _ in range(repeat):
+        for node in nodes:
+            target = node
+            if node.value > 0:
+                swaps = node.value % max_swaps
+                for _ in range(swaps):
+                    target = target.next
+                if swaps != 0:
+                    node.remove()
+                    target.insert_after(node)
+            elif node.value < 0:
+                swaps = -node.value % max_swaps
+                for _ in range(swaps):
+                    target = target.prev
+                if swaps != 0:
+                    node.remove()
+                    target.insert_before(node)
 
     node = next(number for number in numbers if number.value == 0)
     result = 0
@@ -89,14 +93,24 @@ def part_1(numbers):
     return result
 
 
+def part_2(numbers):
+    return mix((n * DECRYPTION_KEY for n in numbers), repeat=10)
+
+
 def test_part_1():
     numbers = read_input("input_test")
-    assert part_1(numbers) == EXPECTED_PART_1
+    assert mix(numbers) == EXPECTED_PART_1
+
+
+def test_part_2():
+    numbers = read_input("input_test")
+    assert part_2(numbers) == EXPECTED_PART_2
 
 
 def main():
     numbers = read_input("input")
-    print(part_1(numbers))
+    print(mix(numbers))
+    print(part_2(numbers))
 
 
 if __name__ == "__main__":
