@@ -1,5 +1,6 @@
 #!/usr/bin/env pypy3
 
+import math
 import re
 from typing import NamedTuple
 
@@ -155,15 +156,26 @@ def part_1(blueprints):
     return sum(blueprint.quality_level() for blueprint in blueprints)
 
 
+def part_2(blueprints):
+    return math.prod(blueprint.max_geodes(32) for blueprint in blueprints[:3])
+
+
 def test_part_1():
     blueprints = read_input("input_test")
     assert blueprints[0].quality_level() == 9
     assert blueprints[1].quality_level() == 24
 
 
+def test_part_2():
+    blueprints = read_input("input_test")
+    assert blueprints[0].max_geodes(32) == 56
+    assert blueprints[1].max_geodes(32) == 62
+
+
 def main():
     blueprints = read_input("input")
     print(part_1(blueprints))
+    print(part_2(blueprints))
 
 
 if __name__ == "__main__":
