@@ -7,8 +7,16 @@ from operator import mul
 from operator import sub
 
 EXPECTED_PART_1 = 152
+EXPECTED_PART_2 = 301
 
 OPERATIONS = {"+": add, "-": sub, "*": mul, "/": floordiv}
+INVERSE_OPERATIONS_LHS = {"+": sub, "-": add, "*": floordiv, "/": mul}
+INVERSE_OPERATIONS_RHS = {
+    "+": sub,
+    "-": lambda lhs, rhs: rhs - lhs,
+    "*": floordiv,
+    "/": lambda lhs, rhs: rhs // lhs,
+}
 
 
 def parse_monkey(line):
@@ -25,7 +33,7 @@ def read_input(filename):
         return dict(parse_monkey(line) for line in lines)
 
 
-def part_1(monkeys):
+def calculate_monkeys(monkeys):
     todo = deque(monkeys.items())
     done = {}
 
@@ -38,17 +46,68 @@ def part_1(monkeys):
             case not_done:
                 todo.append(not_done)
 
-    return done["root"]
+    return done
+
+
+def has_humn(monkeys, monkey):
+    if monkey == "humn":
+        return True
+
+    match monkeys[monkey]:
+        case int():
+            return False
+        case _, lhs, rhs:
+            return has_humn(monkeys, lhs) or has_humn(monkeys, rhs)
+
+
+def invert(monkeys, results, result, monkey):
+    if monkey == "humn":
+        return result
+
+    op, lhs, rhs = monkeys[monkey]
+    lhs_has_humn = has_humn(monkeys, lhs)
+    rhs_has_humn = has_humn(monkeys, rhs)
+    assert lhs_has_humn != rhs_has_humn
+
+    if lhs_has_humn:
+        return invert(monkeys, results, INVERSE_OPERATIONS_LHS[op](result, results[rhs]), lhs)
+    elif rhs_has_humn:
+        return invert(monkeys, results, INVERSE_OPERATIONS_RHS[op](result, results[lhs]), rhs)
+
+
+def part_2(monkeys, results):
+    _, lhs, rhs = monkeys["root"]
+    lhs_has_humn = has_humn(monkeys, lhs)
+    rhs_has_humn = has_humn(monkeys, rhs)
+    assert lhs_has_humn != rhs_has_humn
+
+    if lhs_has_humn:
+        result = results[rhs]
+        monkey = lhs
+    else:
+        result = results[lhs]
+        monkey = rhs
+
+    return invert(monkeys, results, result, monkey)
 
 
 def test_part_1():
     monkeys = read_input("input_test")
-    assert part_1(monkeys) == EXPECTED_PART_1
+    results = calculate_monkeys(monkeys)
+    assert results["root"] == EXPECTED_PART_1
+
+
+def test_part_2():
+    monkeys = read_input("input_test")
+    results = calculate_monkeys(monkeys)
+    assert part_2(monkeys, results) == EXPECTED_PART_2
 
 
 def main():
     monkeys = read_input("input")
-    print(part_1(monkeys))
+    results = calculate_monkeys(monkeys)
+    print(results["root"])
+    print(part_2(monkeys, results))
 
 
 if __name__ == "__main__":
