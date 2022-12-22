@@ -134,59 +134,63 @@ impl<'a, T: IO> Computer<'a, T> {
             .map(|cell| *cell = value)
     }
 
-    pub fn run(&mut self) -> Option<()> {
-        loop {
-            let opcode = *self.read(Immediate)?;
-            let command = opcode % 100;
-            let mut modes = opcode / 100;
+    pub fn step(&mut self) -> Option<bool> {
+        let opcode = *self.read(Immediate)?;
+        let command = opcode % 100;
+        let mut modes = opcode / 100;
 
-            macro_rules! operation {
-                (2, store_result, $f:expr) => {{
-                    let a = *self.read(next_mode(&mut modes)?)?;
-                    let b = *self.read(next_mode(&mut modes)?)?;
-                    let target_addr = *self.read(Immediate)?;
-                    self.write(target_addr, $f(a, b), next_mode(&mut modes)?)?;
-                }};
-                (2, $f:expr) => {{
-                    let a = *self.read(next_mode(&mut modes)?)?;
-                    let b = *self.read(next_mode(&mut modes)?)?;
-                    $f(a, b);
-                }};
-                (1, $f:expr) => {{
-                    let a = *self.read(next_mode(&mut modes)?)?;
-                    $f(a);
-                }};
-                (0, store_result, $f:expr) => {{
-                    let target_addr = *self.read(Immediate)?;
-                    self.write(target_addr, $f(), next_mode(&mut modes)?)?;
-                }};
-            }
-
-            use Opcode::*;
-            match Opcode::try_from(command).ok()? {
-                Add => operation!(2, store_result, |a, b| a + b),
-                Multiply => operation!(2, store_result, |a, b| a * b),
-                ReadInput => {
-                    let input = self.io.next_input()?;
-                    operation!(0, store_result, || input);
-                }
-                WriteOutput => operation!(1, |output| self.io.output(output)),
-                JumpIfTrue => operation!(2, |condition, target| {
-                    if condition != 0 {
-                        self.ip = target as usize
-                    }
-                }),
-                JumpIfFalse => operation!(2, |condition, target| {
-                    if condition == 0 {
-                        self.ip = target as usize
-                    }
-                }),
-                LessThan => operation!(2, store_result, |lhs, rhs| (lhs < rhs) as Cell),
-                Equals => operation!(2, store_result, |lhs, rhs| (lhs == rhs) as Cell),
-                AdjustRelativeBase => operation!(1, |offset| self.rb += offset),
-                Halt => return Some(()),
-            }
+        macro_rules! operation {
+            (2, store_result, $f:expr) => {{
+                let a = *self.read(next_mode(&mut modes)?)?;
+                let b = *self.read(next_mode(&mut modes)?)?;
+                let target_addr = *self.read(Immediate)?;
+                self.write(target_addr, $f(a, b), next_mode(&mut modes)?)?;
+            }};
+            (2, $f:expr) => {{
+                let a = *self.read(next_mode(&mut modes)?)?;
+                let b = *self.read(next_mode(&mut modes)?)?;
+                $f(a, b);
+            }};
+            (1, $f:expr) => {{
+                let a = *self.read(next_mode(&mut modes)?)?;
+                $f(a);
+            }};
+            (0, store_result, $f:expr) => {{
+                let target_addr = *self.read(Immediate)?;
+                self.write(target_addr, $f(), next_mode(&mut modes)?)?;
+            }};
         }
+
+        use Opcode::*;
+        match Opcode::try_from(command).ok()? {
+            Add => operation!(2, store_result, |a, b| a + b),
+            Multiply => operation!(2, store_result, |a, b| a * b),
+            ReadInput => {
+                let input = self.io.next_input()?;
+                operation!(0, store_result, || input);
+            }
+            WriteOutput => operation!(1, |output| self.io.output(output)),
+            JumpIfTrue => operation!(2, |condition, target| {
+                if condition != 0 {
+                    self.ip = target as usize
+                }
+            }),
+            JumpIfFalse => operation!(2, |condition, target| {
+                if condition == 0 {
+                    self.ip = target as usize
+                }
+            }),
+            LessThan => operation!(2, store_result, |lhs, rhs| (lhs < rhs) as Cell),
+            Equals => operation!(2, store_result, |lhs, rhs| (lhs == rhs) as Cell),
+            AdjustRelativeBase => operation!(1, |offset| self.rb += offset),
+            Halt => return Some(true),
+        }
+        Some(false)
+    }
+
+    pub fn run(&mut self) -> Option<()> {
+        while !self.step()? {}
+        Some(())
     }
 }
 
