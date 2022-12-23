@@ -2,8 +2,10 @@
 
 from collections import Counter
 from collections import deque
+from itertools import count
 
 EXPECTED_PART_1 = 110
+EXPECTED_PART_2 = 20
 
 
 def north(x, y):
@@ -112,13 +114,29 @@ def part_1(grove):
     return (max_x - min_x + 1) * (max_y - min_y + 1) - len(grove)
 
 
+def part_2(grove):
+    directions = deque(DIRECTIONS)
+
+    for i in count(1):
+        old_grove = grove
+        grove = step(grove, directions)
+        if grove == old_grove:
+            return i
+
+
 def test_part_1():
     assert part_1(read_input("input_test")) == EXPECTED_PART_1
+
+
+def test_part_2():
+    puzzle_input = read_input("input_test")
+    assert part_2(puzzle_input) == EXPECTED_PART_2
 
 
 def main():
     grove = read_input("input")
     print(part_1(grove))
+    print(part_2(grove))
 
 
 if __name__ == "__main__":
