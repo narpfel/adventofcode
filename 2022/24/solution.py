@@ -5,6 +5,7 @@ from heapq import heappop
 from heapq import heappush
 
 EXPECTED_PART_1 = 18
+EXPECTED_PART_2 = 54
 
 
 def read_input(filename):
@@ -54,7 +55,7 @@ def map_at_time(valley, time, size_x, size_y):
     return frozenset(result), frozenset((x, y) for x, y, _ in result)
 
 
-def travel_time(initial_valley, *, start, target):
+def travel_time(initial_valley, *, start, target, time_offset):
     min_x = min(x for x, _, _ in initial_valley)
     max_x = max(x for x, _, _ in initial_valley)
     min_y = min(y for _, y, _ in initial_valley)
@@ -73,7 +74,7 @@ def travel_time(initial_valley, *, start, target):
         if (x, y) == target:
             return time
 
-        valley, occupied = map_at_time(initial_valley, time + 1, max_x, max_y)
+        valley, occupied = map_at_time(initial_valley, time_offset + time + 1, max_x, max_y)
 
         for xn, yn in neighbours(x, y):
             if xn in xrange and yn in yrange and (xn, yn) not in occupied:
@@ -88,7 +89,17 @@ def part_1(valley):
     max_x = max(x for x, _, _ in valley)
     max_y = max(y for _, y, _ in valley)
     target = max_x - 1, max_y
-    return travel_time(valley, start=(1, 0), target=target)
+    return travel_time(valley, start=(1, 0), target=target, time_offset=0)
+
+
+def part_2(valley):
+    max_x = max(x for x, _, _ in valley)
+    max_y = max(y for _, y, _ in valley)
+    target = max_x - 1, max_y
+    there = travel_time(valley, start=(1, 0), target=target, time_offset=0)
+    and_back = travel_time(valley, start=target, target=(1, 0), time_offset=there)
+    and_back_again = travel_time(valley, start=(1, 0), target=target, time_offset=there + and_back)
+    return there + and_back + and_back_again
 
 
 def test_part_1():
@@ -96,9 +107,15 @@ def test_part_1():
     assert part_1(valley) == EXPECTED_PART_1
 
 
+def test_part_2():
+    valley = read_input("input_test")
+    assert part_2(valley) == EXPECTED_PART_2
+
+
 def main():
     valley = read_input("input")
     print(part_1(valley))
+    print(part_2(valley))
 
 
 if __name__ == "__main__":
