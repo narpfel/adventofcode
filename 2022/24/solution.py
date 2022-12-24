@@ -33,11 +33,13 @@ def move(blizzard, size_x, size_y):
 
 
 def neighbours(x, y):
-    yield x, y
-    yield x - 1, y
-    yield x + 1, y
-    yield x, y - 1
-    yield x, y + 1
+    return [
+        (x, y),
+        (x - 1, y),
+        (x + 1, y),
+        (x, y - 1),
+        (x, y + 1),
+    ]
 
 
 @cache
