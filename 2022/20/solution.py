@@ -45,6 +45,11 @@ class Node:
             self.next.prev = node
         self.next = node
 
+    def pop_after(self):
+        node = self.next
+        node.remove()
+        return node
+
     def remove(self):
         self.prev.next = self.next
         self.next.prev = self.prev
