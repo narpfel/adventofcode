@@ -1,6 +1,7 @@
 #!/usr/bin/env pypy3
 
 import sys
+from itertools import chain
 from operator import attrgetter
 
 sys.path.insert(0, "../../2022")
@@ -47,15 +48,26 @@ def part_1(number, steps=100):
     return int("".join(str(n.value) for n in node)[1:])
 
 
+def part_2(number):
+    node = play_cups(chain(map(int, str(number)), range(10, 1_000_001)), 10_000_000)
+    return node.next.value * node.next.next.value
+
+
 def test_part_1():
     cup_labels = read_input("input_test")
     assert part_1(cup_labels, 10) == 92658374
     assert part_1(cup_labels) == 67384529
 
 
+def test_part_2():
+    cup_labels = read_input("input_test")
+    assert part_2(cup_labels) == 149245887792
+
+
 def main():
     cup_labels = read_input("input")
     print(part_1(cup_labels))
+    print(part_2(cup_labels))
 
 
 if __name__ == "__main__":
