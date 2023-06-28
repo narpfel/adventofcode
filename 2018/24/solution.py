@@ -57,7 +57,7 @@ class Group:
 
     @property
     def effective_power(self):
-        return max(self.unit_count, 0) * self.damage
+        return self.unit_count * self.damage
 
     def effective_damage(self, other):
         return self.effective_power * other.damage_multiplier(self.damage_type)
@@ -69,8 +69,7 @@ class Group:
         old_unit_count = other.unit_count
         damage = self.effective_damage(other)
         units_killed = damage // other.hit_points
-        other.unit_count -= units_killed
-        other.unit_count = max(0, other.unit_count)
+        other.unit_count -= min(units_killed, old_unit_count)
         return old_unit_count != other.unit_count
 
 
