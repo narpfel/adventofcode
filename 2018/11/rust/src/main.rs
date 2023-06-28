@@ -1,5 +1,3 @@
-#![feature(box_syntax)]
-
 const GRID_SIZE: usize = 300;
 
 const INPUT: i64 = 7672;
@@ -19,7 +17,10 @@ fn power_level(x: usize, y: usize, serial_number: i64) -> i64 {
 }
 
 fn calculate_grid(serial_number: i64) -> Box<Grid> {
-    let mut grid = box [[0; GRID_SIZE + 1]; GRID_SIZE + 1];
+    let mut grid: Box<Grid> = vec![[0; GRID_SIZE + 1]; GRID_SIZE + 1]
+        .into_boxed_slice()
+        .try_into()
+        .unwrap();
     for (y, line) in grid.iter_mut().enumerate() {
         for (x, fuel_cell) in line.iter_mut().enumerate() {
             *fuel_cell = power_level(x, y, serial_number);
