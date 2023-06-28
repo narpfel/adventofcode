@@ -3,13 +3,11 @@
 import re
 from bisect import bisect_left
 from functools import partial
-from itertools import chain
 from operator import attrgetter
 
 from attr import attrib
 from attr import attrs
 
-WEAKNESS_RE = re.compile("(?P<type>immune|weak) to (?P<types>.*)")
 GROUP_RE = re.compile(
     r"(?P<unit_count>\d+) units each with (?P<hit_points>\d+) hit points"
     r" (?:\((?P<weaknesses>.*?)\) )?with an attack that does (?P<damage>\d+)"
@@ -26,22 +24,6 @@ class InfiniteLoop(Exception):
     pass
 
 
-@attrs(frozen=True)
-class Weakness:
-    type = attrib()
-    damage_multiplier = attrib(converter=int)
-
-    @classmethod
-    def parse(cls, s):
-        if not s:
-            return []
-        match = WEAKNESS_RE.match(s)
-        return [
-            cls(type=type_, damage_multiplier=DAMAGE_MULTIPLIERS[match["type"]])
-            for type_ in match["types"].split(", ")
-        ]
-
-
 @attrs
 class Group:
     faction = attrib()
@@ -56,17 +38,18 @@ class Group:
     @classmethod
     def from_line(cls, faction, index, line):
         match = GROUP_RE.match(line)
+        weaknesses = {}
+        if match["weaknesses"]:
+            for s in match["weaknesses"].split("; "):
+                type_, _, types = s.partition(" to ")
+                for damage_type in types.split(", "):
+                    weaknesses[damage_type] = DAMAGE_MULTIPLIERS[type_]
         return cls(
             faction=faction,
             index=index,
             unit_count=match["unit_count"],
             hit_points=match["hit_points"],
-            weaknesses={
-                weakness.type: weakness.damage_multiplier
-                for weakness in chain.from_iterable(
-                    Weakness.parse(s) for s in (match["weaknesses"] or "").split("; ")
-                )
-            },
+            weaknesses=weaknesses,
             damage=match["damage"],
             damage_type=match["damage_type"],
             initiative=match["initiative"],
