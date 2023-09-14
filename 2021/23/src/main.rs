@@ -8,6 +8,7 @@ use std::{
     },
     error::Error,
     hash::BuildHasher,
+    marker::PhantomData,
 };
 
 use graph::{
@@ -240,7 +241,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_part_1() {
+    fn test_part_1()
+    where
+        Burrow:,
+    {
         assert_eq!(
             solve(&HashMap::from_file("input_test").unwrap(), [2, 3]),
             12521,
@@ -248,7 +252,10 @@ mod tests {
     }
 
     #[test]
-    fn test_part_2() {
+    fn test_part_2()
+    where
+        Burrow:,
+    {
         assert_eq!(
             solve(&HashMap::from_file("input_test_2").unwrap(), [2, 3, 4, 5]),
             44169,
@@ -256,7 +263,22 @@ mod tests {
     }
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+type ActuallyUnit<T> = <Use<T> as HasUnit>::Unit;
+
+struct Use<T>(PhantomData<T>);
+
+trait HasUnit {
+    type Unit;
+}
+
+impl<T> HasUnit for Use<T> {
+    type Unit = ();
+}
+
+// Rust PR 112652 requires that TAITs are mentioned in the signature in this
+// case, however we can’t use a `where` clause with empty bounds here as `main`
+// cannot be constrained by a `where`. So we use this slightly silly workaround.
+fn main() -> Result<ActuallyUnit<Burrow>, Box<dyn Error>> {
     println!("{}", solve(&HashMap::from_file("input")?, [2, 3]));
     println!(
         "{}",
