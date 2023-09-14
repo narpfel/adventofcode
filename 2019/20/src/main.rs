@@ -1,3 +1,5 @@
+#![feature(return_position_impl_trait_in_trait)]
+
 use std::{
     collections::HashMap,
     fs::File,
@@ -61,14 +63,13 @@ impl WarpedPoint {
 }
 
 impl graph::Point for WarpedPoint {
-    fn neighbours(&self) -> Vec<Self>
+    fn neighbours(self) -> impl Iterator<Item = Self>
     where
         Self: Sized,
     {
         let mut neighbours = self
             .inner
             .neighbours()
-            .into_iter()
             .map(|p| WarpedPoint { inner: p, additional_neighbour: None })
             .collect_vec();
         neighbours.extend(
@@ -76,7 +77,7 @@ impl graph::Point for WarpedPoint {
                 .map(|point| Self { inner: point, additional_neighbour: None })
                 .iter(),
         );
-        neighbours
+        neighbours.into_iter()
     }
 }
 
@@ -109,7 +110,7 @@ impl World for WarpedMaze {
         self.inner.get(p).cloned()
     }
 
-    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_> {
+    fn iter(&self) -> impl Iterator<Item = (Self::Point, &Self::Tile)> {
         World::iter(&self.inner)
     }
 
@@ -127,11 +128,13 @@ struct FractalPoint {
 }
 
 impl Point for FractalPoint {
-    fn neighbours(&self) -> Vec<Self>
+    fn neighbours(self) -> impl Iterator<Item = Self>
     where
         Self: Sized,
     {
-        unimplemented!("we don’t need this")
+        unimplemented!("we don’t need this");
+        #[allow(unreachable_code)]
+        [].into_iter()
     }
 }
 
@@ -161,11 +164,9 @@ impl World for FractalMaze {
         self.inner.get(&p.inner)
     }
 
-    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_> {
-        Box::new(
-            World::iter(&self.inner)
-                .map(|(point, tile)| (FractalPoint { inner: point, level: 0 }, tile)),
-        )
+    fn iter(&self) -> impl Iterator<Item = (Self::Point, &Self::Tile)> {
+        World::iter(&self.inner)
+            .map(|(point, tile)| (FractalPoint { inner: point, level: 0 }, tile))
     }
 
     fn canonicalise_point(&self, point: &Self::Point) -> Self::Point {
@@ -175,22 +176,24 @@ impl World for FractalMaze {
         }
     }
 
-    fn neighbours<'a>(&'a self, point: Self::Point) -> Box<dyn Iterator<Item = Self::Point> + 'a> {
-        Box::new(Neighbours {
+    fn neighbours(&self, point: Self::Point) -> impl Iterator<Item = Self::Point> {
+        Neighbours {
             maze: self,
             point,
             points: self.inner.neighbours(point.inner),
-        })
+        }
     }
 }
 
-struct Neighbours<'a> {
+struct Neighbours<'a, Iter> {
     maze: &'a FractalMaze,
     point: <FractalMaze as World>::Point,
-    points: Box<dyn Iterator<Item = <WarpedMaze as World>::Point> + 'a>,
+    points: Iter,
 }
 
-impl<'a> Iterator for Neighbours<'a> {
+impl<'a, Iter: Iterator<Item = <WarpedMaze as World>::Point> + 'a> Iterator
+    for Neighbours<'a, Iter>
+{
     type Item = <FractalMaze as World>::Point;
 
     fn next(&mut self) -> Option<Self::Item> {

@@ -1,3 +1,5 @@
+#![feature(return_position_impl_trait_in_trait)]
+
 use std::{
     collections::{
         HashMap,
@@ -137,8 +139,10 @@ impl graph::World for Hull {
         Some(self.map.get(p).cloned().unwrap_or(Unknown))
     }
 
-    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_> {
-        unimplemented!()
+    fn iter(&self) -> impl Iterator<Item = (Self::Point, &Self::Tile)> {
+        unimplemented!();
+        #[allow(unreachable_code)]
+        [].into_iter()
     }
 }
 
@@ -247,12 +251,8 @@ impl State {
     fn next_unexplored_cell(&self) -> Option<Point> {
         // BFS around current position
 
-        let neighbours_with_tile = |point: Point| {
-            point
-                .neighbours()
-                .into_iter()
-                .zip(repeat(self.hull.get(&point)))
-        };
+        let neighbours_with_tile =
+            |point: Point| point.neighbours().zip(repeat(self.hull.get(&point)));
 
         let mut queue: VecDeque<_> = neighbours_with_tile((self.x, self.y)).collect();
         let mut seen = HashSet::new();

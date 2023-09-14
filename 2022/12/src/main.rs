@@ -1,3 +1,5 @@
+#![feature(return_position_impl_trait_in_trait)]
+
 use std::error::Error;
 
 use fnv::FnvHashMap;
@@ -69,17 +71,15 @@ where
         World::get(&self.map, p)
     }
 
-    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_> {
+    fn iter(&self) -> impl Iterator<Item = (Self::Point, &Self::Tile)> {
         World::iter(&self.map)
     }
 
-    fn neighbours<'a>(&'a self, point: Self::Point) -> Box<dyn Iterator<Item = Self::Point> + 'a> {
+    fn neighbours(&self, point: Self::Point) -> impl Iterator<Item = Self::Point> {
         let tile = self.map[&point];
-        Box::new(
-            self.map
-                .neighbours(point)
-                .filter(move |p| (self.can_walk)(tile, self.map[p])),
-        )
+        self.map
+            .neighbours(point)
+            .filter(move |p| (self.can_walk)(tile, self.map[p]))
     }
 }
 

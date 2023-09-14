@@ -1,3 +1,5 @@
+#![feature(return_position_impl_trait_in_trait)]
+
 use graph::{
     CartesianPoint,
     Point as _,
@@ -83,13 +85,13 @@ impl TryFrom<char> for Tile {
 struct Point(CartesianPoint);
 
 impl graph::Point for Point {
-    fn neighbours(&self) -> Vec<Self>
+    fn neighbours(self) -> impl Iterator<Item = Self>
     where
         Self: Sized,
     {
-        let mut result: Vec<_> = self.0.neighbours().into_iter().map(Point).collect();
+        let mut result: Vec<_> = self.0.neighbours().map(Point).collect();
         result.sort();
-        result
+        result.into_iter()
     }
 }
 
@@ -177,7 +179,7 @@ fn simulate_combat(
                         remaining_units.into_iter().filter_map(Tile::health).sum(),
                     );
                 }
-                if !point.neighbours().into_iter().any(|neighbour| {
+                if !point.neighbours().any(|neighbour| {
                     dungeon
                         .get(&neighbour)
                         .map_or(false, |enemy| unit.is_enemy(&enemy))
@@ -198,7 +200,6 @@ fn simulate_combat(
                 }
                 if let Some(enemy_point) = point
                     .neighbours()
-                    .into_iter()
                     .filter(|p| dungeon.get(p).map_or(false, |enemy| unit.is_enemy(&enemy)))
                     .min_by_key(|p| (dungeon.get(p).unwrap().health(), *p))
                 {

@@ -1,3 +1,5 @@
+#![feature(return_position_impl_trait_in_trait)]
+
 use std::error::Error;
 
 use fnv::FnvHashMap;
@@ -43,7 +45,7 @@ impl World for Cave {
         self.risk_levels.get(p).cloned()
     }
 
-    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_> {
+    fn iter(&self) -> impl Iterator<Item = (Self::Point, &Self::Tile)> {
         World::iter(&self.risk_levels)
     }
 

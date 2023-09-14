@@ -1,4 +1,5 @@
 #![feature(thread_local)]
+#![feature(return_position_impl_trait_in_trait)]
 
 use std::{
     any::TypeId,
@@ -41,17 +42,17 @@ pub trait World: Clone {
     type Tile: Tile;
 
     fn get(&self, p: &Self::Point) -> Option<Self::Tile>;
-    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_>;
+    fn iter(&self) -> impl Iterator<Item = (Self::Point, &Self::Tile)>;
 
-    fn find_all<'a>(&'a self, tile: &'a Self::Tile) -> Box<dyn Iterator<Item = Self::Point> + 'a> {
-        Box::new(self.iter().filter_map(move |(p, t)| {
+    fn find_all<'a>(&'a self, tile: &'a Self::Tile) -> impl Iterator<Item = Self::Point> {
+        self.iter().filter_map(move |(p, t)| {
             if t == tile {
                 Some(p)
             }
             else {
                 None
             }
-        }))
+        })
     }
 
     fn find(&self, tile: &Self::Tile) -> Option<Self::Point> {
@@ -142,19 +143,16 @@ pub trait World: Clone {
         None
     }
 
-    fn neighbours<'a>(&'a self, point: Self::Point) -> Box<dyn Iterator<Item = Self::Point> + 'a> {
-        Box::new(
-            point
-                .neighbours()
-                .into_iter()
-                .filter(move |neighbour| self.is_walkable(neighbour)),
-        )
+    fn neighbours(&self, point: Self::Point) -> impl Iterator<Item = Self::Point> {
+        point
+            .neighbours()
+            .filter(move |neighbour| self.is_walkable(neighbour))
     }
 
     fn walk_cells_breadth_first<'a>(
         &'a self,
         start: &Self::Point,
-    ) -> Box<dyn Iterator<Item = Vector<Self::Point>> + 'a>
+    ) -> impl Iterator<Item = Vector<Self::Point>>
     where
         <Self as World>::Point: 'static,
     {
@@ -190,7 +188,7 @@ pub trait World: Clone {
         let mut next_points = VecDeque::new();
         next_points.push_back((start.clone(), Vector::with_pool(pool.get())));
 
-        Box::new(from_fn(move || {
+        from_fn(move || {
             while let Some((point, path)) = next_points.pop_front() {
                 if !visited.contains(&point) {
                     visited.insert(point.clone());
@@ -210,7 +208,7 @@ pub trait World: Clone {
                 }
             }
             None
-        }))
+        })
     }
 
     fn cost(&self, _: &Self::Point) -> u64 {
@@ -235,8 +233,8 @@ where
         HashMap::get(self, p).cloned()
     }
 
-    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_> {
-        Box::new(HashMap::iter(self).map(|(point, tile)| (point.clone(), tile)))
+    fn iter(&self) -> impl Iterator<Item = (Self::Point, &Self::Tile)> {
+        HashMap::iter(self).map(|(point, tile)| (point.clone(), tile))
     }
 }
 
@@ -346,8 +344,8 @@ where
         self.world.get(self.index(p)).cloned()
     }
 
-    fn iter(&self) -> Box<dyn Iterator<Item = (Self::Point, &Self::Tile)> + '_> {
-        Box::new(RectangularWorld::iter(self))
+    fn iter(&self) -> impl Iterator<Item = (Self::Point, &Self::Tile)> {
+        RectangularWorld::iter(self)
     }
 
     fn path(&self, start: &Self::Point, end: &Self::Point) -> Option<Vec<Self::Point>> {
@@ -408,7 +406,7 @@ where
 }
 
 pub trait Point: PartialEq + Clone + Eq + Hash + Debug + PartialOrd + Ord {
-    fn neighbours(&self) -> Vec<Self>
+    fn neighbours(self) -> impl Iterator<Item = Self>
     where
         Self: Sized;
 }
@@ -437,8 +435,9 @@ impl CartesianPoint {
 }
 
 impl Point for CartesianPoint {
-    fn neighbours(&self) -> Vec<Self> {
-        let CartesianPoint(x, y) = *self;
+    #[inline]
+    fn neighbours(self) -> impl Iterator<Item = Self> {
+        let CartesianPoint(x, y) = self;
         let mut neighbours = Vec::with_capacity(4);
         if let Some(x) = x.checked_sub(1) {
             neighbours.push(CartesianPoint(x, y));
@@ -448,7 +447,7 @@ impl Point for CartesianPoint {
             neighbours.push(CartesianPoint(x, y));
         }
         neighbours.push(CartesianPoint(x, y + 1));
-        neighbours
+        neighbours.into_iter()
     }
 }
 
@@ -463,12 +462,12 @@ impl Cartesian for CartesianPoint {
 }
 
 impl Point for (i64, i64) {
-    fn neighbours(&self) -> Vec<Self>
+    fn neighbours(self) -> impl Iterator<Item = Self>
     where
         Self: Sized,
     {
-        let (x, y) = *self;
-        vec![(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
+        let (x, y) = self;
+        [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)].into_iter()
     }
 }
 
