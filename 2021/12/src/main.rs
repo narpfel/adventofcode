@@ -24,7 +24,8 @@ fn dfs(
         .iter()
         .take(cave_count)
         .enumerate()
-        .filter_map(|(cave, connected)| connected.then(|| cave))
+        .filter(|(_, connected)| **connected)
+        .map(|(cave, _)| cave)
         .filter_map(|cave| {
             if cave == end {
                 Some(1)

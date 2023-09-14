@@ -24,7 +24,10 @@ impl Fold {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let input = fs::read_to_string("input")?;
-    let [dots, folds] = &input.split("\n\n").collect::<Vec<_>>()[..] else { return Err("invalid input".into()); };
+    let [dots, folds] = &input.split("\n\n").collect::<Vec<_>>()[..]
+    else {
+        return Err("invalid input".into());
+    };
     let mut dots = dots
         .lines()
         .map(|line| {

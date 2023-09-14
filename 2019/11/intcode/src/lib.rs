@@ -23,14 +23,14 @@ impl TryFrom<Cell> for Mode {
     type Error = InvalidMode;
 
     fn try_from(cell: Cell) -> Result<Self, InvalidMode> {
-        let result = Ok(match cell {
+        let result = match cell {
             0 => Position,
             1 => Immediate,
             2 => Relative,
             _ => return Err(InvalidMode(cell)),
-        });
-        debug_assert_eq!(cell, result.unwrap() as Cell);
-        result
+        };
+        debug_assert_eq!(cell, result as Cell);
+        Ok(result)
     }
 }
 
@@ -56,7 +56,7 @@ impl TryFrom<Cell> for Opcode {
 
     fn try_from(cell: Cell) -> Result<Self, InvalidOpcode> {
         use Opcode::*;
-        let result = Ok(match cell {
+        let result = match cell {
             1 => Add,
             2 => Multiply,
             3 => ReadInput,
@@ -68,9 +68,9 @@ impl TryFrom<Cell> for Opcode {
             9 => AdjustRelativeBase,
             99 => Halt,
             _ => return Err(InvalidOpcode(cell)),
-        });
-        debug_assert_eq!(cell, result.unwrap() as Cell);
-        result
+        };
+        debug_assert_eq!(cell, result as Cell);
+        Ok(result)
     }
 }
 
@@ -144,19 +144,23 @@ impl<'a, T: IO> Computer<'a, T> {
                 let a = *self.read(next_mode(&mut modes)?)?;
                 let b = *self.read(next_mode(&mut modes)?)?;
                 let target_addr = *self.read(Immediate)?;
+                #[allow(clippy::redundant_closure_call)]
                 self.write(target_addr, $f(a, b), next_mode(&mut modes)?)?;
             }};
             (2, $f:expr) => {{
                 let a = *self.read(next_mode(&mut modes)?)?;
                 let b = *self.read(next_mode(&mut modes)?)?;
+                #[allow(clippy::redundant_closure_call)]
                 $f(a, b);
             }};
             (1, $f:expr) => {{
                 let a = *self.read(next_mode(&mut modes)?)?;
+                #[allow(clippy::redundant_closure_call)]
                 $f(a);
             }};
             (0, store_result, $f:expr) => {{
                 let target_addr = *self.read(Immediate)?;
+                #[allow(clippy::redundant_closure_call)]
                 self.write(target_addr, $f(), next_mode(&mut modes)?)?;
             }};
         }
