@@ -423,21 +423,12 @@ pub struct CartesianPoint(pub usize, pub usize);
 
 impl CartesianPoint {
     pub fn is_direct_neighbour(self, CartesianPoint(x2, y2): CartesianPoint) -> bool {
-        fn absolute_difference(x: usize, y: usize) -> usize {
-            if x > y {
-                x - y
-            }
-            else {
-                y - x
-            }
-        }
-
         let CartesianPoint(x1, y1) = self;
         if x1 == x2 {
-            absolute_difference(y1, y2) == 1
+            y2.abs_diff(y1) == 1
         }
         else if y1 == y2 {
-            absolute_difference(x1, x2) == 1
+            x2.abs_diff(x1) == 1
         }
         else {
             false
