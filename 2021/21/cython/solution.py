@@ -84,7 +84,6 @@ def part_2(
 
 
 @cython.cfunc
-@cython.locals(dice=(ulong, ulong)[7])
 def cmain():
     print(part_1(read_input("input")))
 
