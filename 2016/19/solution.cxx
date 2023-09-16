@@ -1,5 +1,6 @@
 #include <cstdint>
 
+#include <algorithm>
 #include <iostream>
 #include <list>
 #include <ranges>
@@ -20,11 +21,7 @@ auto circular_next(auto& container, auto it) {
 auto generate_elves(std::uint64_t const size) -> std::list<std::uint64_t> {
     auto elf_numbers = std::ranges::views::iota(std::uint64_t{1}, size + 1);
     auto elves = std::list<std::uint64_t>{};
-    std::for_each(
-        std::begin(elf_numbers),
-        std::end(elf_numbers),
-        [&](auto const i) { elves.push_back(i); }
-    );
+    std::ranges::for_each(elf_numbers, [&](auto const i) { elves.push_back(i); });
     return elves;
 }
 
