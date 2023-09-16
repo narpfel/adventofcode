@@ -11,7 +11,7 @@ venv:
 	@echo building virtualenv with dependencies
 	python3 -m venv venv
 	./venv/bin/python -m pip install -U pip wheel
-	./venv/bin/python -m pip install 'Cython==3.0.0a10'
+	./venv/bin/python -m pip install Cython
 
 language:
 	@echo cython

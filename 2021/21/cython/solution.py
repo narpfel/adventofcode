@@ -61,7 +61,7 @@ def part_2(
     p1: ulong, p2: ulong,
     s1: ulong, s2: ulong,
     n: ulong = 1,
-) -> (ulong, ulong):
+) -> tuple[ulong, ulong]:
     r1: ulong = 0
     r2: ulong = 0
     i: ulong
@@ -76,7 +76,7 @@ def part_2(
             else:
                 r2 += multiplicity * n
         else:
-            results: (ulong, ulong)
+            results: tuple[ulong, ulong]
             results = part_2(n2, n1, p2, position, s2, score, n=n * multiplicity)
             r1 += results[0]
             r2 += results[1]
