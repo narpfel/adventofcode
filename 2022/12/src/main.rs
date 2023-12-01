@@ -1,5 +1,3 @@
-#![feature(return_position_impl_trait_in_trait)]
-
 use std::error::Error;
 
 use fnv::FnvHashMap;
@@ -13,7 +11,7 @@ use graph::{
 enum Tile {
     Start,
     Destination,
-    Tile(u64),
+    Elevation(u64),
 }
 
 #[derive(Debug)]
@@ -24,7 +22,7 @@ impl Tile {
         match self {
             Tile::Start => 0,
             Tile::Destination => Tile::try_from('z').unwrap().height(),
-            Tile::Tile(height) => height,
+            Tile::Elevation(height) => height,
         }
     }
 }
@@ -40,7 +38,7 @@ impl TryFrom<char> for Tile {
 
     fn try_from(value: char) -> Result<Self, Self::Error> {
         if value.is_ascii_lowercase() {
-            Ok(Tile::Tile((value as u32 - 'a' as u32).into()))
+            Ok(Tile::Elevation((value as u32 - 'a' as u32).into()))
         }
         else if value == 'S' {
             Ok(Tile::Start)
