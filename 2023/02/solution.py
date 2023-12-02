@@ -32,7 +32,7 @@ def part_1(games):
 def part_2(games):
     return sum(
         math.prod(
-            max(c.get(colour) for c in counts if c.get(colour))
+            max(c[colour] for c in counts)
             for colour in ("red", "green", "blue")
         )
         for _, counts in games
