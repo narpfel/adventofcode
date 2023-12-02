@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
+import math
 from collections import Counter
 
 EXPECTED_PART_1 = 8
+EXPECTED_PART_2 = 2286
 
 
 def read_input(filename):
@@ -27,13 +29,29 @@ def part_1(games):
     )
 
 
+def part_2(games):
+    return sum(
+        math.prod(
+            max(c.get(colour) for c in counts if c.get(colour))
+            for colour in ("red", "green", "blue")
+        )
+        for _, counts in games
+    )
+
+
 def test_part_1():
     puzzle_input = read_input("input_test")
     assert part_1(puzzle_input) == EXPECTED_PART_1
 
 
+def test_part_2():
+    puzzle_input = read_input("input_test")
+    assert part_2(puzzle_input) == EXPECTED_PART_2
+
+
 def main():
     print(part_1(read_input("input")))
+    print(part_2(read_input("input")))
 
 
 if __name__ == "__main__":
