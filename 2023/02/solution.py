@@ -25,7 +25,7 @@ def part_1(games):
     return sum(
         game_id
         for game_id, counts in games
-        if all(c < Counter({"red": 12, "green": 13, "blue": 14}) for c in counts)
+        if all(c <= Counter({"red": 12, "green": 13, "blue": 14}) for c in counts)
     )
 
 
