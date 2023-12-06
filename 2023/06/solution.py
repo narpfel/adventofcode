@@ -3,6 +3,7 @@
 import math
 
 EXPECTED_PART_1 = 288
+EXPECTED_PART_2 = 71503
 
 
 def transpose(xss):
@@ -30,14 +31,26 @@ def part_1(times, distances):
     )
 
 
+def part_2(time, distance):
+    time = int("".join(map(str, time)))
+    distance = int("".join(map(str, distance)))
+    return ways_to_beat_distance_record(time, distance)
+
+
 def test_part_1():
     times, distances = read_input("input_test")
     assert part_1(times, distances) == EXPECTED_PART_1
 
 
+def test_part_2():
+    times, distances = read_input("input_test")
+    assert part_2(times, distances) == EXPECTED_PART_2
+
+
 def main():
     times, distances = read_input("input")
     print(part_1(times, distances))
+    print(part_2(times, distances))
 
 
 if __name__ == "__main__":
