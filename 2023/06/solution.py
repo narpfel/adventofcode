@@ -6,14 +6,13 @@ EXPECTED_PART_1 = 288
 EXPECTED_PART_2 = 71503
 
 
-def transpose(xss):
-    return list(zip(*xss))
-
-
 def read_input(filename):
     with open(filename) as lines:
-        times, dists = lines
-        return transpose(zip(map(int, times.split()[1:]), map(int, dists.split()[1:])))
+        times, distances = lines
+        return (
+            [int(time) for time in times.split()[1:]],
+            [int(distance) for distance in distances.split()[1:]],
+        )
 
 
 def ways_to_beat_distance_record(time, distance):
