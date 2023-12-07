@@ -1,4 +1,4 @@
-#!/usr/bin/env pypy3
+#!/usr/bin/env python3
 
 import math
 
@@ -33,7 +33,10 @@ def part_1(times, distances):
 def part_2(time, distance):
     time = int("".join(map(str, time)))
     distance = int("".join(map(str, distance)))
-    return ways_to_beat_distance_record(time, distance)
+    r = math.sqrt((time/2) ** 2 - distance)
+    min_acceleration_time = math.floor(time/2 - r) + 1
+    max_acceleration_time = math.ceil(time/2 + r) - 1
+    return max_acceleration_time - min_acceleration_time + 1
 
 
 def test_part_1():
