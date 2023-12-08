@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import math
-import re
 from itertools import cycle
 
 EXPECTED_PART_1 = 6
@@ -14,8 +13,7 @@ def read_input(filename):
         node_connections = {}
         for node in nodes.splitlines():
             node, connections = node.split(" = ")
-            left, right = re.findall(r"\w\w\w", connections)
-            node_connections[node] = left, right
+            node_connections[node] = connections.strip("()").split(", ")
         return [0 if i == "L" else 1 for i in instrs.strip()], node_connections
 
 
