@@ -14,7 +14,7 @@ def read_input(filename):
         for node in nodes.splitlines():
             node, connections = node.split(" = ")
             node_connections[node] = connections.strip("()").split(", ")
-        return [0 if i == "L" else 1 for i in instrs.strip()], node_connections
+        return [0 if instr == "L" else 1 for instr in instrs.strip()], node_connections
 
 
 def part_1(instrs, nodes, *, node="AAA", is_at_end=lambda n: n == "ZZZ"):
