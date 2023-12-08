@@ -39,16 +39,9 @@ def hand_key(hand_with_bid, *, cards):
 
 def hand_with_jokers_key(hand_with_bid, *, cards):
     hand, _, bid = hand_with_bid
-    cards_in_hand = set(hand)
-    return max(
-        hand_key(
-            (hand[:i] + hand[i:].replace("J", card, joker_replacement_count), hand, bid),
-            cards=cards,
-        )
-        for joker_replacement_count in range(hand.count("J") + 1)
-        for card in cards_in_hand
-        for i in range(len(hand))
-    )
+    card_counts = Counter(hand)
+    card = next((card for card, _ in card_counts.most_common() if card != "J"), "J")
+    return hand_key((hand.replace("J", card), hand, bid), cards=cards)
 
 
 def solve(cards, hands, key):
