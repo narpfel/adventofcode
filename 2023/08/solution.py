@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import math
 import re
 from itertools import cycle
 
 EXPECTED_PART_1 = 6
+EXPECTED_PART_2 = 6
 
 
 def read_input(filename):
@@ -24,14 +26,30 @@ def part_1(instrs, nodes, *, node="AAA", is_at_end=lambda n: n == "ZZZ"):
             return i
 
 
+def part_2(instrs, nodes):
+    return math.lcm(
+        *(
+            part_1(instrs, nodes, node=node, is_at_end=lambda n: n.endswith("Z"))
+            for node in nodes
+            if node.endswith("A")
+        ),
+    )
+
+
 def test_part_1():
     instrs, nodes = read_input("input_test")
     assert part_1(instrs, nodes) == EXPECTED_PART_1
 
 
+def test_part_2():
+    instrs, nodes = read_input("input_test_2")
+    assert part_2(instrs, nodes) == EXPECTED_PART_2
+
+
 def main():
     instrs, nodes = read_input("input")
     print(part_1(instrs, nodes))
+    print(part_2(instrs, nodes))
 
 
 if __name__ == "__main__":
