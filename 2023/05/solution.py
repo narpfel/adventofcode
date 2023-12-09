@@ -1,15 +1,64 @@
 #!/usr/bin/env python3
 
+from collections import deque
 from collections import namedtuple
-
-import z3
-from more_itertools import chunked
 
 EXPECTED_PART_1 = 35
 EXPECTED_PART_2 = 46
 
 
-Range = namedtuple("Range", "dest, src, len")
+class Range(namedtuple("Range", "dest, src, len")):
+    __slots__ = ()
+
+    @property
+    def start(self):
+        return self.src
+
+    @property
+    def stop(self):
+        return self.src + self.len
+
+    def apply_to_range(self, other):
+        if self.stop < other.start:
+            return (None, None, other)
+        if other.stop < self.start:
+            return (other, None, None)
+        if self.start >= other.start and self.stop <= other.stop:
+            overlap_start = self.dest + max(self.start, other.start) - self.src
+            overlap_end = self.dest + min(self.stop, other.stop) - self.src
+            return (
+                range(other.start, self.start),
+                range(self.dest, self.dest + self.len),
+                range(self.stop, other.stop),
+            )
+        if other.start >= self.start and other.stop <= self.stop:
+            overlap_start = self.dest + other.start - self.src
+            return (
+                None,
+                range(overlap_start, overlap_start + len(other)),
+                None,
+            )
+        if self.start < other.start and self.stop < other.stop:
+            overlap_start = self.dest + other.start - self.src
+            overlap_end = self.dest + self.len
+            return (
+                None,
+                range(overlap_start, overlap_end),
+                range(self.stop, other.stop),
+            )
+        if other.start < self.start and other.stop < self.stop:
+            overlap_start = self.dest
+            overlap_end = self.dest + other.stop - self.src
+            return (
+                range(other.start, self.start),
+                range(overlap_start, overlap_end),
+                None,
+            )
+
+        assert False, "unreachable"
+
+    def __repr__(self):
+        return f"<{range(self.start, self.stop)} {self.dest - self.src:+}>"
 
 
 def read_input(filename):
@@ -42,37 +91,63 @@ def part_1(seeds, maps):
     return min(locations)
 
 
+def compress(ranges):
+    ranges = iter(ranges)
+    rng = next(ranges)
+    for other in ranges:
+        if other.start == rng.start:
+            rng = other
+        elif other.start == rng.stop:
+            rng = range(rng.start, other.stop)
+        else:
+            yield rng
+            rng = other
+    yield rng
+
+
+def chunked(xs, chunksize):
+    xs = iter(xs)
+    try:
+        while True:
+            chunk = []
+            for _ in range(chunksize):
+                chunk.append(next(xs))
+            yield chunk
+    except StopIteration:
+        if chunk:
+            yield chunk
+
+
 def part_2(seeds, maps):
-    opt = z3.Optimize()
+    ranges = [range(start, start + len) for start, len in chunked(seeds, 2)]
+    for map_ in maps.values():
+        new_ranges = []
+        srcs = deque(ranges)
+        seen = set()
+        while srcs:
+            src = srcs.popleft()
+            if src not in seen:
+                seen.add(src)
+                for dest in map_:
+                    (before, overlap, after) = dest.apply_to_range(src)
+                    assert len(before or ()) + len(overlap or ()) + len(after or ()) == len(src)
+                    if before:
+                        srcs.append(before)
+                    if after:
+                        srcs.append(after)
+                    if overlap:
+                        new_ranges.append(overlap)
+                        break
+                else:
+                    new_ranges.append(src)
 
-    values = {"seed": z3.Int("seed")} | {
-        to: z3.Int(to)
-        for _, to in maps
-    }
-    seed = values["seed"]
-
-    constraints = [
-        z3.And(seed >= seed_range[0], seed < seed_range[0] + seed_range[1])
-        for seed_range in chunked(seeds, 2)
-    ]
-    opt.add(z3.Or(*constraints))
-
-    for (from_, to), map_ in maps.items():
-        from_value = values[from_]
-        to_value = values[to]
-        calculation = from_value == to_value
-        for range_ in map_:
-            calculation = z3.If(
-                z3.And(from_value >= range_.src, from_value < range_.src + range_.len),
-                to_value == from_value - range_.src + range_.dest,
-                calculation,
-            )
-        opt.add(calculation)
-
-    opt.minimize(values["location"])
-    assert opt.check() == z3.sat
-    model = opt.model()
-    return model[values["location"]]
+        ranges = compress(
+            sorted(
+                (range_ for range_ in set(new_ranges) if range_),
+                key=lambda r: (r.start, r.stop),
+            ),
+        )
+    return min(range_.start for range_ in ranges)
 
 
 def test_part_1():
