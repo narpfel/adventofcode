@@ -1,3 +1,8 @@
+use std::{
+    io,
+    path::Path,
+};
+
 use fnv::FnvHashMap;
 use graph::{
     ReadExt,
@@ -29,6 +34,39 @@ impl graph::Tile for Tile {
 #[derive(Debug, Clone)]
 struct Pipes(FnvHashMap<Point, Tile>);
 
+impl Pipes {
+    fn from_file(path: impl AsRef<Path>) -> io::Result<(Self, Point)> {
+        let mut pipes = Self(ReadExt::from_file(path)?);
+        let start @ (x, y) = pipes.find(&Start).unwrap();
+        let connected_to_start = {
+            let mut points = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
+                .into_iter()
+                .filter(|p| pipes.get(p).is_some())
+                .filter(|p| pipes.neighbours(*p).any(|p| p == start))
+                .collect::<Vec<_>>();
+            points.sort_by_key(|(x, y)| (*y, *x));
+            points
+        };
+        let [(x1, y1), (x2, y2)] = &connected_to_start[..]
+        else {
+            unreachable!()
+        };
+        let start_tile_type = match ((x1 - x, y1 - y), (x2 - x, y2 - y)) {
+            ((0, -1), (0, 1)) => Vertical,
+            ((-1, 0), (1, 0)) => Horizontal,
+            ((0, -1), (1, 0)) => LBend,
+            ((0, -1), (-1, 0)) => JBend,
+            ((-1, 0), (0, 1)) => SevenBend,
+            ((1, 0), (0, 1)) => FBend,
+            _ => unreachable!(),
+        };
+
+        pipes.0.insert(start, start_tile_type);
+
+        Ok((pipes, start))
+    }
+}
+
 impl graph::World for Pipes {
     type Point = Point;
     type Tile = Tile;
@@ -50,8 +88,7 @@ impl graph::World for Pipes {
             Some(SevenBend) => Box::new([(x - 1, y), (x, y + 1)].into_iter()),
             Some(FBend) => Box::new([(x + 1, y), (x, y + 1)].into_iter()),
             Some(Ground) => Box::new([].into_iter()),
-            // FIXME: this is input-specific
-            Some(Start) => Box::new([(x - 1, y), (x + 1, y)].into_iter()),
+            Some(Start) => unreachable!("has been replaced"),
             None => Box::new([].into_iter()),
         }
     }
@@ -76,8 +113,8 @@ impl TryFrom<char> for Tile {
 }
 
 fn main() {
-    let pipes = Pipes(FnvHashMap::from_file("input").unwrap());
-    let start = pipes.find(&Start).unwrap();
+    let (pipes, start) = Pipes::from_file("input").unwrap();
+
     let distance_to_farthest_tile = pipes.walk_cells_breadth_first(&start).last().unwrap().len();
     println!("{}", distance_to_farthest_tile);
 
@@ -97,8 +134,7 @@ fn main() {
                 SevenBend => [p, (x - 1, y), (x, y + 1)],
                 FBend => [p, (x + 1, y), (x, y + 1)],
                 Ground => unreachable!("ground is not part of the pipe"),
-                // FIXME: this is input-specific
-                Start => [p, (x - 1, y), (x + 1, y)],
+                Start => unreachable!("has been replaced"),
             }
         })
         .map(|p| (p, false))
