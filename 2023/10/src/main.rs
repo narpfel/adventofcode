@@ -80,4 +80,48 @@ fn main() {
     let start = pipes.find(&Start).unwrap();
     let distance_to_farthest_tile = pipes.walk_cells_breadth_first(&start).last().unwrap().len();
     println!("{}", distance_to_farthest_tile);
+
+    let mut squeeze_through_pipes: FnvHashMap<Point, bool> = pipes
+        .all_reachable_points(start)
+        .iter()
+        .flat_map(|p @ (x, y)| {
+            let tile = pipes.get(p).unwrap();
+            let x = 2 * x;
+            let y = 2 * y;
+            let p = (x, y);
+            match tile {
+                Vertical => [p, (x, y - 1), (x, y + 1)],
+                Horizontal => [p, (x - 1, y), (x + 1, y)],
+                LBend => [p, (x + 1, y), (x, y - 1)],
+                JBend => [p, (x - 1, y), (x, y - 1)],
+                SevenBend => [p, (x - 1, y), (x, y + 1)],
+                FBend => [p, (x + 1, y), (x, y + 1)],
+                Ground => unreachable!("ground is not part of the pipe"),
+                // FIXME: this is input-specific
+                Start => [p, (x - 1, y), (x + 1, y)],
+            }
+        })
+        .map(|p| (p, false))
+        .collect();
+
+    let min_x = pipes.points().map(|(x, _)| x).min().unwrap() * 2;
+    let max_x = pipes.points().map(|(x, _)| x).max().unwrap() * 2;
+    let min_y = pipes.points().map(|(_, y)| y).min().unwrap() * 2;
+    let max_y = pipes.points().map(|(_, y)| y).max().unwrap() * 2;
+
+    for y in min_y - 1..max_y + 2 {
+        for x in min_x - 1..max_x + 2 {
+            squeeze_through_pipes.entry((x, y)).or_insert(true);
+        }
+    }
+
+    let outside = squeeze_through_pipes.all_reachable_points((-1, -1));
+
+    let tiles_contained_inside = squeeze_through_pipes
+        .iter()
+        .filter(|(&(x, y), &not_pipe)| {
+            x % 2 == 0 && y % 2 == 0 && not_pipe && !outside.contains(&(x, y))
+        })
+        .count();
+    println!("{tiles_contained_inside}");
 }

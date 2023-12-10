@@ -43,6 +43,14 @@ pub trait World: Clone {
     fn get(&self, p: &Self::Point) -> Option<Self::Tile>;
     fn iter(&self) -> impl Iterator<Item = (Self::Point, &Self::Tile)>;
 
+    fn points(&self) -> impl Iterator<Item = Self::Point> {
+        self.iter().map(|(p, _)| p)
+    }
+
+    fn tiles(&self) -> impl Iterator<Item = &Self::Tile> {
+        self.iter().map(|(_, tile)| tile)
+    }
+
     fn find_all<'a>(&'a self, tile: &'a Self::Tile) -> impl Iterator<Item = Self::Point> {
         self.iter().filter_map(move |(p, t)| {
             if t == tile {
@@ -212,6 +220,20 @@ pub trait World: Clone {
 
     fn cost(&self, _: &Self::Point) -> u64 {
         1
+    }
+
+    fn all_reachable_points(&self, start: Self::Point) -> FnvHashSet<Self::Point> {
+        let mut seen = FnvHashSet::default();
+        let mut todo = VecDeque::from([start]);
+
+        while let Some(p) = todo.pop_front() {
+            if seen.contains(&p) {
+                continue;
+            }
+            seen.insert(p.clone());
+            todo.extend(self.neighbours(p).map(|p| self.canonicalise_point(&p)));
+        }
+        seen
     }
 }
 
@@ -519,3 +541,9 @@ impl TryFrom<Distance> for u64 {
 
 #[derive(Debug, Copy, Clone)]
 pub struct Unreachable;
+
+impl Tile for bool {
+    fn is_walkable(&self) -> bool {
+        *self
+    }
+}
