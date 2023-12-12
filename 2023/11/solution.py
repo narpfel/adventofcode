@@ -1,4 +1,4 @@
-#!/usr/bin/env pypy3
+#!/usr/bin/env python3
 
 from collections import namedtuple
 from itertools import combinations
@@ -6,6 +6,13 @@ from itertools import combinations
 EXPECTED_PART_1 = 374
 
 Universe = namedtuple("Universe", "galaxies, empty_x, empty_y")
+
+
+def cumsum(xs):
+    acc = 0
+    for x in xs:
+        acc += x
+        yield acc
 
 
 def read_input(filename):
@@ -18,16 +25,18 @@ def read_input(filename):
         }
     max_x = max(x for x, _ in galaxies)
     max_y = max(y for _, y in galaxies)
-    empty_x = {
-        x
-        for x in range(max_x + 1)
-        if not any((x, y) in galaxies for y in range(max_y + 1))
-    }
-    empty_y = {
-        y
-        for y in range(max_y + 1)
-        if not any((x, y) in galaxies for x in range(max_x + 1))
-    }
+    empty_x = list(
+        cumsum(
+            not any((x, y) in galaxies for y in range(max_y + 1))
+            for x in range(max_x + 1)
+        ),
+    )
+    empty_y = list(
+        cumsum(
+            not any((x, y) in galaxies for x in range(max_x + 1))
+            for y in range(max_y + 1)
+        ),
+    )
     return Universe(galaxies, empty_x, empty_y)
 
 
@@ -35,8 +44,8 @@ def distances_stretched(universe, stretch):
     return sum(
         abs(x - X) + abs(y - Y)
         + stretch * (
-            sum(a in universe.empty_x for a in range(min(x, X), max(x, X)))
-            + sum(a in universe.empty_y for a in range(min(y, Y), max(y, Y)))
+            universe.empty_x[max(x, X)] - universe.empty_x[min(x, X)]
+            + universe.empty_y[max(y, Y)] - universe.empty_y[min(y, Y)]
         )
         for (x, y), (X, Y) in combinations(universe.galaxies, r=2)
     )
