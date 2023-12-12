@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
+from functools import cache
+
 EXPECTED_PART_1 = 21
+EXPECTED_PART_2 = 525152
 
 
 def read_input(filename):
@@ -31,6 +34,7 @@ DONT_CARE = DontCare()
 
 
 def arrangements(springs, groups):
+    @cache
     def go(spring, group):
         if spring >= len(springs):
             return int(group == len(groups))
@@ -56,14 +60,27 @@ def part_1(conditions):
     )
 
 
+def part_2(conditions):
+    return part_1(
+        ((springs + [DONT_CARE]) * 4 + springs, groups * 5)
+        for springs, groups in conditions
+    )
+
+
 def test_part_1():
     puzzle_input = read_input("input_test")
     assert part_1(puzzle_input) == EXPECTED_PART_1
 
 
+def test_part_2():
+    puzzle_input = read_input("input_test")
+    assert part_2(puzzle_input) == EXPECTED_PART_2
+
+
 def main():
     conditions = list(read_input("input"))
     print(part_1(conditions))
+    print(part_2(conditions))
 
 
 if __name__ == "__main__":
