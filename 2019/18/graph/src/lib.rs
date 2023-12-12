@@ -351,6 +351,10 @@ where
     fn len(&self) -> usize {
         self.world.len()
     }
+
+    pub fn lines(&self) -> impl Iterator<Item = &[Tile]> {
+        self.world.chunks(self.width)
+    }
 }
 
 impl<Point, Tile> World for RectangularWorld<Point, Tile>
@@ -498,7 +502,7 @@ impl Cartesian for (i64, i64) {
     }
 
     fn to_xy(&self) -> (usize, usize) {
-        todo!()
+        (self.0 as _, self.1 as _)
     }
 }
 

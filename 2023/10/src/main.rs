@@ -3,9 +3,9 @@ use std::{
     path::Path,
 };
 
-use fnv::FnvHashMap;
 use graph::{
     ReadExt,
+    RectangularWorld,
     World,
 };
 
@@ -32,7 +32,7 @@ impl graph::Tile for Tile {
 }
 
 #[derive(Debug, Clone)]
-struct Pipes(FnvHashMap<Point, Tile>);
+struct Pipes(RectangularWorld<Point, Tile>);
 
 impl Pipes {
     fn from_file(path: impl AsRef<Path>) -> io::Result<(Self, Point)> {
@@ -72,7 +72,7 @@ impl graph::World for Pipes {
     type Tile = Tile;
 
     fn get(&self, p: &Self::Point) -> Option<Self::Tile> {
-        self.0.get(p).copied()
+        self.0.get(p)
     }
 
     fn iter(&self) -> impl Iterator<Item = (Self::Point, &Self::Tile)> {
@@ -114,50 +114,60 @@ impl TryFrom<char> for Tile {
 
 fn main() {
     let (pipes, start) = Pipes::from_file("input").unwrap();
+    let pipe_points = pipes.all_reachable_points(start);
+    println!("{}", pipe_points.len() / 2);
 
-    let distance_to_farthest_tile = pipes.walk_cells_breadth_first(&start).last().unwrap().len();
-    println!("{}", distance_to_farthest_tile);
+    enum Direction {
+        FromBottom,
+        FromTop,
+    }
+    use Direction::*;
 
-    let mut squeeze_through_pipes: FnvHashMap<Point, bool> = pipes
-        .all_reachable_points(start)
-        .iter()
-        .flat_map(|p @ (x, y)| {
-            let tile = pipes.get(p).unwrap();
-            let x = 2 * x;
-            let y = 2 * y;
-            let p = (x, y);
-            match tile {
-                Vertical => [p, (x, y - 1), (x, y + 1)],
-                Horizontal => [p, (x - 1, y), (x + 1, y)],
-                LBend => [p, (x + 1, y), (x, y - 1)],
-                JBend => [p, (x - 1, y), (x, y - 1)],
-                SevenBend => [p, (x - 1, y), (x, y + 1)],
-                FBend => [p, (x + 1, y), (x, y + 1)],
-                Ground => unreachable!("ground is not part of the pipe"),
-                Start => unreachable!("has been replaced"),
+    let mut enclosed_tiles_count = 0;
+    for (y, line) in pipes.0.lines().enumerate() {
+        let mut crossings = 0;
+        let mut on_pipe = None;
+        for (x, pipe) in line.iter().enumerate() {
+            let x = x as i64;
+            let y = y as i64;
+            if pipe_points.contains(&(x, y)) {
+                match pipe {
+                    Vertical => crossings += 1,
+                    Horizontal => (),
+                    LBend => match on_pipe {
+                        Some(_) => unreachable!(),
+                        None => on_pipe = Some(FromTop),
+                    },
+                    JBend => match on_pipe {
+                        Some(FromTop) => on_pipe = None,
+                        Some(FromBottom) => {
+                            crossings += 1;
+                            on_pipe = None;
+                        }
+                        None => unreachable!(),
+                    },
+                    SevenBend => match on_pipe {
+                        Some(FromTop) => {
+                            crossings += 1;
+                            on_pipe = None;
+                        }
+                        Some(FromBottom) => {
+                            on_pipe = None;
+                        }
+                        None => unreachable!(),
+                    },
+                    FBend => match on_pipe {
+                        Some(_) => unreachable!(),
+                        None => on_pipe = Some(FromBottom),
+                    },
+                    Ground => (),
+                    Start => unreachable!(),
+                }
             }
-        })
-        .map(|p| (p, false))
-        .collect();
-
-    let min_x = pipes.points().map(|(x, _)| x).min().unwrap() * 2;
-    let max_x = pipes.points().map(|(x, _)| x).max().unwrap() * 2;
-    let min_y = pipes.points().map(|(_, y)| y).min().unwrap() * 2;
-    let max_y = pipes.points().map(|(_, y)| y).max().unwrap() * 2;
-
-    for y in min_y - 1..max_y + 2 {
-        for x in min_x - 1..max_x + 2 {
-            squeeze_through_pipes.entry((x, y)).or_insert(true);
+            else if crossings % 2 == 1 {
+                enclosed_tiles_count += 1;
+            }
         }
     }
-
-    let outside = squeeze_through_pipes.all_reachable_points((-1, -1));
-
-    let tiles_contained_inside = squeeze_through_pipes
-        .iter()
-        .filter(|(&(x, y), &not_pipe)| {
-            x % 2 == 0 && y % 2 == 0 && not_pipe && !outside.contains(&(x, y))
-        })
-        .count();
-    println!("{tiles_contained_inside}");
+    println!("{enclosed_tiles_count}");
 }
