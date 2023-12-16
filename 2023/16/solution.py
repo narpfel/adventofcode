@@ -1,6 +1,7 @@
 #!/usr/bin/env pypy3
 
 EXPECTED_PART_1 = 46
+EXPECTED_PART_2 = 51
 
 
 def read_input(filename):
@@ -43,14 +44,41 @@ def part_1(contraption, start=((0, 0), (1, 0))):
     return len({point for point, _ in seen})
 
 
+def part_2(contraption):
+    return max(
+        max(
+            part_1(contraption, ((0, y), (1, 0)))
+            for y in range(len(contraption))
+        ),
+        max(
+            part_1(contraption, ((len(contraption[0]) - 1, y), (-1, 0)))
+            for y in range(len(contraption))
+        ),
+        max(
+            part_1(contraption, ((x, 0), (0, 1)))
+            for x in range(len(contraption[0]))
+        ),
+        max(
+            part_1(contraption, ((x, len(contraption) - 1), (0, -1)))
+            for x in range(len(contraption[0]))
+        ),
+    )
+
+
 def test_part_1():
     puzzle_input = read_input("input_test")
     assert part_1(puzzle_input) == EXPECTED_PART_1
 
 
+def test_part_2():
+    puzzle_input = read_input("input_test")
+    assert part_2(puzzle_input) == EXPECTED_PART_2
+
+
 def main():
     contraption = read_input("input")
     print(part_1(contraption))
+    print(part_2(contraption))
 
 
 if __name__ == "__main__":
