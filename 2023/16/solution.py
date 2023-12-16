@@ -17,29 +17,21 @@ def part_1(contraption, *, start=((0, 0), (1, 0))):
         beam = (x, y), (Δx, Δy) = beams.pop()
         if beam not in seen and y in range(len(contraption)) and x in range(len(contraption[y])):
             seen.add(beam)
+
             match contraption[y][x]:
-                case ".":
+                case "|" if Δy == 0:
+                    beams.append(((x, y), (0, -1)))
+                    beams.append(((x, y), (0, 1)))
+                case "-" if Δx == 0:
+                    beams.append(((x, y), (-1, 0)))
+                    beams.append(((x, y), (1, 0)))
+                case _:
+                    match contraption[y][x]:
+                        case "/":
+                            Δx, Δy = -Δy, -Δx
+                        case "\\":
+                            Δx, Δy = Δy, Δx
                     beams.append(((x + Δx, y + Δy), (Δx, Δy)))
-                case "/":
-                    Δx, Δy = -Δy, -Δx
-                    beams.append(((x + Δx, y + Δy), (Δx, Δy)))
-                case "\\":
-                    Δx, Δy = Δy, Δx
-                    beams.append(((x + Δx, y + Δy), (Δx, Δy)))
-                case "|":
-                    if Δy == 0:
-                        beams.append(((x, y), (0, -1)))
-                        beams.append(((x, y), (0, 1)))
-                    else:
-                        beams.append(((x + Δx, y + Δy), (Δx, Δy)))
-                case "-":
-                    if Δx == 0:
-                        beams.append(((x, y), (-1, 0)))
-                        beams.append(((x, y), (1, 0)))
-                    else:
-                        beams.append(((x + Δx, y + Δy), (Δx, Δy)))
-                case c:
-                    assert False, c
 
     return len({point for point, _ in seen})
 
