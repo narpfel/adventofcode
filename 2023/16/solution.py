@@ -9,7 +9,7 @@ def read_input(filename):
         return [line.strip() for line in lines]
 
 
-def part_1(contraption, start=((0, 0), (1, 0))):
+def part_1(contraption, *, start=((0, 0), (1, 0))):
     beams = [start]
     seen = set()
 
@@ -47,19 +47,19 @@ def part_1(contraption, start=((0, 0), (1, 0))):
 def part_2(contraption):
     return max(
         max(
-            part_1(contraption, ((0, y), (1, 0)))
+            part_1(contraption, start=((0, y), (1, 0)))
             for y in range(len(contraption))
         ),
         max(
-            part_1(contraption, ((len(contraption[0]) - 1, y), (-1, 0)))
+            part_1(contraption, start=((len(contraption[0]) - 1, y), (-1, 0)))
             for y in range(len(contraption))
         ),
         max(
-            part_1(contraption, ((x, 0), (0, 1)))
+            part_1(contraption, start=((x, 0), (0, 1)))
             for x in range(len(contraption[0]))
         ),
         max(
-            part_1(contraption, ((x, len(contraption) - 1), (0, -1)))
+            part_1(contraption, start=((x, len(contraption) - 1), (0, -1)))
             for x in range(len(contraption[0]))
         ),
     )
