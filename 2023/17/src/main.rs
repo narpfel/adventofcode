@@ -142,21 +142,21 @@ impl From<CartesianPoint> for UltraPoint {
 }
 
 #[derive(Debug, Clone)]
-struct Maze<P> {
-    map: RectangularWorld<CartesianPoint, Tile>,
+struct City<P> {
+    blocks: RectangularWorld<CartesianPoint, Tile>,
     _p: PhantomData<P>,
 }
 
-impl Maze<DirectedPoint> {
+impl City<DirectedPoint> {
     fn from_file(filename: impl AsRef<Path>) -> io::Result<Self> {
         Ok(Self {
-            map: ReadExt::from_file(filename)?,
+            blocks: ReadExt::from_file(filename)?,
             _p: PhantomData,
         })
     }
 }
 
-impl<P> graph::World for Maze<P>
+impl<P> graph::World for City<P>
 where
     P: Point + From<CartesianPoint> + Into<CartesianPoint>,
 {
@@ -164,11 +164,11 @@ where
     type Tile = Tile;
 
     fn get(&self, p: &Self::Point) -> Option<Self::Tile> {
-        self.map.get(&p.clone().into())
+        self.blocks.get(&p.clone().into())
     }
 
     fn iter(&self) -> impl Iterator<Item = (Self::Point, &Self::Tile)> {
-        World::iter(&self.map).map(|(p, t)| (P::from(p), t))
+        World::iter(&self.blocks).map(|(p, t)| (P::from(p), t))
     }
 
     fn cost(&self, p: &Self::Point) -> u64 {
@@ -176,13 +176,13 @@ where
     }
 }
 
-impl From<Maze<DirectedPoint>> for Maze<UltraPoint> {
-    fn from(value: Maze<DirectedPoint>) -> Self {
-        Maze { map: value.map, _p: PhantomData }
+impl From<City<DirectedPoint>> for City<UltraPoint> {
+    fn from(value: City<DirectedPoint>) -> Self {
+        City { blocks: value.blocks, _p: PhantomData }
     }
 }
 
-fn shortest_path_length<P>(maze: &Maze<P>) -> u64
+fn shortest_path_length<P>(maze: &City<P>) -> u64
 where
     P: Point + From<CartesianPoint>,
     CartesianPoint: From<P>,
@@ -203,23 +203,23 @@ mod tests {
 
     #[test]
     fn test_part_1() -> io::Result<()> {
-        let maze = Maze::from_file("input_test")?;
+        let maze = City::from_file("input_test")?;
         assert_eq!(shortest_path_length(&maze), 102);
         Ok(())
     }
 
     #[test]
     fn test_part_2() -> io::Result<()> {
-        let maze = Maze::<UltraPoint>::from(Maze::from_file("input_test")?);
+        let maze = City::<UltraPoint>::from(City::from_file("input_test")?);
         assert_eq!(shortest_path_length(&maze), 94);
         Ok(())
     }
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let maze = Maze::from_file("input")?;
+    let maze = City::from_file("input")?;
     println!("{}", shortest_path_length(&maze));
-    let ultra_maze = Maze::<UltraPoint>::from(maze);
+    let ultra_maze = City::<UltraPoint>::from(maze);
     println!("{}", shortest_path_length(&ultra_maze));
     Ok(())
 }
