@@ -4,11 +4,11 @@ use std::{
     path::Path,
 };
 
-use fnv::FnvHashMap;
 use graph::{
     CartesianPoint,
     Point,
     ReadExt,
+    RectangularWorld,
     World,
 };
 
@@ -143,7 +143,7 @@ impl From<CartesianPoint> for UltraPoint {
 
 #[derive(Debug, Clone)]
 struct Maze<P> {
-    map: FnvHashMap<CartesianPoint, Tile>,
+    map: RectangularWorld<CartesianPoint, Tile>,
     _p: PhantomData<P>,
 }
 
@@ -164,7 +164,7 @@ where
     type Tile = Tile;
 
     fn get(&self, p: &Self::Point) -> Option<Self::Tile> {
-        self.map.get(&p.clone().into()).copied()
+        self.map.get(&p.clone().into())
     }
 
     fn iter(&self) -> impl Iterator<Item = (Self::Point, &Self::Tile)> {

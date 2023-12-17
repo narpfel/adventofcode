@@ -366,7 +366,12 @@ where
     type Tile = Tile;
 
     fn get(&self, p: &Self::Point) -> Option<Self::Tile> {
-        self.world.get(self.index(p)).cloned()
+        if p.to_xy().0 >= self.width {
+            None
+        }
+        else {
+            self.world.get(self.index(p)).cloned()
+        }
     }
 
     fn iter(&self) -> impl Iterator<Item = (Self::Point, &Self::Tile)> {
