@@ -486,6 +486,16 @@ impl Cartesian for CartesianPoint {
     }
 }
 
+impl std::ops::Sub for CartesianPoint {
+    type Output = (i64, i64);
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let CartesianPoint(x1, y1) = self;
+        let CartesianPoint(x2, y2) = rhs;
+        (x1 as i64 - x2 as i64, y1 as i64 - y2 as i64)
+    }
+}
+
 impl Point for (i64, i64) {
     fn neighbours(self) -> impl Iterator<Item = Self>
     where
