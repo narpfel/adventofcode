@@ -15,7 +15,7 @@ COMPARISON_OPERATORS = {
 }
 
 
-Rule = namedtuple("Rule", "prop, op, n, tgt")
+Rule = namedtuple("Rule", "prop, op, value, tgt")
 
 
 def parse_rule(rule):
@@ -24,16 +24,17 @@ def parse_rule(rule):
     parsed_rules = []
     for rule in rules:
         if "<" in rule:
-            prop, op, n = rule.partition("<")
-            n, _, tgt = n.partition(":")
+            prop, op, value = rule.partition("<")
+            value, _, tgt = value.partition(":")
         elif ">" in rule:
-            prop, op, n = rule.partition(">")
-            n, _, tgt = n.partition(":")
+            prop, op, value = rule.partition(">")
+            value, _, tgt = value.partition(":")
         else:
             prop = "a"
             op = "?"
             tgt = rule
-        parsed_rules.append(Rule(prop=prop, op=op, n=int(n), tgt=tgt))
+            value = 0
+        parsed_rules.append(Rule(prop=prop, op=op, value=int(value), tgt=tgt))
     return name, parsed_rules
 
 
@@ -60,7 +61,7 @@ def part_1(rules, parts):
         state = "in"
         while True:
             for rule in rules[state]:
-                if COMPARISON_OPERATORS[rule.op](part[rule.prop], rule.n):
+                if COMPARISON_OPERATORS[rule.op](part[rule.prop], rule.value):
                     state = rule.tgt
                     break
             else:
@@ -94,12 +95,12 @@ def count_possiblities(rules, part, state, rule_index):
         rule = rules[state][rule_index]
         match rule.op:
             case "<":
-                inside, outside = split_range_at(part[rule.prop], rule.n)
+                inside, outside = split_range_at(part[rule.prop], rule.value)
                 part_outside = part | {rule.prop: outside}
                 result += count_possiblities(rules, part_outside, state, rule_index + 1)
                 part = part | {rule.prop: inside}
             case ">":
-                outside, inside = split_range_at(part[rule.prop], rule.n + 1)
+                outside, inside = split_range_at(part[rule.prop], rule.value + 1)
                 part_outside = part | {rule.prop: outside}
                 result += count_possiblities(rules, part_outside, state, rule_index + 1)
                 part = part | {rule.prop: inside}
