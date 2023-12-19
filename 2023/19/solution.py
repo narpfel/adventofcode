@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import math
 import operator
 from collections import namedtuple
 
 EXPECTED_PART_1 = 19114
+EXPECTED_PART_2 = 167409079868000
 
 
 COMPARISON_OPERATORS = {
@@ -75,14 +77,60 @@ def part_1(rules, parts):
     )
 
 
+def split_range_at(rng, mid):
+    start = rng.start
+    stop = rng.stop
+    return range(start, min(stop, mid)), range(max(mid, start), stop)
+
+
+def count_possiblities(rules, part, state, rule_index):
+    result = 0
+    while True:
+        if state == "A":
+            return result + math.prod(len(prop) for prop in part.values())
+        elif state == "R":
+            return result
+
+        rule = rules[state][rule_index]
+        match rule.op:
+            case "<":
+                inside, outside = split_range_at(part[rule.prop], rule.n)
+                part_outside = part | {rule.prop: outside}
+                result += count_possiblities(rules, part_outside, state, rule_index + 1)
+                part = part | {rule.prop: inside}
+            case ">":
+                outside, inside = split_range_at(part[rule.prop], rule.n + 1)
+                part_outside = part | {rule.prop: outside}
+                result += count_possiblities(rules, part_outside, state, rule_index + 1)
+                part = part | {rule.prop: inside}
+            case "?":
+                pass
+            case _:
+                assert False, rule
+
+        state = rule.tgt
+        rule_index = 0
+
+
+def part_2(rules):
+    part = dict(x=range(1, 4001), m=range(1, 4001), a=range(1, 4001), s=range(1, 4001))
+    return count_possiblities(rules, part, "in", 0)
+
+
 def test_part_1():
     rules, parts = read_input("input_test")
     assert part_1(rules, parts) == EXPECTED_PART_1
 
 
+def test_part_2():
+    rules, _ = read_input("input_test")
+    assert part_2(rules) == EXPECTED_PART_2
+
+
 def main():
     rules, parts = read_input("input")
     print(part_1(rules, parts))
+    print(part_2(rules))
 
 
 if __name__ == "__main__":
