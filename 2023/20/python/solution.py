@@ -117,8 +117,8 @@ def part_2(modules):
     states = setup_initial_state(modules)
     sent = defaultdict(int)
 
-    rx_dep, = (m.name for m in modules if "rx" in m.targets)
-    rx_dep_deps = [m.name for m in modules if rx_dep in m.targets]
+    rx_dep, = (module.name for module in modules if "rx" in module.targets)
+    rx_dep_deps = [module.name for module in modules if rx_dep in module.targets]
 
     for time in count(1):
         simulate_one_button_press(states, sent, time)
