@@ -352,6 +352,10 @@ where
         self.world.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn lines(&self) -> impl Iterator<Item = &[Tile]> {
         self.world.chunks(self.width)
     }
