@@ -359,6 +359,10 @@ where
     pub fn lines(&self) -> impl Iterator<Item = &[Tile]> {
         self.world.chunks(self.width)
     }
+
+    pub fn size(&self) -> Point {
+        Point::from_xy((self.width, self.len() / self.width))
+    }
 }
 
 impl<Point, Tile> World for RectangularWorld<Point, Tile>
