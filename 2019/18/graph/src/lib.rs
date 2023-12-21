@@ -343,12 +343,12 @@ where
         self.world.get_mut(index)
     }
 
-    fn index(&self, p: &Point) -> usize {
+    pub fn index(&self, p: &Point) -> usize {
         let (x, y) = p.to_xy();
         x + y * self.width
     }
 
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.world.len()
     }
 
