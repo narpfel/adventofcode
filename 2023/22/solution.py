@@ -1,6 +1,7 @@
 #!/usr/bin/env pypy3
 
 EXPECTED_PART_1 = 5
+EXPECTED_PART_2 = 7
 
 
 def parse_point(s):
@@ -65,25 +66,35 @@ def solve(bricks):
 
     bricks = settle(bricks, x_range, y_range)
 
-    result = 0
+    result_part_1 = 0
+    result_part_2 = 0
     for i, brick in enumerate(bricks):
         copy = bricks[:i] + bricks[i + 1:]
         settled = frozenset(settle(copy, x_range, y_range))
         copy = frozenset(copy)
 
         if settled == copy:
-            result += 1
+            result_part_1 += 1
+        else:
+            result_part_2 += len(settled - copy)
 
-    return result
+    return result_part_1, result_part_2
 
 
 def test_part_1():
     puzzle_input = read_input("input_test")
-    assert solve(puzzle_input) == EXPECTED_PART_1
+    assert solve(puzzle_input)[0] == EXPECTED_PART_1
+
+
+def test_part_2():
+    puzzle_input = read_input("input_test")
+    assert solve(puzzle_input)[1] == EXPECTED_PART_2
 
 
 def main():
-    print(solve(read_input("input")))
+    part_1, part_2 = solve(read_input("input"))
+    print(part_1)
+    print(part_2)
 
 
 if __name__ == "__main__":
