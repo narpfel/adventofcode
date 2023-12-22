@@ -32,7 +32,7 @@ def move(brick):
 def settle(bricks, x_range, y_range):
     while True:
         new_bricks = []
-        all_bricks = {
+        all_blocks = {
             (x, y, 0)
             for x in x_range
             for y in y_range
@@ -40,9 +40,9 @@ def settle(bricks, x_range, y_range):
         for i, brick in bricks:
             while True:
                 moved = move(brick)
-                if moved & all_bricks:
+                if moved & all_blocks:
                     new_bricks.append((i, brick))
-                    all_bricks |= brick
+                    all_blocks |= brick
                     break
                 else:
                     brick = moved
