@@ -1,0 +1,12 @@
+[package]
+name = "solution"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+lto = true
+codegen-units = 1
+
+[dependencies]
+arrayvec = "0.7.4"
+ct-python = "0.5.7"
