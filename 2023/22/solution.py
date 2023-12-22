@@ -30,32 +30,28 @@ def move(brick):
 
 
 def settle(bricks, x_range, y_range):
-    while True:
-        new_bricks = []
-        all_blocks = {
-            (x, y, 0)
-            for x in x_range
-            for y in y_range
-        }
-        for i, brick in bricks:
-            while True:
-                moved = move(brick)
-                if moved & all_blocks:
-                    new_bricks.append((i, brick))
-                    all_blocks |= brick
-                    break
-                else:
-                    brick = moved
+    new_bricks = []
+    all_blocks = {
+        (x, y, 0)
+        for x in x_range
+        for y in y_range
+    }
+    for i, brick in bricks:
+        while True:
+            moved = move(brick)
+            if moved & all_blocks:
+                new_bricks.append((i, brick))
+                all_blocks |= brick
+                break
+            else:
+                brick = moved
 
-        if new_bricks == bricks:
-            return new_bricks
-
-        bricks = new_bricks
+    return new_bricks
 
 
 def solve(bricks):
     bricks = [(i, make_brick(start, end)) for i, (start, end) in enumerate(bricks)]
-    bricks = sorted(bricks, key=lambda b: min(z for _, _, z in b[1]))
+    bricks = sorted(bricks, key=lambda brick: min(z for _, _, z in brick[1]))
 
     min_x = min(x for _, brick in bricks for x, _, _ in brick)
     max_x = max(x for _, brick in bricks for x, _, _ in brick)
