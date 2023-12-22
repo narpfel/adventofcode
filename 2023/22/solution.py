@@ -69,14 +69,14 @@ def solve(bricks):
     result_part_1 = 0
     result_part_2 = 0
     for i, brick in enumerate(bricks):
-        copy = bricks[:i] + bricks[i + 1:]
-        settled = frozenset(settle(copy, x_range, y_range))
-        copy = frozenset(copy)
+        ith_brick_removed = bricks[:i] + bricks[i + 1:]
+        settled = frozenset(settle(ith_brick_removed, x_range, y_range))
+        ith_brick_removed = frozenset(ith_brick_removed)
 
-        if settled == copy:
+        if settled == ith_brick_removed:
             result_part_1 += 1
         else:
-            result_part_2 += len(settled - copy)
+            result_part_2 += len(settled - ith_brick_removed)
 
     return result_part_1, result_part_2
 
