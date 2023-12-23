@@ -52,9 +52,9 @@ impl graph::Tile for Tile {
 }
 
 #[derive(Debug, Clone)]
-struct Forest(RectangularWorld<CartesianPoint, Tile>);
+struct Forest<S: Slipperiness>(RectangularWorld<CartesianPoint, Tile>, S);
 
-impl Forest {
+impl<S: Slipperiness> Forest<S> {
     fn distances_with<'a>(
         &'a self,
         start: CartesianPoint,
@@ -94,7 +94,7 @@ impl Forest {
     }
 }
 
-impl World for Forest {
+impl<S: Slipperiness> World for Forest<S> {
     type Point = CartesianPoint;
     type Tile = Tile;
 
@@ -107,9 +107,31 @@ impl World for Forest {
     }
 
     fn neighbours(&self, point: Self::Point) -> impl Iterator<Item = Self::Point> {
-        let ty = self.get(&point).unwrap();
+        self.1.neighbours(self, point)
+    }
+}
+
+trait Slipperiness: Clone + Copy {
+    fn neighbours(
+        self,
+        forest: &Forest<Self>,
+        point: <Forest<Self> as World>::Point,
+    ) -> impl Iterator<Item = <Forest<Self> as World>::Point>;
+}
+
+#[derive(Debug, Clone, Copy)]
+struct Slippery;
+
+impl Slipperiness for Slippery {
+    fn neighbours(
+        self,
+        forest: &Forest<Self>,
+        point: <Forest<Slippery> as World>::Point,
+    ) -> impl Iterator<Item = <Forest<Slippery> as World>::Point> {
+        let ty = forest.get(&point).unwrap();
         let CartesianPoint(x, y) = point;
-        self.0
+        forest
+            .0
             .neighbours(point)
             .filter(move |&CartesianPoint(x2, y2)| match ty {
                 Tile::Path => true,
@@ -119,6 +141,19 @@ impl World for Forest {
                 Up => x == x2 && y2 == y - 1,
                 Down => x == x2 && y2 == y + 1,
             })
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct NotSlippery;
+
+impl Slipperiness for NotSlippery {
+    fn neighbours(
+        self,
+        forest: &Forest<Self>,
+        point: <Forest<Self> as World>::Point,
+    ) -> impl Iterator<Item = <Forest<Self> as World>::Point> {
+        forest.0.neighbours(point)
     }
 }
 
@@ -221,8 +256,11 @@ fn set_bit(n: &mut u64, bit: usize) {
     *n |= 1 << bit;
 }
 
-fn solve(filename: impl AsRef<Path>) -> u64 {
-    let forest = Forest(RectangularWorld::<CartesianPoint, Tile>::from_file(filename).unwrap());
+fn solve(filename: impl AsRef<Path>, slipperiness: impl Slipperiness) -> u64 {
+    let forest = Forest(
+        RectangularWorld::<CartesianPoint, Tile>::from_file(filename).unwrap(),
+        slipperiness,
+    );
     // FIXME: `start` and `end` could be anywhere on the first/last line, but in the
     // example and real input, they’re both at fixed positions.
     let start = CartesianPoint(1, 0);
@@ -255,7 +293,8 @@ fn solve(filename: impl AsRef<Path>) -> u64 {
 }
 
 fn main() {
-    println!("{}", solve("input"));
+    println!("{}", solve("input", Slippery));
+    println!("{}", solve("input", NotSlippery));
 }
 
 #[cfg(test)]
@@ -264,6 +303,11 @@ mod tests {
 
     #[test]
     fn part_1() {
-        assert_eq!(solve("input_test"), 94);
+        assert_eq!(solve("input_test", Slippery), 94);
+    }
+
+    #[test]
+    fn part_2() {
+        assert_eq!(solve("input_test", NotSlippery), 154);
     }
 }
