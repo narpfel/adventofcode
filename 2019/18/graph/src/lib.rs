@@ -541,7 +541,7 @@ impl Distance {
         Self::default()
     }
 
-    fn map(self, f: impl FnOnce(u64) -> u64) -> Self {
+    pub fn map(self, f: impl FnOnce(u64) -> u64) -> Self {
         Distance(Reverse(self.0 .0.map(|Reverse(d)| Reverse(f(d)))))
     }
 }

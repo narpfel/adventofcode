@@ -1,0 +1,13 @@
+[package]
+name = "solution"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+lto = true
+codegen-units = 1
+debug = 2
+
+[dependencies]
+fnv = "1.0.7"
+graph = { path = "../../2019/18/graph" }
