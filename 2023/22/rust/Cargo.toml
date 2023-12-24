@@ -8,5 +8,4 @@ lto = true
 codegen-units = 1
 
 [dependencies]
-arrayvec = "0.7.4"
 ct-python = "0.5.7"

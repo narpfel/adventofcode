@@ -1,7 +1,5 @@
 use std::ops::Range;
 
-use arrayvec::ArrayVec;
-
 ct_python::ct_python! {
     import sys
     sys.path.append("../python")
@@ -12,47 +10,39 @@ ct_python::ct_python! {
         for start, end in solution.read_input("input")
     ]
     print(f "const INPUT: &[(Point, Point)] = &{puzzle_input};")
-    max_brick_size = max(
-        b - a + 1
-        for start, end in puzzle_input
-        for a, b in zip(start, end)
-    )
-    print(f "const MAX_BRICK_SIZE: usize = {max_brick_size};")
 }
 
-type Coordinate = u16;
+type Coordinate = usize;
 type Point = (Coordinate, Coordinate, Coordinate);
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct Brick {
     name: usize,
     moved: bool,
-    blocks: ArrayVec<Point, MAX_BRICK_SIZE>,
+    start: Point,
+    end: Point,
 }
 
 impl Brick {
     fn new(name: usize, start: Point, end: Point) -> Self {
-        Self {
-            name,
-            moved: false,
-            blocks: (start.0..=end.0)
-                .flat_map(move |x| {
-                    (start.1..=end.1).flat_map(move |y| (start.2..=end.2).map(move |z| (x, y, z)))
-                })
-                .collect(),
-        }
+        Self { name, moved: false, start, end }
     }
 
     fn drop(self) -> Self {
         Self {
             name: self.name,
             moved: true,
-            blocks: self
-                .blocks
-                .into_iter()
-                .map(|(x, y, z)| (x, y, z - 1))
-                .collect(),
+            start: (self.start.0, self.start.1, self.start.2 - 1),
+            end: (self.end.0, self.end.1, self.end.2 - 1),
         }
+    }
+
+    fn blocks(&self) -> impl Iterator<Item = Point> {
+        let start = self.start;
+        let end = self.end;
+        (start.0..end.0 + 1).flat_map(move |x| {
+            (start.1..end.1 + 1).flat_map(move |y| (start.2..end.2 + 1).map(move |z| (x, y, z)))
+        })
     }
 }
 
@@ -63,12 +53,7 @@ fn settle(
     z_range: Range<Coordinate>,
 ) -> Vec<Brick> {
     let xy_size = x_range.len() * y_range.len();
-    let index = |(x, y, z)| {
-        let x = usize::from(x);
-        let y = usize::from(y);
-        let z = usize::from(z);
-        z * xy_size + y * x_range.len() + x
-    };
+    let index = |(x, y, z)| z * xy_size + y * x_range.len() + x;
 
     let mut all_blocks = vec![false; x_range.len() * y_range.len() * z_range.len()];
     for y in y_range.clone() {
@@ -78,9 +63,9 @@ fn settle(
     }
 
     bricks.iter_mut().for_each(|brick| loop {
-        let moved = brick.clone().drop();
-        if moved.blocks.iter().any(|&block| all_blocks[index(block)]) {
-            for &block in &brick.blocks {
+        let moved = brick.drop();
+        if moved.blocks().any(|block| all_blocks[index(block)]) {
+            for block in brick.blocks() {
                 all_blocks[index(block)] = true;
             }
             break;
@@ -110,7 +95,7 @@ fn main() {
             .enumerate()
             .map(|(i, &(start, end))| Brick::new(i, start, end))
             .collect::<Vec<_>>();
-        bricks.sort_by_key(|brick| brick.blocks.iter().map(|(_, _, z)| *z).min());
+        bricks.sort_by_key(|brick| brick.blocks().map(|(_, _, z)| z).min());
         bricks = settle(bricks, x_range.clone(), y_range.clone(), z_range.clone());
         for brick in &mut bricks {
             brick.moved = false;
