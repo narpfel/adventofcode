@@ -2,7 +2,7 @@
 
 from itertools import combinations
 
-import z3
+import sympy
 
 EXPECTED_PART_1 = 2
 EXPECTED_PART_2 = 47
@@ -53,20 +53,16 @@ def part_1(hail, check_range=range(200000000000000, 400000000000000)):
 
 
 def part_2(hail):
-    solver = z3.Solver()
+    rx, ry, rz, rvx, rvy, rvz, t1, t2, t3 = sympy.symbols("rx, ry, rz, rvx, rvy, rvz, t1, t2, t3")
 
-    rx, ry, rz = z3.Int("rx"), z3.Int("ry"), z3.Int("rz")
-    rvx, rvy, rvz = z3.Int("rvx"), z3.Int("rvy"), z3.Int("rvz")
+    equations = [
+        sympy.Eq(hp + t * hv, rp + t * rv)
+        for t, (p, v) in zip([t1, t2, t3], hail)
+        for rp, rv, hp, hv in zip((rx, ry, rz), (rvx, rvy, rvz), p, v)
+    ]
 
-    for name, ((x, y, z), (vx, vy, vz)) in enumerate(hail):
-        t = z3.Int(f"t{name}")
-        solver.add(x + t * vx == rx + t * rvx)
-        solver.add(y + t * vy == ry + t * rvy)
-        solver.add(z + t * vz == rz + t * rvz)
-
-    assert solver.check() == z3.sat
-    model = solver.model()
-    return model[rx].as_long() + model[ry].as_long() + model[rz].as_long()
+    solution, = sympy.solve(equations)
+    return solution[rx] + solution[ry] + solution[rz]
 
 
 def test_part_1():
