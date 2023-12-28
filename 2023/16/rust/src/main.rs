@@ -1,6 +1,6 @@
 #![allow(mixed_script_confusables)]
 
-use std::collections::HashSet;
+use std::num::Wrapping;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct Point {
@@ -14,20 +14,35 @@ struct Beam {
     direction: Point,
 }
 
+impl Beam {
+    fn direction(&self) -> usize {
+        let Point { x, y } = self.direction;
+        let x = Wrapping(x as u64);
+        let y = Wrapping(y as u64);
+        ((x - Wrapping(3) * y + Wrapping(3)) / Wrapping(2)).0 as _
+    }
+}
+
 fn part_1(contraption: &[&[u8]], start: Beam) -> usize {
+    let x_size = contraption[0].len();
+    let y_size = contraption.len();
+    let index = |beam: Beam| {
+        let Point { x, y } = beam.position;
+        y as usize * x_size + x as usize
+    };
     let mut beams = vec![start];
-    let mut seen: HashSet<Beam> = HashSet::default();
+    let mut seen = vec![[false; 4]; x_size * y_size];
 
     while let Some(beam) = beams.pop() {
         let Beam {
             position: position @ Point { x, y },
             direction: Point { x: δx, y: δy },
         } = beam;
-        if !seen.contains(&beam)
-            && (0..contraption.len()).contains(&(y as usize))
+        if (0..contraption.len()).contains(&(y as usize))
             && (0..contraption[0].len()).contains(&(x as usize))
+            && !seen[index(beam)][beam.direction()]
         {
-            seen.insert(beam);
+            seen[index(beam)][beam.direction()] = true;
             match contraption[y as usize][x as usize] {
                 b'|' if δy == 0 => {
                     beams.push(Beam {
@@ -64,10 +79,7 @@ fn part_1(contraption: &[&[u8]], start: Beam) -> usize {
         }
     }
 
-    seen.iter()
-        .map(|beam| beam.position)
-        .collect::<HashSet<_>>()
-        .len()
+    seen.iter().filter(|seen| seen.iter().any(|&b| b)).count()
 }
 
 fn part_2(contraption: &[&[u8]]) -> usize {
