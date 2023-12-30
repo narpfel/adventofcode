@@ -84,25 +84,23 @@ def split_range_at(rng, mid):
     return range(start, min(stop, mid)), range(max(mid, start), stop)
 
 
-def count_possiblities(rules, part, state, rule_index):
-    result = 0
+def accepted_parts(rules, part, state, rule_index):
     while True:
         if state == "A":
-            return result + math.prod(len(prop) for prop in part.values())
+            yield part
+            return
         elif state == "R":
-            return result
+            return
 
         rule = rules[state][rule_index]
         match rule.op:
-            case "<":
-                inside, outside = split_range_at(part[rule.prop], rule.value)
+            case "<" | ">":
+                if rule.op == "<":
+                    inside, outside = split_range_at(part[rule.prop], rule.value)
+                else:
+                    outside, inside = split_range_at(part[rule.prop], rule.value + 1)
                 part_outside = part | {rule.prop: outside}
-                result += count_possiblities(rules, part_outside, state, rule_index + 1)
-                part = part | {rule.prop: inside}
-            case ">":
-                outside, inside = split_range_at(part[rule.prop], rule.value + 1)
-                part_outside = part | {rule.prop: outside}
-                result += count_possiblities(rules, part_outside, state, rule_index + 1)
+                yield from accepted_parts(rules, part_outside, state, rule_index + 1)
                 part = part | {rule.prop: inside}
             case "?":
                 pass
@@ -115,7 +113,10 @@ def count_possiblities(rules, part, state, rule_index):
 
 def part_2(rules):
     part = dict(x=range(1, 4001), m=range(1, 4001), a=range(1, 4001), s=range(1, 4001))
-    return count_possiblities(rules, part, "in", 0)
+    return sum(
+        math.prod(len(prop) for prop in part.values())
+        for part in accepted_parts(rules, part, "in", 0)
+    )
 
 
 def test_part_1():
