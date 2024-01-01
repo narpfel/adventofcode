@@ -3,7 +3,7 @@
 import re
 import sys
 
-sys.path.insert(0, "../../2016")
+sys.path.insert(0, "../../../2016")
 sparse = __import__("20.solution").solution
 
 EXPECTED_PART_1 = 26
