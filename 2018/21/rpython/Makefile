@@ -8,7 +8,7 @@ main-c: main.py pypy
 	pypy pypy/rpython/bin/rpython --lto -O2 --translation-jit $<
 
 pypy:
-	hg clone https://foss.heptapod.net/pypy/pypy
+	git clone --depth=1 https://github.com/pypy/pypy
 
 language:
 	@echo rpython
