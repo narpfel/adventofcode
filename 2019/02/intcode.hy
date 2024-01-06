@@ -89,45 +89,44 @@
           self.mode mode)
     (assert (isinstance address int)))
 
-  (with-decorator property
-    (defn value [self]
-      ((. self computer lookup)
-        (cond
-          [(= self.mode Mode.POSITION)
-           ((. self computer lookup) self.address)]
-          [(= self.mode Mode.IMMEDIATE)
-           self.address]
-          [(= self.mode Mode.RELATIVE)
-           (do
-             (setv val ((. self computer lookup) self.address))
-             (debug
-               "relative mode read: relative base %s offset %s"
-               self.computer.relative-base val)
-             (setv x (+ ((. self computer lookup) self.address) self.computer.relative-base))
-             (debug "relative mode read: read from address %s" x)
-             x)]
-          [True
-           (raise (ValueError f"unknown read mode {mode !r}"))]))))
+  (defn [property] value [self]
+    ((. self computer lookup)
+      (cond
+        (= self.mode Mode.POSITION)
+         ((. self computer lookup) self.address)
+        (= self.mode Mode.IMMEDIATE)
+         self.address
+        (= self.mode Mode.RELATIVE)
+         (do
+           (setv val ((. self computer lookup) self.address))
+           (debug
+             "relative mode read: relative base %s offset %s"
+             self.computer.relative-base val)
+           (setv x (+ ((. self computer lookup) self.address) self.computer.relative-base))
+           (debug "relative mode read: read from address %s" x)
+           x)
+        True
+         (raise (ValueError f"unknown read mode {mode !r}")))))
 
   (defn store [self value]
     (cond
-      [(= self.mode Mode.POSITION)
+      (= self.mode Mode.POSITION)
        (do
          (setv address ((. self computer lookup) self.address))
          (debug "write value %s to address %s in %s" value address self.mode)
-         (assoc self.computer.memory address value))]
-      [(= self.mode Mode.IMMEDIATE)
-       (raise Exception)]
-      [(= self.mode Mode.RELATIVE)
+         (assoc self.computer.memory address value))
+      (= self.mode Mode.IMMEDIATE)
+       (raise Exception)
+      (= self.mode Mode.RELATIVE)
        (do
          (setv address (+ self.computer.relative-base ((. self computer lookup) self.address)))
          (debug "write value %s to address %s in %s" value address self.mode)
          (assoc
            self.computer.memory
            (+ self.computer.relative-base ((. self computer lookup) self.address))
-           value))]
-      [True
-       (raise Exception)])))
+           value))
+      True
+       (raise Exception))))
 
 
 (defclass IntcodeComputer []
@@ -142,14 +141,12 @@
           self.outputs (lif outputs outputs (self.OUTPUTS-TYPE))
           self.relative-base 0))
 
-  (with-decorator classmethod
-    (defn from-string [cls string #* args #** kwargs]
-      (cls (parse string) #* args #** kwargs)))
+  (defn [classmethod] from-string [cls string #* args #** kwargs]
+    (cls (parse string) #* args #** kwargs))
 
-  (with-decorator classmethod
-    (defn from-file [cls path #* args #** kwargs]
-      (with [f (open path)]
-        (.from-string cls (.read f) #* args #** kwargs))))
+  (defn [classmethod] from-file [cls path #* args #** kwargs]
+    (with [f (open path)]
+      (.from-string cls (.read f) #* args #** kwargs)))
 
   (defn lookup [self address]
     (get self.memory address))
@@ -171,7 +168,7 @@
            (debug "run-program: %s" self.instruction-pointer)
            (setv opcode (. (.read self Mode.IMMEDIATE) value))
            (setv command (% opcode 100))
-           (if (= command 99) (break))
+           (when (= command 99) (break))
            (setv operation (get self.OPERATIONS command))
            (debug "instruction: %s (%s): %s" command opcode operation.function.__name__)
            (debug "state: ip: %s" self.instruction-pointer)
@@ -211,13 +208,13 @@
     (debug
       "jump-if-true from %s on value %s to %s"
       self.instruction-pointer value.value target.value)
-    (if value.value (setv self.instruction-pointer target.value)))
+    (when value.value (setv self.instruction-pointer target.value)))
 
   (defn jump-if-false [self value target]
     (debug
       "jump-if-false from %s on value %s to %s"
       self.instruction-pointer value.value target.value)
-    (if (not value.value) (setv self.instruction-pointer target.value)))
+    (when (not value.value) (setv self.instruction-pointer target.value)))
 
   (defn less-than [self lhs rhs addr]
     (debug "less-than %s < %s => %s" lhs.value rhs.value (< lhs.value rhs.value))
@@ -240,4 +237,4 @@
   (setv OPERATIONS
         (dfor
           [opcode function] (enumerate OPERATION-FUNCTIONS 1)
-          [opcode (with-parameter-count function)])))
+          opcode (with-parameter-count function))))
