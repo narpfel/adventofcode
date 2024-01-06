@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
+import math
+from itertools import combinations
 from itertools import count
+from itertools import tee
 
 import pytest
 
@@ -32,18 +35,32 @@ def solve_part1(earliest_time, busses):
     return (time - earliest_time) * bus
 
 
-def solve_part2(busses):
+def chinese_remainder_theorem(ixs):
     # Implementation of this algorithm:
     # https://en.wikipedia.org/w/index.php?title=Chinese_remainder_theorem&oldid=993982536#Search_by_sieving
-    period = busses[0]
-    time = 0
-    for i, bus in filter(lambda i_bus: i_bus[1] is not UNSPECIFIED, enumerate(busses[1:], 1)):
+    ixs, ixs_copy = tee(ixs)
+
+    xs = [x for _, x in ixs_copy]
+    gcds = {math.gcd(a, b) for a, b in combinations(xs, 2)}
+    assert gcds == {1}, f"numbers must be pairwise coprime, but gcds are {gcds}; numbers = {xs}"
+
+    _, period = next(ixs)
+    result = 0
+    for i, x in ixs:
         for _ in count():
-            time += period
-            if (time + i) % bus == 0:
-                period *= bus
+            result += period
+            if (result + i) % x == 0:
+                period *= x
                 break
-    return time
+    return result
+
+
+def solve_part2(busses):
+    return chinese_remainder_theorem(
+        (departure_time, bus)
+        for departure_time, bus in enumerate(busses)
+        if bus is not UNSPECIFIED
+    )
 
 
 def test_part1():
