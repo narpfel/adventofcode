@@ -1,3 +1,5 @@
+#![feature(lint_reasons)]
+
 use std::{
     collections::{
         HashMap,
@@ -112,7 +114,7 @@ impl TryFrom<Cell> for Tile {
 }
 
 #[derive(Copy, Clone, Debug)]
-struct InvalidTile(Cell);
+struct InvalidTile(#[expect(dead_code)] Cell);
 
 #[derive(Clone, Debug, Default)]
 struct Hull {
@@ -139,7 +141,7 @@ impl graph::World for Hull {
 
     fn iter(&self) -> impl Iterator<Item = (Self::Point, &Self::Tile)> {
         unimplemented!();
-        #[allow(unreachable_code)]
+        #[expect(unreachable_code)]
         [].into_iter()
     }
 }

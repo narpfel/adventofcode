@@ -1,3 +1,5 @@
+#![feature(lint_reasons)]
+
 use std::{
     error::Error,
     fs::File,
@@ -17,7 +19,7 @@ enum Tile {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct Invalid(char);
+struct Invalid(#[expect(dead_code)] char);
 
 impl Tile {
     fn next_pos(self, tiles: &[Vec<Tile>], x: usize, y: usize) -> (usize, usize) {

@@ -1,3 +1,5 @@
+#![feature(lint_reasons)]
+
 use std::error::Error;
 
 use fnv::FnvHashMap;
@@ -15,7 +17,7 @@ enum Tile {
 }
 
 #[derive(Debug)]
-struct Invalid(char);
+struct Invalid(#[expect(dead_code)] char);
 
 impl Tile {
     fn height(self) -> u64 {

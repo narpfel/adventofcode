@@ -1,3 +1,4 @@
+#![feature(lint_reasons)]
 #![feature(type_alias_impl_trait)]
 
 use std::{
@@ -69,7 +70,7 @@ impl Tile {
 }
 
 #[derive(Debug)]
-struct Invalid(char);
+struct Invalid(#[expect(dead_code)] char);
 
 impl graph::Tile for Tile {
     fn is_walkable(&self) -> bool {

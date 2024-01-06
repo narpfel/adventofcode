@@ -1,3 +1,5 @@
+#![feature(lint_reasons)]
+
 use std::{
     error::Error,
     fs::read_to_string,
@@ -17,7 +19,7 @@ enum Mode {
 use Mode::*;
 
 #[derive(Copy, Clone, Debug)]
-pub struct InvalidMode(Cell);
+pub struct InvalidMode(#[expect(dead_code)] Cell);
 
 impl TryFrom<Cell> for Mode {
     type Error = InvalidMode;
@@ -49,7 +51,7 @@ enum Opcode {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub struct InvalidOpcode(Cell);
+pub struct InvalidOpcode(#[expect(dead_code)] Cell);
 
 impl TryFrom<Cell> for Opcode {
     type Error = InvalidOpcode;
@@ -144,23 +146,23 @@ impl<'a, T: IO> Computer<'a, T> {
                 let a = *self.read(next_mode(&mut modes)?)?;
                 let b = *self.read(next_mode(&mut modes)?)?;
                 let target_addr = *self.read(Immediate)?;
-                #[allow(clippy::redundant_closure_call)]
+                #[expect(clippy::redundant_closure_call)]
                 self.write(target_addr, $f(a, b), next_mode(&mut modes)?)?;
             }};
             (2, $f:expr) => {{
                 let a = *self.read(next_mode(&mut modes)?)?;
                 let b = *self.read(next_mode(&mut modes)?)?;
-                #[allow(clippy::redundant_closure_call)]
+                #[expect(clippy::redundant_closure_call)]
                 $f(a, b);
             }};
             (1, $f:expr) => {{
                 let a = *self.read(next_mode(&mut modes)?)?;
-                #[allow(clippy::redundant_closure_call)]
+                #[expect(clippy::redundant_closure_call)]
                 $f(a);
             }};
             (0, store_result, $f:expr) => {{
                 let target_addr = *self.read(Immediate)?;
-                #[allow(clippy::redundant_closure_call)]
+                #[expect(clippy::redundant_closure_call)]
                 self.write(target_addr, $f(), next_mode(&mut modes)?)?;
             }};
         }

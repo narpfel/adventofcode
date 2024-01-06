@@ -1,4 +1,5 @@
 #![feature(entry_insert)]
+#![feature(lint_reasons)]
 
 use std::{
     io,
@@ -104,8 +105,8 @@ impl Maze {
 
 #[derive(Debug)]
 enum Error {
-    WrongChar(char),
-    IoError(io::Error),
+    WrongChar(#[expect(dead_code)] char),
+    IoError(#[expect(dead_code)] io::Error),
 }
 
 impl From<char> for Error {
