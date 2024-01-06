@@ -8,26 +8,16 @@ from itertools import permutations
 
 def parse_impl(nested_number, level=0):
     for child in nested_number:
-        # match child:
-        #     case int():
-        #         yield child, level
-        #     case [int(x), int(y)]:
-        #         yield x, level + 1
-        #         yield y, level + 1
-        #     case list():
-        #         yield from parse_impl(child, level + 1)
-        #     case _:
-        #         assert False
-        if isinstance(child, int):
-            yield child, level
-        elif isinstance(child, list):
-            if len(child) == 2 and isinstance(child[0], int) and isinstance(child[1], int):
-                yield child[0], level + 1
-                yield child[1], level + 1
-            else:
+        match child:
+            case int():
+                yield child, level
+            case [int(x), int(y)]:
+                yield x, level + 1
+                yield y, level + 1
+            case list():
                 yield from parse_impl(child, level + 1)
-        else:
-            assert False
+            case _:
+                assert False
 
 
 def parse(nested_number):
