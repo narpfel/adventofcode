@@ -167,7 +167,7 @@ pub fn md5(bytes: &[u8]) -> [u8; DIGEST_BYTE_COUNT] {
             },
         ];
 
-        for Round { round, index, s_cycle } in &md5_rounds {
+        for Round { round, index, s_cycle } in md5_rounds {
             for (k, &s) in (0..CHUNKSIZE / 4).map(index).zip(s_cycle.iter().cycle()) {
                 let tmp = d;
                 d = c;
