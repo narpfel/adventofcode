@@ -63,21 +63,28 @@ impl<'a> Iterator for Chunks<'a> {
         self.chunks
             .next()
             .inspect(|_| self.chunk_count += Wrapping(1))
-            .or_else(|| {
-                let buffer = self.buffer.take()?;
-                let chunk = self.chunks.remainder();
-                let mut padded_chunks = pad(
-                    chunk,
-                    Wrapping(CHUNKSIZE as u64) * self.chunk_count + Wrapping(chunk.len() as u64),
-                    buffer,
-                )
-                .ok()?
-                .array_chunks();
-                let first_chunk = padded_chunks.next();
-                self.last_chunk = padded_chunks.next();
-                first_chunk
-            })
-            .or_else(|| self.last_chunk.take())
+            .or_else(
+                #[cold]
+                || {
+                    let buffer = self.buffer.take()?;
+                    let chunk = self.chunks.remainder();
+                    let mut padded_chunks = pad(
+                        chunk,
+                        Wrapping(CHUNKSIZE as u64) * self.chunk_count
+                            + Wrapping(chunk.len() as u64),
+                        buffer,
+                    )
+                    .ok()?
+                    .array_chunks();
+                    let first_chunk = padded_chunks.next();
+                    self.last_chunk = padded_chunks.next();
+                    first_chunk
+                },
+            )
+            .or_else(
+                #[cold]
+                || self.last_chunk.take(),
+            )
     }
 }
 
