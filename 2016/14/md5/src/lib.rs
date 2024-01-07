@@ -62,10 +62,7 @@ impl<'a> Iterator for Chunks<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         self.chunks
             .next()
-            .map(|chunk| {
-                self.chunk_count += Wrapping(1);
-                chunk
-            })
+            .inspect(|_| self.chunk_count += Wrapping(1))
             .or_else(|| {
                 let buffer = self.buffer.take()?;
                 let chunk = self.chunks.remainder();
