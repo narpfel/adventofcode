@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 byteorder = "1"
-memmap = "0.7"
+memmap2 = "0.9.3"
 ct-python = "0.5"
 
 [profile.release]
