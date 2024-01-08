@@ -5,9 +5,11 @@ from rpython.rlib import jit
 driver = jit.JitDriver(
     greens=["ip", "ip_value", "instrs"],
     reds=["last", "registers", "seen"],
-    virtualizables=[],
+    virtualizables=["registers"],
     is_recursive=False,
 )
+
+REGISTER_COUNT = 6
 
 EXECUTE = {
     "addr": lambda registers, lhs, rhs: registers[lhs] + registers[rhs],
@@ -28,6 +30,31 @@ EXECUTE = {
     "eqrr": lambda registers, lhs, rhs: int(registers[lhs] == registers[rhs]),
 }
 
+# pyupgrade removes inheriting from `object`
+Object = object
+
+
+class Registers(Object):
+    _virtualizable_ = ["registers[*]"]
+    _immutable_fields_ = ["registers"]
+
+    def __init__(self):
+        self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
+        self.registers = [0] * REGISTER_COUNT
+
+    def __getitem__(self, index):
+        assert 0 <= index < REGISTER_COUNT, index
+        jit.promote(index)
+        return self.registers[index]
+
+    def __setitem__(self, index, value):
+        assert 0 <= index < REGISTER_COUNT, index
+        jit.promote(index)
+        self.registers[index] = value
+
+    def __len__(self):
+        return len(self.registers)
+
 
 def parse(line):
     instr, lhs, rhs, tgt = line.split(" ")
@@ -42,7 +69,7 @@ def lookup_instr(functions, opcode):
 def run(instrs, ip):
     seen = {}
     last = 0
-    registers = [0] * 6
+    registers = Registers()
     assert 0 <= ip < len(registers)
     while True:
         driver.jit_merge_point(
