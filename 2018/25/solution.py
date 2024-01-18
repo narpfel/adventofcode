@@ -14,7 +14,7 @@ def distance(p1, p2):
 
 
 def solve(filename):
-    points = list(parse_input(filename))
+    points = parse_input(filename)
     constellations = []
 
     for point in points:
