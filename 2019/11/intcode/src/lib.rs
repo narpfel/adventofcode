@@ -146,24 +146,20 @@ impl<'a, T: IO> Computer<'a, T> {
                 let a = *self.read(next_mode(&mut modes)?)?;
                 let b = *self.read(next_mode(&mut modes)?)?;
                 let target_addr = *self.read(Immediate)?;
-                #[expect(clippy::redundant_closure_call)]
                 self.write(target_addr, $f(a, b), next_mode(&mut modes)?)?;
             }};
             (2, $f:expr) => {{
                 let a = *self.read(next_mode(&mut modes)?)?;
                 let b = *self.read(next_mode(&mut modes)?)?;
-                #[expect(clippy::redundant_closure_call)]
                 $f(a, b);
             }};
             (1, $f:expr) => {{
                 let a = *self.read(next_mode(&mut modes)?)?;
-                #[expect(clippy::redundant_closure_call)]
                 $f(a);
             }};
-            (0, store_result, $f:expr) => {{
+            (0, store_result, $value:expr) => {{
                 let target_addr = *self.read(Immediate)?;
-                #[expect(clippy::redundant_closure_call)]
-                self.write(target_addr, $f(), next_mode(&mut modes)?)?;
+                self.write(target_addr, $value, next_mode(&mut modes)?)?;
             }};
         }
 
@@ -173,7 +169,7 @@ impl<'a, T: IO> Computer<'a, T> {
             Multiply => operation!(2, store_result, |a, b| a * b),
             ReadInput => {
                 let input = self.io.next_input()?;
-                operation!(0, store_result, || input);
+                operation!(0, store_result, input);
             }
             WriteOutput => operation!(1, |output| self.io.output(output)),
             JumpIfTrue => operation!(2, |condition, target| {
