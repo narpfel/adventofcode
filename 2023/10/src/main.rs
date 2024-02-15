@@ -1,13 +1,9 @@
-use std::{
-    io,
-    path::Path,
-};
+use std::io;
+use std::path::Path;
 
-use graph::{
-    ReadExt,
-    RectangularWorld,
-    World,
-};
+use graph::ReadExt;
+use graph::RectangularWorld;
+use graph::World;
 
 type Point = (i64, i64);
 

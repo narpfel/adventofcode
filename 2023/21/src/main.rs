@@ -1,18 +1,14 @@
 #![allow(mixed_script_confusables)]
 
-use std::{
-    collections::VecDeque,
-    io,
-    path::Path,
-};
+use std::collections::VecDeque;
+use std::io;
+use std::path::Path;
 
-use graph::{
-    Point as _,
-    ReadExt as _,
-    RectangularWorld,
-    Tile as _,
-    World,
-};
+use graph::Point as _;
+use graph::ReadExt as _;
+use graph::RectangularWorld;
+use graph::Tile as _;
+use graph::World;
 
 const DISTANCE_PART_2: u64 = 26501365;
 

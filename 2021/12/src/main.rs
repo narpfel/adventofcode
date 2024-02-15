@@ -1,13 +1,9 @@
-use std::{
-    collections::HashMap,
-    fs::File,
-    io::{
-        self,
-        BufRead,
-        BufReader,
-    },
-    path::Path,
-};
+use std::collections::HashMap;
+use std::fs::File;
+use std::io;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::path::Path;
 
 use itertools::Itertools;
 
@@ -161,11 +157,9 @@ fn part_2(
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        part_1,
-        part_2,
-        read_input,
-    };
+    use super::part_1;
+    use super::part_2;
+    use super::read_input;
 
     #[test]
     fn test_part_1_1() {

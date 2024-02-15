@@ -1,21 +1,15 @@
-use std::{
-    cmp::Reverse,
-    collections::BinaryHeap,
-    iter::from_fn,
-    path::Path,
-};
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
+use std::iter::from_fn;
+use std::path::Path;
 
-use fnv::{
-    FnvHashMap,
-    FnvHashSet,
-};
-use graph::{
-    CartesianPoint,
-    Distance,
-    ReadExt as _,
-    RectangularWorld,
-    World,
-};
+use fnv::FnvHashMap;
+use fnv::FnvHashSet;
+use graph::CartesianPoint;
+use graph::Distance;
+use graph::ReadExt as _;
+use graph::RectangularWorld;
+use graph::World;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Tile {

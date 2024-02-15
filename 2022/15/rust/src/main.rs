@@ -1,15 +1,11 @@
 #![feature(array_chunks)]
 
-use std::{
-    collections::HashSet,
-    error::Error,
-    fs::File,
-    io::{
-        BufRead,
-        BufReader,
-    },
-    path::Path,
-};
+use std::collections::HashSet;
+use std::error::Error;
+use std::fs::File;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::path::Path;
 
 use regex::Regex;
 

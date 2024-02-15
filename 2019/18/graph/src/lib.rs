@@ -1,37 +1,25 @@
 #![feature(thread_local)]
 
-use std::{
-    any::TypeId,
-    cmp::Reverse,
-    collections::{
-        BinaryHeap,
-        HashMap,
-        VecDeque,
-    },
-    fmt::Debug,
-    fs::File,
-    hash::{
-        BuildHasher,
-        Hash,
-    },
-    io::{
-        self,
-        BufRead,
-        BufReader,
-    },
-    iter::from_fn,
-    marker::PhantomData,
-    path::Path,
-};
+use std::any::TypeId;
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
+use std::collections::HashMap;
+use std::collections::VecDeque;
+use std::fmt::Debug;
+use std::fs::File;
+use std::hash::BuildHasher;
+use std::hash::Hash;
+use std::io;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::iter::from_fn;
+use std::marker::PhantomData;
+use std::path::Path;
 
-use fnv::{
-    FnvHashMap,
-    FnvHashSet,
-};
-use im_rc::{
-    vector::RRBPool,
-    Vector,
-};
+use fnv::FnvHashMap;
+use fnv::FnvHashSet;
+use im_rc::vector::RRBPool;
+use im_rc::Vector;
 
 // TODO: Formulate in terms of edges and vertices. Maybe use some kind of
 // adjacency matrix/hash map?

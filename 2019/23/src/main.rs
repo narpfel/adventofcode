@@ -1,13 +1,9 @@
-use std::{
-    cell::Cell,
-    error::Error,
-    rc::Rc,
-};
+use std::cell::Cell;
+use std::error::Error;
+use std::rc::Rc;
 
-use intcode::{
-    Computer,
-    IO,
-};
+use intcode::Computer;
+use intcode::IO;
 
 struct State {
     input_queue: std::sync::mpsc::Receiver<intcode::Cell>,

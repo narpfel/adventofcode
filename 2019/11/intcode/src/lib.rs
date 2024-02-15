@@ -1,11 +1,9 @@
 #![feature(lint_reasons)]
 
-use std::{
-    error::Error,
-    fs::read_to_string,
-    num::ParseIntError,
-    path::Path,
-};
+use std::error::Error;
+use std::fs::read_to_string;
+use std::num::ParseIntError;
+use std::path::Path;
 
 pub type Cell = i64;
 pub type Memory = Vec<Cell>;

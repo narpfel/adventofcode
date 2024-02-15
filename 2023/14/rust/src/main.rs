@@ -1,13 +1,9 @@
-use std::{
-    collections::hash_map::Entry,
-    io,
-    path::Path,
-};
+use std::collections::hash_map::Entry;
+use std::io;
+use std::path::Path;
 
-use either::Either::{
-    Left,
-    Right,
-};
+use either::Either::Left;
+use either::Either::Right;
 use fnv::FnvHashMap;
 
 const TOTAL_CYCLE_COUNT: u64 = 1000000000;

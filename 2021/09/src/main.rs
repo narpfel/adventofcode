@@ -1,14 +1,10 @@
-use std::{
-    cmp::Reverse,
-    collections::HashMap,
-};
+use std::cmp::Reverse;
+use std::collections::HashMap;
 
-use graph::{
-    CartesianPoint as Point,
-    ReadExt,
-    Tile as _,
-    World,
-};
+use graph::CartesianPoint as Point;
+use graph::ReadExt;
+use graph::Tile as _;
+use graph::World;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord)]
 struct Tile {

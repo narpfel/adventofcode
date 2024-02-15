@@ -1,11 +1,7 @@
-use std::{
-    collections::{
-        HashMap,
-        HashSet,
-    },
-    fs::read_to_string,
-    io,
-};
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::fs::read_to_string;
+use std::io;
 
 type Point = (i64, i64);
 

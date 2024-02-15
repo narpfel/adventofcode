@@ -1,12 +1,8 @@
-use std::{
-    fs::File,
-    io::{
-        self,
-        BufRead,
-        BufReader,
-    },
-    path::Path,
-};
+use std::fs::File;
+use std::io;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::path::Path;
 
 use itertools::iproduct;
 

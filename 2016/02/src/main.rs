@@ -1,15 +1,9 @@
-use std::{
-    cmp::{
-        max,
-        min,
-    },
-    fs::File,
-    io::{
-        self,
-        prelude::*,
-        BufReader,
-    },
-};
+use std::cmp::max;
+use std::cmp::min;
+use std::fs::File;
+use std::io;
+use std::io::BufRead;
+use std::io::BufReader;
 
 fn read_instructions() -> io::Result<Vec<String>> {
     BufReader::new(File::open("input")?).lines().collect()

@@ -1,19 +1,12 @@
-use std::{
-    cmp::Ordering,
-    error::Error,
-    io::{
-        stdout,
-        Write,
-    },
-};
+use std::cmp::Ordering;
+use std::error::Error;
+use std::io::stdout;
+use std::io::Write;
 
+use intcode::Cell;
+use intcode::Computer;
+use intcode::IO;
 use itertools::Itertools;
-
-use intcode::{
-    Cell,
-    Computer,
-    IO,
-};
 
 type Point = (i64, i64);
 

@@ -1,21 +1,15 @@
 #![feature(array_chunks)]
 
-use std::{
-    io::{
-        Cursor,
-        Seek,
-        SeekFrom,
-        Write,
-    },
-    num::Wrapping,
-};
+use std::io::Cursor;
+use std::io::Seek;
+use std::io::SeekFrom;
+use std::io::Write;
+use std::num::Wrapping;
 
-use byteorder::{
-    ByteOrder,
-    LittleEndian,
-    ReadBytesExt,
-    WriteBytesExt,
-};
+use byteorder::ByteOrder;
+use byteorder::LittleEndian;
+use byteorder::ReadBytesExt;
+use byteorder::WriteBytesExt;
 
 mod constants;
 pub use constants::DIGEST_CHAR_LENGTH;

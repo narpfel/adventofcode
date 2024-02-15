@@ -1,10 +1,8 @@
-use graph::{
-    CartesianPoint,
-    Point as _,
-    ReadExt,
-    RectangularWorld,
-    World,
-};
+use graph::CartesianPoint;
+use graph::Point as _;
+use graph::ReadExt;
+use graph::RectangularWorld;
+use graph::World;
 use itertools::Itertools;
 
 const INITIAL_HITPOINTS: usize = 200;
@@ -234,17 +232,13 @@ fn part_2(dungeon: RectangularWorld<Point, Tile>) -> (usize, usize, usize) {
 
 #[cfg(test)]
 mod tests {
-    use graph::{
-        ReadExt,
-        RectangularWorld,
-    };
+    use graph::ReadExt;
+    use graph::RectangularWorld;
 
-    use super::{
-        part_2,
-        simulate_combat,
-        Winner,
-        ATTACK_STRENGTH,
-    };
+    use super::part_2;
+    use super::simulate_combat;
+    use super::Winner;
+    use super::ATTACK_STRENGTH;
 
     #[test]
     fn test_simulate_combat_1() {

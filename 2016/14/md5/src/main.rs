@@ -1,8 +1,6 @@
-use std::{
-    env::args,
-    error::Error,
-    fs::File,
-};
+use std::env::args;
+use std::error::Error;
+use std::fs::File;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let filename = args().nth(1).expect("Usage: md5 <filename>");

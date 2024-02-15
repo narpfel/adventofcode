@@ -1,14 +1,9 @@
-use md5::{
-    format_digest,
-    md5,
-    DIGEST_CHAR_LENGTH,
-};
-
 use arraydeque::ArrayDeque;
-use generic_array::{
-    typenum::U1000,
-    GenericArray,
-};
+use generic_array::typenum::U1000;
+use generic_array::GenericArray;
+use md5::format_digest;
+use md5::md5;
+use md5::DIGEST_CHAR_LENGTH;
 
 fn has_byte_repetition(s: &[u8], length: usize) -> Option<u8> {
     s.windows(length).find_map(|window| {

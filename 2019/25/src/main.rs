@@ -1,14 +1,10 @@
-use std::{
-    collections::VecDeque,
-    error::Error,
-    fs::read_to_string,
-    io::stdin,
-};
+use std::collections::VecDeque;
+use std::error::Error;
+use std::fs::read_to_string;
+use std::io::stdin;
 
-use intcode::{
-    Cell,
-    Computer,
-};
+use intcode::Cell;
+use intcode::Computer;
 
 struct State {
     input: VecDeque<Cell>,

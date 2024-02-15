@@ -1,12 +1,9 @@
 use std::error::Error;
 
 use fnv::FnvHashMap;
-
-use graph::{
-    CartesianPoint as Point,
-    ReadExt,
-    World,
-};
+use graph::CartesianPoint as Point;
+use graph::ReadExt;
+use graph::World;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Tile {

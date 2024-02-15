@@ -1,8 +1,6 @@
-use std::{
-    collections::HashSet,
-    error::Error,
-    fs,
-};
+use std::collections::HashSet;
+use std::error::Error;
+use std::fs;
 
 #[derive(Debug)]
 enum Fold {

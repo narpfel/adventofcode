@@ -1,15 +1,11 @@
 #![feature(lint_reasons)]
 
-use std::{
-    error::Error,
-    fs::File,
-    io::{
-        self,
-        BufRead,
-        BufReader,
-    },
-    path::Path,
-};
+use std::error::Error;
+use std::fs::File;
+use std::io;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::path::Path;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Tile {

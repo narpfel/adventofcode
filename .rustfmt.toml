@@ -1,7 +1,7 @@
 control_brace_style = "ClosingNextLine"
 force_multiline_blocks = false
-imports_granularity = "Crate"
-imports_layout = "Vertical"
+group_imports = "StdExternalCrate"
+imports_granularity = "Item"
 match_arm_blocks = false
 newline_style = "Unix"
 reorder_impl_items = true

@@ -1,11 +1,9 @@
 #![feature(lazy_cell)]
 
-use std::{
-    error::Error,
-    fs::read_to_string,
-    path::Path,
-    sync::LazyLock,
-};
+use std::error::Error;
+use std::fs::read_to_string;
+use std::path::Path;
+use std::sync::LazyLock;
 
 use rayon::prelude::*;
 use regex::Regex;

@@ -41,26 +41,18 @@ pub struct Cpu {
 }
 
 pub mod parse {
-    use nom::{
-        branch::alt,
-        bytes::complete::tag,
-        character::complete::{
-            newline,
-            space1,
-        },
-        combinator::{
-            map,
-            value,
-        },
-        error::ParseError,
-        multi::many1,
-        sequence::{
-            preceded,
-            terminated,
-            tuple,
-        },
-        IResult,
-    };
+    use nom::branch::alt;
+    use nom::bytes::complete::tag;
+    use nom::character::complete::newline;
+    use nom::character::complete::space1;
+    use nom::combinator::map;
+    use nom::combinator::value;
+    use nom::error::ParseError;
+    use nom::multi::many1;
+    use nom::sequence::preceded;
+    use nom::sequence::terminated;
+    use nom::sequence::tuple;
+    use nom::IResult;
 
     use super::*;
 

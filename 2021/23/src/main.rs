@@ -1,24 +1,18 @@
 #![feature(lint_reasons)]
 #![feature(type_alias_impl_trait)]
 
-use std::{
-    collections::{
-        BTreeMap,
-        BinaryHeap,
-        HashMap,
-    },
-    error::Error,
-    hash::BuildHasher,
-    marker::PhantomData,
-};
+use std::collections::BTreeMap;
+use std::collections::BinaryHeap;
+use std::collections::HashMap;
+use std::error::Error;
+use std::hash::BuildHasher;
+use std::marker::PhantomData;
 
-use graph::{
-    CartesianPoint,
-    Distance,
-    ReadExt,
-    Tile as _,
-    World,
-};
+use graph::CartesianPoint;
+use graph::Distance;
+use graph::ReadExt;
+use graph::Tile as _;
+use graph::World;
 
 type Burrow = HashMap<graph::CartesianPoint, Tile, impl BuildHasher + Clone>;
 

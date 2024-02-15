@@ -1,8 +1,6 @@
-use std::{
-    fs::read_to_string,
-    io,
-    path::Path,
-};
+use std::fs::read_to_string;
+use std::io;
+use std::path::Path;
 
 type Depth = u64;
 type Position = u64;

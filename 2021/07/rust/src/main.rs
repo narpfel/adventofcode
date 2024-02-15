@@ -1,7 +1,5 @@
-use std::{
-    error::Error,
-    fs::read_to_string,
-};
+use std::error::Error;
+use std::fs::read_to_string;
 
 fn fuel_consumption_part_1(start: u64, end: u64) -> u64 {
     start.abs_diff(end)

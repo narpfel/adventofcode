@@ -1,18 +1,14 @@
-use std::{
-    collections::VecDeque,
-    io,
-    marker::PhantomData,
-    num::Wrapping,
-    path::Path,
-};
+use std::collections::VecDeque;
+use std::io;
+use std::marker::PhantomData;
+use std::num::Wrapping;
+use std::path::Path;
 
-use graph::{
-    CartesianPoint,
-    Distance,
-    ReadExt,
-    RectangularWorld,
-    World,
-};
+use graph::CartesianPoint;
+use graph::Distance;
+use graph::ReadExt;
+use graph::RectangularWorld;
+use graph::World;
 
 trait Point: graph::Point + From<CartesianPoint> + Into<CartesianPoint> {
     fn repeat(&self) -> u16;

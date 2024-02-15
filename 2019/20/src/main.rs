@@ -1,22 +1,15 @@
-use std::{
-    collections::HashMap,
-    fs::File,
-    hash::Hash,
-    io::{
-        self,
-        BufRead,
-        BufReader,
-    },
-    path::Path,
-};
+use std::collections::HashMap;
+use std::fs::File;
+use std::hash::Hash;
+use std::io;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::path::Path;
 
+use graph::CartesianPoint;
+use graph::Point;
+use graph::World;
 use itertools::Itertools;
-
-use graph::{
-    CartesianPoint,
-    Point,
-    World,
-};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 enum Tile {
@@ -309,14 +302,12 @@ fn solve_part_2(maze: &FractalMaze) -> u64 {
 mod tests {
     use graph::World;
 
-    use super::{
-        read_input,
-        solve_part_1,
-        solve_part_2,
-        FractalMaze,
-        FractalPoint,
-        WarpedPoint,
-    };
+    use super::read_input;
+    use super::solve_part_1;
+    use super::solve_part_2;
+    use super::FractalMaze;
+    use super::FractalPoint;
+    use super::WarpedPoint;
 
     #[test]
     fn test_1() {

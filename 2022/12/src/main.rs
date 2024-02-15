@@ -3,11 +3,9 @@
 use std::error::Error;
 
 use fnv::FnvHashMap;
-use graph::{
-    CartesianPoint,
-    ReadExt,
-    World,
-};
+use graph::CartesianPoint;
+use graph::ReadExt;
+use graph::World;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum Tile {

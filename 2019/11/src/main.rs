@@ -1,13 +1,9 @@
-use std::{
-    collections::HashMap,
-    error::Error,
-};
+use std::collections::HashMap;
+use std::error::Error;
 
-use intcode::{
-    Cell,
-    Computer,
-    IO,
-};
+use intcode::Cell;
+use intcode::Computer;
+use intcode::IO;
 
 #[derive(Debug, Copy, Clone)]
 enum Direction {

@@ -1,19 +1,12 @@
-use std::{
-    collections::HashMap,
-    hash::BuildHasher,
-    iter::{
-        empty,
-        once,
-    },
-};
+use std::collections::HashMap;
+use std::hash::BuildHasher;
+use std::iter::empty;
+use std::iter::once;
 
+use graph::CartesianPoint as Point;
+use graph::ReadExt;
+use graph::World;
 use itertools::Itertools;
-
-use graph::{
-    CartesianPoint as Point,
-    ReadExt,
-    World,
-};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum Tile {

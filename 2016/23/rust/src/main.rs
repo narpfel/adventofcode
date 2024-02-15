@@ -1,14 +1,10 @@
-use std::{
-    error::Error,
-    fs::read_to_string,
-};
+use std::error::Error;
+use std::fs::read_to_string;
 
-use cpu::{
-    Cpu,
-    ImmOrReg,
-    Instruction,
-    Register,
-};
+use cpu::Cpu;
+use cpu::ImmOrReg;
+use cpu::Instruction;
+use cpu::Register;
 
 fn solve(a: i64, program: &[Instruction]) -> i64 {
     let mut cpu = Cpu::new([a, 0, 0, 0], program);
