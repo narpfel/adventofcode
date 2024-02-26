@@ -1,14 +1,8 @@
 #!/usr/bin/env pypy3
 from itertools import groupby
-from itertools import tee
+from itertools import pairwise
 
 INPUT = "246515-739105"
-
-
-def pairwise(iterable):
-    a, b = tee(iterable)
-    next(b, None)
-    return zip(a, b)
 
 
 def iterator_len(iterator):

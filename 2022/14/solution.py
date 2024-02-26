@@ -1,17 +1,11 @@
 #!/usr/bin/env pypy3
 
-from itertools import tee
+from itertools import pairwise
 
 EXPECTED_PART_1 = 24
 EXPECTED_PART_2 = 93
 
 FULL = object()
-
-
-def pairwise(xs):
-    xs, ys = tee(xs)
-    next(ys, None)
-    return zip(xs, ys)
 
 
 def place_tiles(lines):
