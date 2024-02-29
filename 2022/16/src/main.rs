@@ -1,7 +1,8 @@
 #![feature(generic_nonzero)]
+#![feature(cmp_minmax)]
 #![feature(debug_closure_helpers)]
 
-use std::cmp::min;
+use std::cmp::minmax;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
@@ -98,43 +99,43 @@ fn compute_distances(
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-struct State {
+struct State<const WORKER_COUNT: usize> {
     flow: u64,
     time: u64,
-    location_1: usize,
-    time_1: u64,
-    location_2: usize,
-    time_2: u64,
+    workers: [Worker; WORKER_COUNT],
     open_valves: u64,
 }
 
-impl State {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+struct Worker {
+    time_of_arrival: u64,
+    location: usize,
+}
+
+impl<const WORKER_COUNT: usize> State<WORKER_COUNT> {
     fn is_open(&self, valve: usize) -> bool {
         self.open_valves & (1 << valve) != 0
     }
 }
 
-impl PartialOrd for State {
+impl<const WORKER_COUNT: usize> PartialOrd for State<WORKER_COUNT> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for State {
+impl<const WORKER_COUNT: usize> Ord for State<WORKER_COUNT> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         (self.flow, Reverse(self.time)).cmp(&(other.flow, Reverse(other.time)))
     }
 }
 
-impl Debug for State {
+impl<const WORKER_COUNT: usize> Debug for State<WORKER_COUNT> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("State")
             .field("flow", &self.flow)
             .field("time", &self.time)
-            .field("loc1", &self.location_1)
-            .field("t1", &self.time_1)
-            .field("loc2", &self.location_2)
-            .field("t2", &self.time_2)
+            .field("workers", &self.workers)
             .field_with("open", |f| write!(f, "0b{:064b}", self.open_valves))
             .finish()
     }
@@ -146,10 +147,7 @@ fn part_1(valves: &[Valve], adjacency: &Adjacency, start: usize) -> u64 {
     next.push(State {
         flow: 0,
         time: 0,
-        location_1: start,
-        time_1: 0,
-        location_2: 0,
-        time_2: 0,
+        workers: [Worker { time_of_arrival: 0, location: start }],
         open_valves: 0,
     });
 
@@ -169,14 +167,14 @@ fn part_1(valves: &[Valve], adjacency: &Adjacency, start: usize) -> u64 {
     let mut max_flow = 0;
 
     while let Some(state) = next.pop() {
-        let state_id = (state.location_1, state.open_valves);
+        let state_id = (state.workers[0].location, state.open_valves);
         if !seen.contains_key(&state_id) || seen[&state_id] < state.flow {
             seen.insert(state_id, state.flow);
             if state.time >= 29 || state.open_valves == all_valves {
                 max_flow = max_flow.max(state.flow);
             }
             else {
-                for &(neighbour, distance) in &adjacency[state.location_1] {
+                for &(neighbour, distance) in &adjacency[state.workers[0].location] {
                     if !state.is_open(neighbour) {
                         let time_open = (|| {
                             30_u64
@@ -188,10 +186,7 @@ fn part_1(valves: &[Valve], adjacency: &Adjacency, start: usize) -> u64 {
                         next.push(State {
                             flow: state.flow + time_open * valves[neighbour].flow_rate,
                             time: state.time + distance + 1,
-                            location_1: neighbour,
-                            time_1: 0,
-                            location_2: 0,
-                            time_2: 0,
+                            workers: [Worker { location: neighbour, time_of_arrival: 0 }],
                             open_valves: state.open_valves | (1 << neighbour),
                         });
                     }
@@ -209,10 +204,10 @@ fn part_2(valves: &[Valve], adjacency: &Adjacency, start: usize) -> u64 {
     next.push(State {
         flow: 0,
         time: 0,
-        location_1: start,
-        time_1: 0,
-        location_2: start,
-        time_2: 0,
+        workers: [
+            Worker { time_of_arrival: 0, location: start },
+            Worker { time_of_arrival: 0, location: start },
+        ],
         open_valves: 0,
     });
 
@@ -232,6 +227,8 @@ fn part_2(valves: &[Valve], adjacency: &Adjacency, start: usize) -> u64 {
     let mut max_flow = 0;
 
     while let Some(state) = next.pop() {
+        max_flow = max_flow.max(state.flow);
+
         let remaining_time_open =
             (|| 26_u64.checked_sub(state.time)?.checked_sub(1))().unwrap_or(0);
         let flow_upper_bound = state.flow
@@ -246,148 +243,107 @@ fn part_2(valves: &[Valve], adjacency: &Adjacency, start: usize) -> u64 {
             continue;
         }
 
-        let state_id = (state.location_1, state.location_2, state.open_valves);
+        let state_id = (
+            state.workers[0].location,
+            state.workers[1].location,
+            state.open_valves,
+        );
         if !seen.contains_key(&state_id) || seen[&state_id] < flow_upper_bound {
             seen.insert(state_id, flow_upper_bound);
 
-            if state.time >= 25 || state.open_valves == all_valves {
-                max_flow = max_flow.max(state.flow);
-            }
-            else if state.time_1 == state.time && state.time_2 == state.time {
-                if state.location_1 == start && state.location_2 == start {
-                    for &(neighbour_1, distance_1) in &adjacency[state.location_1] {
-                        for &(neighbour_2, distance_2) in &adjacency[state.location_2] {
-                            let next_time = min(state.time + distance_1, state.time + distance_2);
-                            if next_time <= 26
-                                && !state.is_open(neighbour_1)
-                                && !state.is_open(neighbour_2)
-                            {
-                                next.push(State {
-                                    flow: state.flow,
-                                    time: next_time,
-                                    location_1: neighbour_1,
-                                    time_1: state.time + distance_1,
-                                    location_2: neighbour_2,
-                                    time_2: state.time + distance_2,
-                                    open_valves: state.open_valves,
-                                });
-                            }
-                        }
-                    }
-                }
-                else if !state.is_open(state.location_1) && state.is_open(state.location_2) {
-                    for &(neighbour_1, distance_1) in &adjacency[state.location_1] {
-                        for &(neighbour_2, distance_2) in &adjacency[state.location_2] {
-                            let next_time =
-                                min(state.time + distance_1 + 1, state.time + distance_2);
-                            if next_time <= 26
-                                && !state.is_open(neighbour_1)
-                                && !state.is_open(neighbour_2)
-                            {
-                                next.push(State {
-                                    flow: state.flow
-                                        + remaining_time_open * valves[state.location_1].flow_rate,
-                                    time: next_time,
-                                    location_1: neighbour_1,
-                                    time_1: state.time + distance_1 + 1,
-                                    location_2: neighbour_2,
-                                    time_2: state.time + distance_2,
-                                    open_valves: state.open_valves | (1 << state.location_1),
-                                });
-                            }
-                        }
-                    }
-                }
-                else if state.is_open(state.location_1) && !state.is_open(state.location_2) {
-                    for &(neighbour_1, distance_1) in &adjacency[state.location_1] {
-                        for &(neighbour_2, distance_2) in &adjacency[state.location_2] {
-                            let next_time =
-                                min(state.time + distance_1, state.time + distance_2 + 1);
-                            if next_time <= 26
-                                && !state.is_open(neighbour_1)
-                                && !state.is_open(neighbour_2)
-                            {
-                                next.push(State {
-                                    flow: state.flow
-                                        + remaining_time_open * valves[state.location_2].flow_rate,
-                                    time: next_time,
-                                    location_1: neighbour_1,
-                                    time_1: state.time + distance_1,
-                                    location_2: neighbour_2,
-                                    time_2: state.time + distance_2 + 1,
-                                    open_valves: state.open_valves | (1 << state.location_2),
-                                });
-                            }
-                        }
-                    }
-                }
-                else if state.location_1 != state.location_2
-                    && !state.is_open(state.location_1)
-                    && !state.is_open(state.location_2)
+            if state.time < 25 && state.open_valves != all_valves {
+                if state.workers[0].time_of_arrival == state.time
+                    && state.workers[1].time_of_arrival == state.time
                 {
-                    for &(neighbour_1, distance_1) in &adjacency[state.location_1] {
-                        for &(neighbour_2, distance_2) in &adjacency[state.location_2] {
-                            let next_time =
-                                min(state.time + distance_1 + 1, state.time + distance_2 + 1);
-                            if next_time <= 26
-                                && !state.is_open(neighbour_1)
-                                && !state.is_open(neighbour_2)
+                    if state.workers[0].location == start && state.workers[1].location == start {
+                        assert_eq!(state.time, 0);
+                        for &(neighbour_1, distance_1) in &adjacency[state.workers[0].location] {
+                            for &(neighbour_2, distance_2) in &adjacency[state.workers[1].location]
                             {
-                                next.push(State {
-                                    flow: state.flow
-                                        + remaining_time_open
-                                            * (valves[state.location_1].flow_rate
-                                                + valves[state.location_2].flow_rate),
-                                    time: next_time,
-                                    location_1: neighbour_1,
-                                    time_1: state.time + distance_1 + 1,
-                                    location_2: neighbour_2,
-                                    time_2: state.time + distance_2 + 1,
-                                    open_valves: state.open_valves
-                                        | (1 << state.location_1)
-                                        | (1 << state.location_2),
-                                });
+                                if neighbour_1 != neighbour_2 {
+                                    let workers = minmax(
+                                        Worker {
+                                            time_of_arrival: state.time + distance_1,
+                                            location: neighbour_1,
+                                        },
+                                        Worker {
+                                            time_of_arrival: state.time + distance_2,
+                                            location: neighbour_2,
+                                        },
+                                    );
+                                    let next_time = workers[0].time_of_arrival;
+                                    next.push(State {
+                                        flow: state.flow,
+                                        time: next_time,
+                                        workers,
+                                        open_valves: state.open_valves,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        if state.is_open(state.workers[0].location)
+                            || state.is_open(state.workers[1].location)
+                        {
+                            continue;
+                        }
+                        for &(neighbour_1, distance_1) in &adjacency[state.workers[0].location] {
+                            for &(neighbour_2, distance_2) in &adjacency[state.workers[1].location]
+                            {
+                                if neighbour_1 != neighbour_2 {
+                                    let workers = minmax(
+                                        Worker {
+                                            time_of_arrival: state.time + distance_1 + 1,
+                                            location: neighbour_1,
+                                        },
+                                        Worker {
+                                            time_of_arrival: state.time + distance_2 + 1,
+                                            location: neighbour_2,
+                                        },
+                                    );
+                                    let next_time = workers[0].time_of_arrival;
+                                    next.push(State {
+                                        flow: state.flow
+                                            + remaining_time_open
+                                                * (valves[state.workers[0].location].flow_rate
+                                                    + valves[state.workers[1].location].flow_rate),
+                                        time: next_time,
+                                        workers,
+                                        open_valves: state.open_valves
+                                            | (1 << state.workers[0].location)
+                                            | (1 << state.workers[1].location),
+                                    });
+                                }
                             }
                         }
                     }
                 }
-            }
-            else if state.time_1 == state.time && !state.is_open(state.location_1) {
-                for &(neighbour_1, distance_1) in &adjacency[state.location_1] {
-                    let next_time = min(state.time + distance_1 + 1, state.time_2);
-                    if next_time <= 26 && !state.is_open(neighbour_1) {
-                        next.push(State {
-                            flow: state.flow
-                                + remaining_time_open * valves[state.location_1].flow_rate,
-                            time: next_time,
-                            location_1: neighbour_1,
-                            time_1: state.time + distance_1 + 1,
-                            location_2: state.location_2,
-                            time_2: state.time_2,
-                            open_valves: state.open_valves | (1 << state.location_1),
-                        });
+                else {
+                    let Worker { time_of_arrival, location } = state.workers[0];
+                    if state.is_open(location) {
+                        continue;
+                    }
+                    assert_eq!(time_of_arrival, state.time);
+                    for &(neighbour, distance) in &adjacency[location] {
+                        if !state.is_open(neighbour) && neighbour != state.workers[1].location {
+                            let workers = minmax(
+                                state.workers[1],
+                                Worker {
+                                    time_of_arrival: state.time + distance + 1,
+                                    location: neighbour,
+                                },
+                            );
+                            let next_time = workers[0].time_of_arrival;
+                            next.push(State {
+                                flow: state.flow + remaining_time_open * valves[location].flow_rate,
+                                time: next_time,
+                                workers,
+                                open_valves: state.open_valves | (1 << location),
+                            });
+                        }
                     }
                 }
-            }
-            else if state.time_2 == state.time && !state.is_open(state.location_2) {
-                for &(neighbour_2, distance_2) in &adjacency[state.location_2] {
-                    let next_time = min(state.time_1, state.time + distance_2 + 1);
-                    if next_time <= 26 && !state.is_open(neighbour_2) {
-                        next.push(State {
-                            flow: state.flow
-                                + remaining_time_open * valves[state.location_2].flow_rate,
-                            time: next_time,
-                            location_1: state.location_1,
-                            time_1: state.time_1,
-                            location_2: neighbour_2,
-                            time_2: state.time + distance_2 + 1,
-                            open_valves: state.open_valves | (1 << state.location_2),
-                        });
-                    }
-                }
-            }
-            else if ![state.time_1, state.time_2].contains(&state.time) {
-                unreachable!()
             }
         }
     }
