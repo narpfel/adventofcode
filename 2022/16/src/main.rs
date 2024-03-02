@@ -1,8 +1,6 @@
-#![feature(cmp_minmax)]
 #![feature(debug_closure_helpers)]
 #![feature(generic_nonzero)]
 
-use std::cmp::minmax;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
@@ -141,66 +139,11 @@ impl<const WORKER_COUNT: usize> Debug for State<WORKER_COUNT> {
     }
 }
 
-fn part_1(valves: &[Valve], adjacency: &Adjacency, start: usize) -> u64 {
-    let mut seen = HashMap::new();
-    let mut next = BinaryHeap::new();
-    next.push(State {
-        flow: 0,
-        workers: [Worker { time_of_arrival: 0, location: start }],
-        open_valves: 0,
-    });
-
-    let all_valves = valves
-        .iter()
-        .enumerate()
-        .map(|(i, valve)| {
-            if valve.flow_rate == 0 {
-                0
-            }
-            else {
-                1 << i
-            }
-        })
-        .sum::<u64>();
-
-    let mut max_flow = 0;
-
-    while let Some(state) = next.pop() {
-        let [Worker { time_of_arrival: time, location }] = state.workers;
-        let state_id = (location, state.open_valves);
-        if !seen.contains_key(&state_id) || seen[&state_id] < state.flow {
-            seen.insert(state_id, state.flow);
-            if time >= 29 || state.open_valves == all_valves {
-                max_flow = max_flow.max(state.flow);
-            }
-            else {
-                for &(neighbour, distance) in &adjacency[state.workers[0].location] {
-                    if !state.is_open(neighbour) {
-                        let time_open = (|| {
-                            30_u64
-                                .checked_sub(time)?
-                                .checked_sub(distance)?
-                                .checked_sub(1)
-                        })()
-                        .unwrap_or(0);
-                        next.push(State {
-                            flow: state.flow + time_open * valves[neighbour].flow_rate,
-                            workers: [Worker {
-                                location: neighbour,
-                                time_of_arrival: time + distance + 1,
-                            }],
-                            open_valves: state.open_valves | (1 << neighbour),
-                        });
-                    }
-                }
-            }
-        }
-    }
-
-    max_flow
-}
-
-fn part_2(valves: &[Valve], adjacency: &Adjacency, start: usize) -> u64 {
+fn solve<const WORKER_COUNT: usize, const TIME: u64>(
+    valves: &[Valve],
+    adjacency: &Adjacency,
+    start: usize,
+) -> u64 {
     let nonzero_valves = valves
         .iter()
         .enumerate()
@@ -212,10 +155,7 @@ fn part_2(valves: &[Valve], adjacency: &Adjacency, start: usize) -> u64 {
     let mut next = Vec::new();
     next.push(State {
         flow: 0,
-        workers: [
-            Worker { time_of_arrival: 0, location: start },
-            Worker { time_of_arrival: 0, location: start },
-        ],
+        workers: [Worker { time_of_arrival: 0, location: start }; WORKER_COUNT],
         open_valves: 0,
     });
 
@@ -227,7 +167,7 @@ fn part_2(valves: &[Valve], adjacency: &Adjacency, start: usize) -> u64 {
         max_flow = max_flow.max(state.flow);
 
         let Worker { time_of_arrival: time, location } = state.workers[0];
-        let remaining_time_open = (|| 26_u64.checked_sub(time)?.checked_sub(1))().unwrap_or(0);
+        let remaining_time_open = (|| TIME.checked_sub(time)?.checked_sub(1))().unwrap_or(0);
         let flow_upper_bound = state.flow
             + nonzero_valves
                 .iter()
@@ -243,16 +183,15 @@ fn part_2(valves: &[Valve], adjacency: &Adjacency, start: usize) -> u64 {
         if !seen.contains_key(&state_id) || seen[&state_id] < flow_upper_bound {
             seen.insert(state_id, flow_upper_bound);
 
-            if time < 25 && state.open_valves != all_valves && !state.is_open(location) {
+            if time < (TIME - 1) && state.open_valves != all_valves && !state.is_open(location) {
                 let one_if_not_start = if location != start { 1 } else { 0 };
                 for &(neighbour, distance) in &adjacency[location] {
-                    let workers = minmax(
-                        state.workers[1],
-                        Worker {
-                            time_of_arrival: time + distance + one_if_not_start,
-                            location: neighbour,
-                        },
-                    );
+                    let mut workers = state.workers;
+                    workers[0] = Worker {
+                        time_of_arrival: time + distance + one_if_not_start,
+                        location: neighbour,
+                    };
+                    workers.sort();
                     next.push(State {
                         flow: state.flow
                             + remaining_time_open * valves[location].flow_rate * one_if_not_start,
@@ -269,26 +208,25 @@ fn part_2(valves: &[Valve], adjacency: &Adjacency, start: usize) -> u64 {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (valves, adjacency, start) = read_input("input")?;
-    println!("{}", part_1(&valves, &adjacency, start));
-    println!("{}", part_2(&valves, &adjacency, start));
+    println!("{}", solve::<1, 30>(&valves, &adjacency, start));
+    println!("{}", solve::<2, 26>(&valves, &adjacency, start));
     Ok(())
 }
 
 #[cfg(test)]
 mod test {
-    use super::part_1;
-    use super::part_2;
     use super::read_input;
+    use super::solve;
 
     #[test]
     fn test_part_1() {
         let (valves, adjacency, start) = read_input("input_test").unwrap();
-        assert_eq!(part_1(&valves, &adjacency, start), 1651);
+        assert_eq!(solve::<1, 30>(&valves, &adjacency, start), 1651);
     }
 
     #[test]
     fn test_part_2() {
         let (valves, adjacency, start) = read_input("input_test").unwrap();
-        assert_eq!(part_2(&valves, &adjacency, start), 1707);
+        assert_eq!(solve::<2, 26>(&valves, &adjacency, start), 1707);
     }
 }
