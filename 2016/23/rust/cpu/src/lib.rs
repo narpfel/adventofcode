@@ -197,7 +197,7 @@ impl Cpu {
             .ok()
             .and_then(|idx| self.poisoned.get(idx))
         {
-            self.rom = self.original_rom.clone();
+            self.rom.clone_from(&self.original_rom);
             self.poisoned.iter_mut().for_each(|x| *x = false);
             self.optimised = false;
         }

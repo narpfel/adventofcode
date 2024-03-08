@@ -95,12 +95,11 @@ fn read_word(buffer: &[u8]) -> Word {
     Wrapping(LittleEndian::read_u32(buffer))
 }
 
+// Single-letter variable names match the names given in the MD5 RFC (RFC 1321),
+// see https://www.ietf.org/rfc/rfc1321.txt
+#[allow(clippy::many_single_char_names)]
 #[inline]
 pub fn md5(bytes: &[u8]) -> [u8; DIGEST_BYTE_COUNT] {
-    // Single-letter variable names match the names given in the MD5 RFC (RFC 1321),
-    // see https://www.ietf.org/rfc/rfc1321.txt
-    #![allow(clippy::many_single_char_names)]
-
     let mut a = read_word(&[0x01, 0x23, 0x45, 0x67]);
     let mut b = read_word(&[0x89, 0xab, 0xcd, 0xef]);
     let mut c = read_word(&[0xfe, 0xdc, 0xba, 0x98]);
