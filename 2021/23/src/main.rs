@@ -5,19 +5,21 @@ use std::collections::BTreeMap;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::error::Error;
-use std::hash::BuildHasher;
 use std::marker::PhantomData;
 
 use graph::CartesianPoint;
 use graph::Distance;
 use graph::ReadExt;
+use graph::RectangularWorld;
 use graph::Tile as _;
 use graph::World;
+use rustc_hash::FxHashMap;
 
-type Burrow = HashMap<graph::CartesianPoint, Tile, impl BuildHasher + Clone>;
+type Burrow = RectangularWorld<graph::CartesianPoint, Tile>;
 
-#[derive(Eq, PartialEq, Copy, Clone, Debug, PartialOrd, Ord, Hash)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug, PartialOrd, Ord, Hash, Default)]
 enum Tile {
+    #[default]
     Wall,
     Empty,
     Amphipod(char),
@@ -99,18 +101,18 @@ fn can_move<const N: usize>(
         return None;
     }
 
-    if !burrow[&to].is_walkable() {
+    if !burrow.get(&to).unwrap().is_walkable() {
         return None;
     }
 
-    let start_tile = burrow[&from];
+    let start_tile = burrow.get(&from).unwrap();
     assert!(start_tile.is_amphipod());
 
     if !is_hallway(to) {
         let below_target_positions = &target_positions[to.1 - 2 + 1..];
         if !start_tile.has_destination(to)
             || below_target_positions.iter().any(|point| {
-                let tile = burrow[point];
+                let tile = burrow.get(point).unwrap();
                 tile.is_walkable() || !tile.has_destination(to)
             })
         {
@@ -123,7 +125,7 @@ fn can_move<const N: usize>(
             .map(|CartesianPoint(_, y)| CartesianPoint(from.0, y))[from.1 - 2 + 1..];
         if start_tile.has_destination(from)
             && below_start_positions.iter().all(|point| {
-                let tile = burrow[point];
+                let tile = burrow.get(point).unwrap();
                 tile.is_amphipod() && tile.has_destination(to)
             })
         {
@@ -152,11 +154,11 @@ impl Ord for NextStep {
 fn put_possible_next_steps<const N: usize>(
     next_steps: &mut BinaryHeap<NextStep>,
     burrow: &Burrow,
-    seen: &mut HashMap<BTreeMap<CartesianPoint, Tile>, u64>,
+    seen: &mut FxHashMap<BTreeMap<CartesianPoint, Tile>, u64>,
     previous_distance: u64,
     side_room_y_positions: [usize; N],
 ) {
-    for (&from, &tile) in burrow {
+    for (from, &tile) in burrow.iter() {
         if !tile.is_amphipod() {
             continue;
         }
@@ -170,13 +172,13 @@ fn put_possible_next_steps<const N: usize>(
                 can_move(burrow, from, to, target_positions).map(u64::try_from)
             {
                 let mut new_burrow = burrow.clone();
-                let from_tile = new_burrow[&from];
+                let from_tile = new_burrow.get(&from).unwrap();
                 new_burrow.insert(to, from_tile);
                 new_burrow.insert(from, Tile::Empty);
                 let amphipods = new_burrow
                     .iter()
                     .filter(|(_, &tile)| tile.is_amphipod())
-                    .map(|(&p, &t)| (p, t))
+                    .map(|(p, &t)| (p, t))
                     .collect();
                 let total_distance = distance * from_tile.cost() + previous_distance;
                 match seen.get_mut(&amphipods) {
@@ -199,12 +201,12 @@ fn all_at_destination(burrow: &Burrow) -> bool {
     burrow
         .iter()
         .filter(|(_, &tile)| tile.is_amphipod())
-        .all(|(&point, &tile)| tile.is_at_destination(point))
+        .all(|(point, &tile)| tile.is_at_destination(point))
 }
 
 fn solve<const N: usize>(burrow: &Burrow, target_positions: [usize; N]) -> u64 {
     let mut next_steps = BinaryHeap::new();
-    let mut seen = HashMap::new();
+    let mut seen = HashMap::default();
     put_possible_next_steps(&mut next_steps, burrow, &mut seen, 0, target_positions);
 
     loop {
@@ -212,7 +214,7 @@ fn solve<const N: usize>(burrow: &Burrow, target_positions: [usize; N]) -> u64 {
         let amphipods = burrow
             .iter()
             .filter(|(_, &tile)| tile.is_amphipod())
-            .map(|(&p, &t)| (p, t))
+            .map(|(p, &t)| (p, t))
             .collect();
         if seen.get(&amphipods) > Some(&distance) {
             continue;
@@ -241,7 +243,7 @@ mod tests {
         Burrow:,
     {
         assert_eq!(
-            solve(&HashMap::from_file("input_test").unwrap(), [2, 3]),
+            solve(&Burrow::from_file("input_test").unwrap(), [2, 3]),
             12521,
         );
     }
@@ -252,7 +254,7 @@ mod tests {
         Burrow:,
     {
         assert_eq!(
-            solve(&HashMap::from_file("input_test_2").unwrap(), [2, 3, 4, 5]),
+            solve(&Burrow::from_file("input_test_2").unwrap(), [2, 3, 4, 5]),
             44169,
         );
     }
@@ -274,10 +276,10 @@ impl<T> HasUnit for Use<T> {
 // case, however we can’t use a `where` clause with empty bounds here as `main`
 // cannot be constrained by a `where`. So we use this slightly silly workaround.
 fn main() -> Result<ActuallyUnit<Burrow>, Box<dyn Error>> {
-    println!("{}", solve(&HashMap::from_file("input")?, [2, 3]));
+    println!("{}", solve(&Burrow::from_file("input")?, [2, 3]));
     println!(
         "{}",
-        solve(&HashMap::from_file("input_part_2")?, [2, 3, 4, 5]),
+        solve(&Burrow::from_file("input_part_2")?, [2, 3, 4, 5]),
     );
     Ok(())
 }

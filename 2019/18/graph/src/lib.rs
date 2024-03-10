@@ -284,7 +284,7 @@ where
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RectangularWorld<Point, Tile, PointOrder = Unordered> {
     world: Vec<Tile>,
     width: usize,
@@ -297,7 +297,10 @@ where
     Point: Cartesian,
     Tile: crate::Tile,
 {
-    pub fn from_map(world: FnvHashMap<CartesianPoint, Tile>) -> Self {
+    pub fn from_map(world: FnvHashMap<CartesianPoint, Tile>) -> Self
+    where
+        Tile: Default,
+    {
         let width = world.keys().map(|CartesianPoint(x, _)| x).max().unwrap() + 1;
         let height = world.keys().map(|CartesianPoint(_, y)| y).max().unwrap() + 1;
         let mut tiles = vec![];
@@ -305,7 +308,7 @@ where
             for x in 0..width {
                 tiles.push(
                     World::get(&world, &CartesianPoint(x, y))
-                        .unwrap()
+                        .unwrap_or_default()
                         .to_owned(),
                 );
             }
@@ -600,7 +603,7 @@ where
 impl<Point, Tile, PointOrder> ReadExt for RectangularWorld<Point, Tile, PointOrder>
 where
     Point: Cartesian + crate::Point,
-    Tile: crate::Tile + TryFrom<char>,
+    Tile: crate::Tile + TryFrom<char> + Default,
     PointOrder: self::PointOrder,
 {
     fn from_file(path: impl AsRef<Path>) -> Result<Self, io::Error>

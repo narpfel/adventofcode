@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 graph = { path = "../../2019/18/graph" }
+rustc-hash = "1.1.0"
 
 [profile.release]
 lto = true
