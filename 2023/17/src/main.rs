@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use std::io;
 use std::marker::PhantomData;
 use std::num::Wrapping;
@@ -6,6 +5,7 @@ use std::path::Path;
 
 use graph::CartesianPoint;
 use graph::Distance;
+use graph::MonotonicPriorityQueue;
 use graph::ReadExt;
 use graph::RectangularWorld;
 use graph::World;
@@ -228,7 +228,7 @@ where
         let mut seen = vec![[0_u16; 4]; self.blocks.len()];
         seen[self.index(start)][start.direction()] |= 1 << start.repeat();
 
-        let mut next_points = MonotonicPriorityQueue::new();
+        let mut next_points = MonotonicPriorityQueue::<Self::PointOrder, Self::Point>::new();
         next_points.push(0, start.clone());
 
         while let Some((distance, point)) = next_points.pop() {
@@ -251,46 +251,6 @@ where
         }
 
         Distance::infinity()
-    }
-}
-
-#[derive(Default)]
-pub struct MonotonicPriorityQueue<T> {
-    min_prio: u64,
-    queue: VecDeque<Vec<T>>,
-}
-
-impl<T> MonotonicPriorityQueue<T> {
-    pub fn new() -> Self {
-        Self { min_prio: 0, queue: VecDeque::default() }
-    }
-
-    #[inline(always)]
-    pub fn push(&mut self, priority: u64, value: T) {
-        let index = priority.checked_sub(self.min_prio).unwrap() as usize;
-        let min_length = index + 1;
-        if min_length > self.queue.len() {
-            self.queue.resize_with(min_length, Vec::default);
-        }
-        self.queue[index].push(value);
-    }
-
-    #[inline(always)]
-    pub fn pop(&mut self) -> Option<(u64, T)> {
-        loop {
-            match self.queue.front_mut() {
-                Some(bucket) if bucket.is_empty() => {
-                    self.queue.pop_front();
-                    self.min_prio += 1;
-                }
-                Some(bucket) => {
-                    break bucket.pop().map(|value| (self.min_prio, value));
-                }
-                None => {
-                    break None;
-                }
-            }
-        }
     }
 }
 

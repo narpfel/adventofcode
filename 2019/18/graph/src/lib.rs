@@ -1,3 +1,4 @@
+#![feature(associated_type_defaults)]
 #![feature(thread_local)]
 
 use std::any::TypeId;
@@ -27,6 +28,7 @@ use im_rc::Vector;
 pub trait World: Clone {
     type Point: Point;
     type Tile: Tile;
+    type PointOrder: self::PointOrder = Unordered;
 
     fn get(&self, p: &Self::Point) -> Option<Self::Tile>;
     fn iter(&self) -> impl Iterator<Item = (Self::Point, &Self::Tile)>;
@@ -97,27 +99,25 @@ pub trait World: Clone {
         mut is_at_end: impl FnMut(&Self::Point) -> bool,
     ) -> Option<Vec<Self::Point>> {
         let mut distance_prev = FnvHashMap::default();
-        distance_prev.insert(self.canonicalise_point(start), (Distance::new(0), None));
-        let mut next_points = BinaryHeap::new();
-        next_points.push(Reverse((Distance::new(0), self.canonicalise_point(start))));
+        distance_prev.insert(self.canonicalise_point(start), (0, None));
+        let mut next_points = MonotonicPriorityQueue::<Self::PointOrder, Self::Point>::default();
+        next_points.push(0, self.canonicalise_point(start));
 
-        while let Some(Reverse((distance, point))) = next_points.pop() {
+        while let Some((distance, point)) = next_points.pop() {
             for neighbour in self
                 .neighbours(point.clone())
                 .map(|p| self.canonicalise_point(&p))
             {
-                let distance = if !self.is_walkable(&neighbour) {
-                    Distance::infinity()
+                if !self.is_walkable(&neighbour) {
+                    continue;
                 }
-                else {
-                    distance.map(|d| d + self.cost(&point))
-                };
+                let distance = distance + self.cost(&point);
                 if distance_prev
                     .get(&neighbour)
                     .map_or(true, |(d, _)| d > &distance)
                 {
                     distance_prev.insert(neighbour.clone(), (distance, Some(point.clone())));
-                    next_points.push(Reverse((distance, neighbour)));
+                    next_points.push(distance, neighbour);
                 }
             }
 
@@ -236,6 +236,7 @@ where
     S: BuildHasher + Clone,
 {
     type Point = Point;
+    type PointOrder = Unordered;
     type Tile = Tile;
 
     fn get(&self, p: &Self::Point) -> Option<Self::Tile> {
@@ -283,13 +284,14 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub struct RectangularWorld<Point, Tile> {
+pub struct RectangularWorld<Point, Tile, PointOrder = Unordered> {
     world: Vec<Tile>,
     width: usize,
-    point: PhantomData<Point>,
+    _point: PhantomData<Point>,
+    _point_order: PhantomData<fn(PointOrder)>,
 }
 
-impl<Point, Tile> RectangularWorld<Point, Tile>
+impl<Point, Tile, PointOrder> RectangularWorld<Point, Tile, PointOrder>
 where
     Point: Cartesian,
     Tile: crate::Tile,
@@ -307,7 +309,12 @@ where
                 );
             }
         }
-        Self { world: tiles, width, point: PhantomData }
+        Self {
+            world: tiles,
+            width,
+            _point: PhantomData,
+            _point_order: PhantomData,
+        }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (Point, &Tile)> {
@@ -353,12 +360,14 @@ where
     }
 }
 
-impl<Point, Tile> World for RectangularWorld<Point, Tile>
+impl<Point, Tile, PointOrder> World for RectangularWorld<Point, Tile, PointOrder>
 where
     Point: Cartesian + crate::Point,
     Tile: crate::Tile,
+    PointOrder: self::PointOrder,
 {
     type Point = Point;
+    type PointOrder = PointOrder;
     type Tile = Tile;
 
     fn get(&self, p: &Self::Point) -> Option<Self::Tile> {
@@ -376,27 +385,25 @@ where
 
     fn path(&self, start: &Self::Point, end: &Self::Point) -> Option<Vec<Self::Point>> {
         let mut distance_prev = vec![None; self.len()];
-        distance_prev[self.index(&self.canonicalise_point(start))] = Some((Distance::new(0), None));
-        let mut next_points = BinaryHeap::new();
-        next_points.push(Reverse((Distance::new(0), self.canonicalise_point(start))));
+        distance_prev[self.index(&self.canonicalise_point(start))] = Some((0, None));
+        let mut next_points = MonotonicPriorityQueue::<Self::PointOrder, Self::Point>::default();
+        next_points.push(0, self.canonicalise_point(start));
 
-        while let Some(Reverse((distance, point))) = next_points.pop() {
+        while let Some((distance, point)) = next_points.pop() {
             for neighbour in self
                 .neighbours(point.clone())
                 .map(|p| self.canonicalise_point(&p))
             {
-                let distance = if !self.is_walkable(&neighbour) {
-                    Distance::infinity()
+                if !self.is_walkable(&neighbour) {
+                    continue;
                 }
-                else {
-                    distance.map(|d| d + self.cost(&point))
-                };
+                let distance = distance + self.cost(&point);
                 if distance_prev[self.index(&neighbour)]
                     .as_ref()
                     .map_or(true, |(d, _)| d > &distance)
                 {
                     distance_prev[self.index(&neighbour)] = Some((distance, Some(point.clone())));
-                    next_points.push(Reverse((distance, neighbour)));
+                    next_points.push(distance, neighbour);
                 }
             }
 
@@ -418,10 +425,170 @@ where
     }
 }
 
-impl<Point, Tile> ReadExt for RectangularWorld<Point, Tile>
+pub trait PointOrder: Clone {
+    type Container<T>: PriorityQueueContainer<Item = T>
+    where
+        T: Ord;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Unordered;
+
+impl PointOrder for Unordered {
+    type Container<T> = Vec<T> where T: Ord;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Ordered;
+
+impl PointOrder for Ordered {
+    type Container<T> = BinaryHeap<T> where T: Ord;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ReverseOrdered;
+
+impl PointOrder for ReverseOrdered {
+    type Container<T> = ReverseBinaryHeap<T> where T: Ord;
+}
+
+pub trait PriorityQueueContainer: Default {
+    type Item;
+
+    fn is_empty(&self) -> bool;
+    fn push(&mut self, value: Self::Item);
+    fn pop(&mut self) -> Option<Self::Item>;
+}
+
+impl<T> PriorityQueueContainer for Vec<T> {
+    type Item = T;
+
+    fn is_empty(&self) -> bool {
+        self.is_empty()
+    }
+
+    fn push(&mut self, value: Self::Item) {
+        self.push(value)
+    }
+
+    fn pop(&mut self) -> Option<Self::Item> {
+        self.pop()
+    }
+}
+
+impl<T> PriorityQueueContainer for BinaryHeap<T>
+where
+    T: Ord,
+{
+    type Item = T;
+
+    fn is_empty(&self) -> bool {
+        self.is_empty()
+    }
+
+    fn push(&mut self, value: Self::Item) {
+        self.push(value)
+    }
+
+    fn pop(&mut self) -> Option<Self::Item> {
+        self.pop()
+    }
+}
+
+#[derive(Clone)]
+pub struct ReverseBinaryHeap<T>(BinaryHeap<Reverse<T>>);
+
+impl<T> Default for ReverseBinaryHeap<T>
+where
+    T: Ord,
+{
+    fn default() -> Self {
+        Self(BinaryHeap::default())
+    }
+}
+
+impl<T> PriorityQueueContainer for ReverseBinaryHeap<T>
+where
+    T: Ord,
+{
+    type Item = T;
+
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    fn push(&mut self, value: T) {
+        self.0.push(Reverse(value))
+    }
+
+    fn pop(&mut self) -> Option<T> {
+        self.0.pop().map(|value| value.0)
+    }
+}
+
+pub struct MonotonicPriorityQueue<PointOrder: self::PointOrder, T: Ord> {
+    min_prio: u64,
+    queue: VecDeque<PointOrder::Container<T>>,
+}
+
+impl<PointOrder, T> MonotonicPriorityQueue<PointOrder, T>
+where
+    PointOrder: self::PointOrder,
+    T: Ord,
+{
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl<PointOrder, T> MonotonicPriorityQueue<PointOrder, T>
+where
+    PointOrder: self::PointOrder,
+    T: Ord,
+{
+    pub fn push(&mut self, priority: u64, value: T) {
+        let index = priority.checked_sub(self.min_prio).unwrap() as usize;
+        let min_length = index + 1;
+        if min_length > self.queue.len() {
+            self.queue
+                .resize_with(min_length, PointOrder::Container::default);
+        }
+        self.queue[index].push(value);
+    }
+
+    pub fn pop(&mut self) -> Option<(u64, T)> {
+        loop {
+            match self.queue.front_mut() {
+                Some(bucket) if bucket.is_empty() => {
+                    self.queue.pop_front();
+                    self.min_prio += 1;
+                }
+                Some(bucket) => {
+                    break bucket.pop().map(|value| (self.min_prio, value));
+                }
+                None => {
+                    break None;
+                }
+            }
+        }
+    }
+}
+
+impl<PointOrder, T> Default for MonotonicPriorityQueue<PointOrder, T>
+where
+    PointOrder: self::PointOrder,
+    T: Ord,
+{
+    fn default() -> Self {
+        Self { min_prio: 0, queue: VecDeque::default() }
+    }
+}
+
+impl<Point, Tile, PointOrder> ReadExt for RectangularWorld<Point, Tile, PointOrder>
 where
     Point: Cartesian + crate::Point,
     Tile: crate::Tile + TryFrom<char>,
+    PointOrder: self::PointOrder,
 {
     fn from_file(path: impl AsRef<Path>) -> Result<Self, io::Error>
     where

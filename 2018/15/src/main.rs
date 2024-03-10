@@ -2,11 +2,13 @@ use graph::CartesianPoint;
 use graph::Point as _;
 use graph::ReadExt;
 use graph::RectangularWorld;
-use graph::World;
+use graph::World as _;
 use itertools::Itertools;
 
 const INITIAL_HITPOINTS: usize = 200;
 const ATTACK_STRENGTH: usize = 3;
+
+type World = RectangularWorld<Point, Tile, graph::ReverseOrdered>;
 
 #[derive(Debug)]
 struct InvalidAttackTarget;
@@ -113,7 +115,7 @@ impl Ord for Point {
     }
 }
 
-fn find_units(dungeon: &RectangularWorld<Point, Tile>) -> Vec<(Point, Tile)> {
+fn find_units(dungeon: &World) -> Vec<(Point, Tile)> {
     let mut result: Vec<_> = dungeon
         .iter()
         .map(|(p, t)| (p, *t))
@@ -124,12 +126,12 @@ fn find_units(dungeon: &RectangularWorld<Point, Tile>) -> Vec<(Point, Tile)> {
 }
 
 #[cfg(feature = "visualise")]
-fn print_dungeon(dungeon: &HashMap<Point, Tile, impl BuildHasher>) {
+fn print_dungeon(dungeon: &World) {
     let mut result = String::from("---------------------------------------\n");
     for (_, line) in &dungeon
         .iter()
         .sorted()
-        .group_by(|(Point(CartesianPoint(_, y)), _)| y)
+        .group_by(|(Point(CartesianPoint(_, y)), _)| *y)
     {
         for (_, tile) in line {
             result.push(match tile {
@@ -146,7 +148,7 @@ fn print_dungeon(dungeon: &HashMap<Point, Tile, impl BuildHasher>) {
 }
 
 fn simulate_combat(
-    mut dungeon: RectangularWorld<Point, Tile>,
+    mut dungeon: World,
     attack_strength: impl Fn(Tile) -> usize,
 ) -> (Winner, usize, usize) {
     let mut elf_died = false;
@@ -210,12 +212,12 @@ fn simulate_combat(
     unreachable!()
 }
 
-fn part_1(dungeon: RectangularWorld<Point, Tile>) -> (usize, usize) {
+fn part_1(dungeon: World) -> (usize, usize) {
     let (_winners, turns, remaining_hp) = simulate_combat(dungeon, |_| ATTACK_STRENGTH);
     (turns, remaining_hp)
 }
 
-fn part_2(dungeon: RectangularWorld<Point, Tile>) -> (usize, usize, usize) {
+fn part_2(dungeon: World) -> (usize, usize, usize) {
     for attack_strength in ATTACK_STRENGTH + 1.. {
         if let (Winner::Elves, turns, remaining_hp) =
             simulate_combat(dungeon.clone(), |tile| match tile {
@@ -233,17 +235,17 @@ fn part_2(dungeon: RectangularWorld<Point, Tile>) -> (usize, usize, usize) {
 #[cfg(test)]
 mod tests {
     use graph::ReadExt;
-    use graph::RectangularWorld;
 
     use super::part_2;
     use super::simulate_combat;
     use super::Winner;
+    use super::World;
     use super::ATTACK_STRENGTH;
 
     #[test]
     fn test_simulate_combat_1() {
         assert!(matches!(
-            simulate_combat(RectangularWorld::from_file("input_test_1").unwrap(), |_| {
+            simulate_combat(World::from_file("input_test_1").unwrap(), |_| {
                 ATTACK_STRENGTH
             }),
             (Winner::Goblins, 47, 590)
@@ -253,7 +255,7 @@ mod tests {
     #[test]
     fn test_simulate_combat_2() {
         assert!(matches!(
-            simulate_combat(RectangularWorld::from_file("input_test_2").unwrap(), |_| {
+            simulate_combat(World::from_file("input_test_2").unwrap(), |_| {
                 ATTACK_STRENGTH
             }),
             (Winner::Elves | Winner::ElvesWithLosses, 37, 982)
@@ -263,7 +265,7 @@ mod tests {
     #[test]
     fn test_simulate_combat_3() {
         assert!(matches!(
-            simulate_combat(RectangularWorld::from_file("input_test_3").unwrap(), |_| {
+            simulate_combat(World::from_file("input_test_3").unwrap(), |_| {
                 ATTACK_STRENGTH
             }),
             (Winner::Elves | Winner::ElvesWithLosses, 46, 859)
@@ -273,7 +275,7 @@ mod tests {
     #[test]
     fn test_simulate_combat_4() {
         assert!(matches!(
-            simulate_combat(RectangularWorld::from_file("input_test_4").unwrap(), |_| {
+            simulate_combat(World::from_file("input_test_4").unwrap(), |_| {
                 ATTACK_STRENGTH
             }),
             (Winner::Goblins, 35, 793)
@@ -283,7 +285,7 @@ mod tests {
     #[test]
     fn test_simulate_combat_5() {
         assert!(matches!(
-            simulate_combat(RectangularWorld::from_file("input_test_5").unwrap(), |_| {
+            simulate_combat(World::from_file("input_test_5").unwrap(), |_| {
                 ATTACK_STRENGTH
             }),
             (Winner::Goblins, 54, 536)
@@ -293,7 +295,7 @@ mod tests {
     #[test]
     fn test_simulate_combat_6() {
         assert!(matches!(
-            simulate_combat(RectangularWorld::from_file("input_test_6").unwrap(), |_| {
+            simulate_combat(World::from_file("input_test_6").unwrap(), |_| {
                 ATTACK_STRENGTH
             }),
             (Winner::Goblins, 20, 937)
@@ -303,7 +305,7 @@ mod tests {
     #[test]
     fn test_part_2_1() {
         assert_eq!(
-            part_2(RectangularWorld::from_file("input_test_1").unwrap()),
+            part_2(World::from_file("input_test_1").unwrap()),
             (15, 29, 172)
         );
     }
@@ -311,7 +313,7 @@ mod tests {
     #[test]
     fn test_part_2_3() {
         assert_eq!(
-            part_2(RectangularWorld::from_file("input_test_3").unwrap()),
+            part_2(World::from_file("input_test_3").unwrap()),
             (4, 33, 948)
         );
     }
@@ -319,7 +321,7 @@ mod tests {
     #[test]
     fn test_part_2_4() {
         assert_eq!(
-            part_2(RectangularWorld::from_file("input_test_4").unwrap()),
+            part_2(World::from_file("input_test_4").unwrap()),
             (15, 37, 94)
         );
     }
@@ -327,7 +329,7 @@ mod tests {
     #[test]
     fn test_part_2_5() {
         assert_eq!(
-            part_2(RectangularWorld::from_file("input_test_5").unwrap()),
+            part_2(World::from_file("input_test_5").unwrap()),
             (12, 39, 166)
         );
     }
@@ -335,14 +337,14 @@ mod tests {
     #[test]
     fn test_part_2_6() {
         assert_eq!(
-            part_2(RectangularWorld::from_file("input_test_6").unwrap()),
+            part_2(World::from_file("input_test_6").unwrap()),
             (34, 30, 38)
         );
     }
 }
 
 fn main() {
-    let dungeon = RectangularWorld::from_file("input").unwrap();
+    let dungeon = World::from_file("input").unwrap();
     let (turns, remaining_hp) = part_1(dungeon.clone());
     println!("{}", turns * remaining_hp);
     let (_attack_strength, turns, remaining_hp) = part_2(dungeon);
