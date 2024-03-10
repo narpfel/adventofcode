@@ -1,4 +1,5 @@
 #![feature(associated_type_defaults)]
+#![feature(drain_keep_rest)]
 #![feature(thread_local)]
 
 use std::any::TypeId;
@@ -529,6 +530,7 @@ where
 pub struct MonotonicPriorityQueue<PointOrder: self::PointOrder, T: Ord> {
     min_prio: u64,
     queue: VecDeque<PointOrder::Container<T>>,
+    spares: Vec<PointOrder::Container<T>>,
 }
 
 impl<PointOrder, T> MonotonicPriorityQueue<PointOrder, T>
@@ -550,6 +552,10 @@ where
         let index = priority.checked_sub(self.min_prio).unwrap() as usize;
         let min_length = index + 1;
         if min_length > self.queue.len() {
+            let mut spares = self.spares.drain(..);
+            self.queue
+                .extend((&mut spares).take(min_length - self.queue.len()));
+            spares.keep_rest();
             self.queue
                 .resize_with(min_length, PointOrder::Container::default);
         }
@@ -560,7 +566,10 @@ where
         loop {
             match self.queue.front_mut() {
                 Some(bucket) if bucket.is_empty() => {
-                    self.queue.pop_front();
+                    let bucket = self.queue.pop_front();
+                    if let Some(bucket) = bucket {
+                        self.spares.push(bucket);
+                    }
                     self.min_prio += 1;
                 }
                 Some(bucket) => {
@@ -580,7 +589,11 @@ where
     T: Ord,
 {
     fn default() -> Self {
-        Self { min_prio: 0, queue: VecDeque::default() }
+        Self {
+            min_prio: 0,
+            queue: VecDeque::default(),
+            spares: Vec::default(),
+        }
     }
 }
 
