@@ -1,5 +1,4 @@
 #![feature(associated_type_defaults)]
-#![feature(drain_keep_rest)]
 #![feature(thread_local)]
 
 use std::any::TypeId;
@@ -555,10 +554,10 @@ where
         let index = priority.checked_sub(self.min_prio).unwrap() as usize;
         let min_length = index + 1;
         if min_length > self.queue.len() {
-            let mut spares = self.spares.drain(..);
-            self.queue
-                .extend((&mut spares).take(min_length - self.queue.len()));
-            spares.keep_rest();
+            let elements_needed = min_length - self.queue.len();
+            let start_index = self.spares.len().saturating_sub(elements_needed);
+            let spares = self.spares.drain(start_index..);
+            self.queue.extend(spares);
             self.queue
                 .resize_with(min_length, PointOrder::Container::default);
         }
