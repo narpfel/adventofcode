@@ -296,10 +296,14 @@ where
     Point: Cartesian,
     Tile: crate::Tile,
 {
-    pub fn from_map(world: FnvHashMap<CartesianPoint, Tile>) -> Self
-    where
-        Tile: Default,
-    {
+    pub fn from_map(world: FnvHashMap<CartesianPoint, Tile>) -> Self {
+        Self::from_map_or_else(world, |_| panic!("world is not rectangular"))
+    }
+
+    pub fn from_map_or_else(
+        world: FnvHashMap<CartesianPoint, Tile>,
+        mut or_else: impl FnMut(CartesianPoint) -> Tile,
+    ) -> Self {
         let width = world.keys().map(|CartesianPoint(x, _)| x).max().unwrap() + 1;
         let height = world.keys().map(|CartesianPoint(_, y)| y).max().unwrap() + 1;
         let mut tiles = vec![];
@@ -307,7 +311,7 @@ where
             for x in 0..width {
                 tiles.push(
                     World::get(&world, &CartesianPoint(x, y))
-                        .unwrap_or_default()
+                        .unwrap_or_else(|| or_else(CartesianPoint(x, y)))
                         .to_owned(),
                 );
             }
@@ -318,6 +322,16 @@ where
             _point: PhantomData,
             _point_order: PhantomData,
         }
+    }
+
+    pub fn from_nonrectangular_file(path: impl AsRef<Path>) -> Result<Self, io::Error>
+    where
+        Tile: TryFrom<char> + Default,
+        <Tile as TryFrom<char>>::Error: Debug,
+    {
+        Ok(Self::from_map_or_else(ReadExt::from_file(path)?, |_| {
+            Tile::default()
+        }))
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (Point, &Tile)> {
@@ -602,7 +616,7 @@ where
 impl<Point, Tile, PointOrder> ReadExt for RectangularWorld<Point, Tile, PointOrder>
 where
     Point: Cartesian + crate::Point,
-    Tile: crate::Tile + TryFrom<char> + Default,
+    Tile: crate::Tile + TryFrom<char>,
     PointOrder: self::PointOrder,
 {
     fn from_file(path: impl AsRef<Path>) -> Result<Self, io::Error>

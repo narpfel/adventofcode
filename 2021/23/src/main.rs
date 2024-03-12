@@ -9,7 +9,6 @@ use std::marker::PhantomData;
 
 use graph::CartesianPoint;
 use graph::Distance;
-use graph::ReadExt;
 use graph::RectangularWorld;
 use graph::Tile as _;
 use graph::World;
@@ -243,7 +242,10 @@ mod tests {
         Burrow:,
     {
         assert_eq!(
-            solve(&Burrow::from_file("input_test").unwrap(), [2, 3]),
+            solve(
+                &Burrow::from_nonrectangular_file("input_test").unwrap(),
+                [2, 3],
+            ),
             12521,
         );
     }
@@ -254,7 +256,10 @@ mod tests {
         Burrow:,
     {
         assert_eq!(
-            solve(&Burrow::from_file("input_test_2").unwrap(), [2, 3, 4, 5]),
+            solve(
+                &Burrow::from_nonrectangular_file("input_test_2").unwrap(),
+                [2, 3, 4, 5],
+            ),
             44169,
         );
     }
@@ -276,10 +281,16 @@ impl<T> HasUnit for Use<T> {
 // case, however we can’t use a `where` clause with empty bounds here as `main`
 // cannot be constrained by a `where`. So we use this slightly silly workaround.
 fn main() -> Result<ActuallyUnit<Burrow>, Box<dyn Error>> {
-    println!("{}", solve(&Burrow::from_file("input")?, [2, 3]));
     println!(
         "{}",
-        solve(&Burrow::from_file("input_part_2")?, [2, 3, 4, 5]),
+        solve(&Burrow::from_nonrectangular_file("input")?, [2, 3]),
+    );
+    println!(
+        "{}",
+        solve(
+            &Burrow::from_nonrectangular_file("input_part_2")?,
+            [2, 3, 4, 5],
+        ),
     );
     Ok(())
 }
