@@ -75,9 +75,10 @@ impl graph::World for Pipes {
         World::iter(&self.0)
     }
 
-    fn neighbours(&self, (x, y): Self::Point) -> Box<dyn Iterator<Item = Self::Point>> {
+    fn neighbours(&self, (x, y): Self::Point) -> impl Iterator<Item = Self::Point> {
         match self.get(&(x, y)) {
-            Some(Vertical) => Box::new([(x, y - 1), (x, y + 1)].into_iter()),
+            Some(Vertical) =>
+                Box::<dyn Iterator<Item = _>>::from(Box::new([(x, y - 1), (x, y + 1)].into_iter())),
             Some(Horizontal) => Box::new([(x - 1, y), (x + 1, y)].into_iter()),
             Some(LBend) => Box::new([(x, y - 1), (x + 1, y)].into_iter()),
             Some(JBend) => Box::new([(x, y - 1), (x - 1, y)].into_iter()),
