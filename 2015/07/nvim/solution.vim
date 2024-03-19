@@ -1,7 +1,7 @@
 #!/usr/bin/env -S nvim --clean -s
 :i
 #!/usr/bin/env stack
--- stack --resolver lts-18.0 script
+-- stack --resolver lts-22.13 script
 import Data.Bits
 rshift' = shiftR
 lshift' = shiftL

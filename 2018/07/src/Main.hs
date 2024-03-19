@@ -46,7 +46,7 @@ executeStep :: Construction -> Construction
 executeStep = retire . queueExecution
 
 queueExecution :: Construction -> Construction
-queueExecution construction @ Construction { .. }
+queueExecution construction@Construction { .. }
   = construction
     { waiting = waiting'
     , executing = executing'
@@ -64,7 +64,7 @@ queueExecution construction @ Construction { .. }
       $ selected
 
 retire :: Construction -> Construction
-retire construction @ Construction { .. }
+retire construction@Construction { .. }
   = construction
     { executing = executing'
     , done = done <> Set.toAscList retired

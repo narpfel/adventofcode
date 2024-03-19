@@ -1,5 +1,6 @@
 module Main (main) where
 
+import Control.Monad (when)
 import Control.Monad.State
 import Data.Char (isAlpha, ord)
 

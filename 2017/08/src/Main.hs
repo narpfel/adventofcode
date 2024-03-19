@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Au.Parser
+import Control.Monad (when)
 import Control.Monad.State
 import qualified Data.Map.Strict as Map
 import Text.Show.Functions ()
