@@ -199,7 +199,7 @@ mod fastmod {
             panic!("`d` cannot be `i32::MIN`");
         }
         let d = i64::from(d).unsigned_abs();
-        0xFFFFFFFFFFFFFFFF / d + 1 + if d & (d - 1) == 0 { 1 } else { 0 }
+        u64::MAX / d + 1 + if d & (d - 1) == 0 { 1 } else { 0 }
     }
 
     pub fn mul_128_u32(lowbits: u64, d: u32) -> u64 {
@@ -211,7 +211,7 @@ mod fastmod {
     pub fn fastmod_s32(a: i32, m: u64, positive_d: i32) -> i32 {
         debug_assert!(positive_d > 0);
         let lowbits = m.wrapping_mul(a as u64);
-        let highbits: i32 = mul_128_u32(lowbits, positive_d as u32) as i32;
+        let highbits = mul_128_u32(lowbits, positive_d as u32) as i32;
         let result = highbits - ((positive_d - 1) & (a >> 31));
         if result < 0 {
             positive_d + result
