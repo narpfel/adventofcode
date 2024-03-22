@@ -1,5 +1,7 @@
 #!/usr/bin/env pypy3
 
+from __future__ import annotations
+
 import math
 import re
 from typing import NamedTuple
@@ -20,7 +22,7 @@ class Materials(NamedTuple):
     clay: int = 0
     obsidian: int = 0
 
-    def can_afford(self, other):
+    def can_afford(self, other: Materials) -> bool:
         return (
             self.ore >= other.ore
             and self.clay >= other.clay
@@ -42,7 +44,7 @@ class Blueprint(NamedTuple):
     geode_robot: Materials
 
     @classmethod
-    def parse(cls, line):
+    def parse(cls, line: str) -> Blueprint:
         match = BLUEPRINT_RE.match(line)
         assert match is not None
         return cls(
@@ -59,10 +61,10 @@ class Blueprint(NamedTuple):
             ),
         )
 
-    def quality_level(self):
+    def quality_level(self) -> int:
         return self.max_geodes(24) * self.id
 
-    def max_geodes(self, time_limit):
+    def max_geodes(self, time_limit: int) -> int:
         states = [State()]
         max_geodes = 0
 
@@ -113,7 +115,7 @@ class State(NamedTuple):
     ore: int = 0
     ore_robots: int = 1
 
-    def step(self):
+    def step(self) -> State:
         return self._replace(
             time=self.time + 1,
             ore=self.ore + self.ore_robots,
@@ -123,14 +125,14 @@ class State(NamedTuple):
         )
 
     @property
-    def materials(self):
+    def materials(self) -> Materials:
         return Materials(
             ore=self.ore,
             clay=self.clay,
             obsidian=self.obsidian,
         )
 
-    def can_afford(self, materials):
+    def can_afford(self, materials: Materials) -> bool:
         return self.materials.can_afford(materials) and not (
             # if all of these are true, we definitely could have
             # afforded the cost last minute
@@ -139,7 +141,7 @@ class State(NamedTuple):
             and materials.obsidian <= self.obsidian - self.obsidian_robots
         )
 
-    def spend(self, materials):
+    def spend(self, materials: Materials) -> State:
         return self._replace(
             ore=self.ore - materials.ore,
             clay=self.clay - materials.clay,
@@ -147,32 +149,32 @@ class State(NamedTuple):
         )
 
 
-def read_input(filename):
+def read_input(filename: str) -> list[Blueprint]:
     with open(filename) as lines:
         return [Blueprint.parse(line) for line in lines]
 
 
-def part_1(blueprints):
+def part_1(blueprints: list[Blueprint]) -> int:
     return sum(blueprint.quality_level() for blueprint in blueprints)
 
 
-def part_2(blueprints):
+def part_2(blueprints: list[Blueprint]) -> int:
     return math.prod(blueprint.max_geodes(32) for blueprint in blueprints[:3])
 
 
-def test_part_1():
+def test_part_1() -> None:
     blueprints = read_input("input_test")
     assert blueprints[0].quality_level() == 9
     assert blueprints[1].quality_level() == 24
 
 
-def test_part_2():
+def test_part_2() -> None:
     blueprints = read_input("input_test")
     assert blueprints[0].max_geodes(32) == 56
     assert blueprints[1].max_geodes(32) == 62
 
 
-def main():
+def main() -> None:
     blueprints = read_input("input")
     print(part_1(blueprints))
     print(part_2(blueprints))
