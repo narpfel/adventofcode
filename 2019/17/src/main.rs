@@ -1,3 +1,5 @@
+#![feature(lint_reasons)]
+
 use std::collections::HashMap;
 use std::error::Error;
 #[cfg(feature = "visualise")]
@@ -115,24 +117,21 @@ impl ToAscii for Function {
     }
 }
 
-struct State<Iter: Iterator<Item = Cell>> {
+struct State<Iter> {
     position: Point,
     scaffolding: Scaffolding,
     dust_collected: Option<Cell>,
     input: Iter,
 }
 
-/// FIXME: Apparently, this cannot be expressed as an associated function as
-/// there is no way to name the type `State` is generic over.
-fn new_state<IntoIter>(input: IntoIter) -> State<impl Iterator<Item = Cell>>
-where
-    IntoIter: IntoIterator<Item = u8>,
-{
-    State {
-        position: Point { x: 0, y: 0 },
-        scaffolding: Scaffolding::default(),
-        dust_collected: None,
-        input: input.into_iter().map(|x| x as Cell),
+impl State<()> {
+    fn new(input: impl IntoIterator<Item = u8>) -> State<impl Iterator<Item = Cell>> {
+        State {
+            position: Point { x: 0, y: 0 },
+            scaffolding: Scaffolding::default(),
+            dust_collected: None,
+            input: input.into_iter().map(|x| x as Cell),
+        }
     }
 }
 
@@ -200,7 +199,7 @@ impl<Iter: Iterator<Item = Cell>> State<Iter> {
         ) -> Option<(Vec<Function>, [Vec<Step>; 3])> {
             // FIXME: Is this a false positive? Regardless, a `match` wouldn’t make the
             // code more readable here.
-            #[allow(clippy::comparison_chain)]
+            #[expect(clippy::comparison_chain)]
             if i == steps.len() {
                 return Some((main.clone(), functions.clone()));
             }
@@ -431,7 +430,7 @@ fn neighbours(Point { x, y }: Point) -> impl Iterator<Item = Point> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let mut state = new_state("".bytes());
+    let mut state = State::new("".bytes());
     let mut computer = Computer::from_file("input", &mut state)?;
 
     #[cfg(feature = "visualise")]
@@ -444,7 +443,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     #[cfg(feature = "visualise")]
     print!("\x1B[2J");
 
-    let mut state = new_state(part2_input.bytes());
+    let mut state = State::new(part2_input.bytes());
     let mut computer = Computer::from_file("input", &mut state)?;
     computer.memory[0] = 2;
     computer.run();
