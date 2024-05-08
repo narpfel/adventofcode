@@ -1,5 +1,4 @@
 #![feature(debug_closure_helpers)]
-#![feature(generic_nonzero)]
 
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
