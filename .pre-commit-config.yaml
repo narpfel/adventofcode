@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: check-docstring-first
       - id: check-executables-have-shebangs
@@ -28,11 +28,11 @@ repos:
     hooks:
       - id: add-trailing-comma
   - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
+    rev: 7.1.0
     hooks:
       - id: flake8
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.1
+    rev: v3.17.0
     hooks:
       - id: pyupgrade
         args: [--py311-plus]
