@@ -10,17 +10,16 @@ from _md5 import md5
 INPUT = b"iwrupvqb"
 
 
-def lowest_with_n_zeroes(leading_zeroes_count):
-    leading_zeroes = "0" * leading_zeroes_count
+def find_hash_lower_than(maximum_value):
     for n in count():
         hash = md5(INPUT + str(n).encode())
-        if hash.hexdigest().startswith(leading_zeroes):
+        if hash.digest() < maximum_value:
             return n
 
 
 def main():
-    print(lowest_with_n_zeroes(5))
-    print(lowest_with_n_zeroes(6))
+    print(find_hash_lower_than(b"\x00\x00\x10"))
+    print(find_hash_lower_than(b"\x00\x00\x01"))
 
 
 if __name__ == "__main__":
