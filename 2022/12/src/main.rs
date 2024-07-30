@@ -1,5 +1,3 @@
-#![feature(lint_reasons)]
-
 use std::error::Error;
 
 use fnv::FnvHashMap;

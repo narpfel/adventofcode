@@ -1,5 +1,3 @@
-#![feature(lint_reasons)]
-
 use std::collections::HashMap;
 use std::error::Error;
 #[cfg(feature = "visualise")]

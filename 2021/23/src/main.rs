@@ -1,4 +1,3 @@
-#![feature(lint_reasons)]
 #![feature(type_alias_impl_trait)]
 
 use std::collections::BTreeMap;

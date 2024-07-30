@@ -1,7 +1,5 @@
 #![feature(entry_insert)]
-#![feature(lint_reasons)]
 
-use std::io;
 use std::iter::from_fn;
 
 use fnv::FnvHashMap;
@@ -95,24 +93,6 @@ impl Maze {
 
     fn key_count(&self) -> usize {
         self.adjacency.len() - self.entrance_count
-    }
-}
-
-#[derive(Debug)]
-enum Error {
-    WrongChar(#[expect(dead_code)] char),
-    IoError(#[expect(dead_code)] io::Error),
-}
-
-impl From<char> for Error {
-    fn from(c: char) -> Self {
-        Error::WrongChar(c)
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Self {
-        Error::IoError(err)
     }
 }
 
