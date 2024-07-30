@@ -1,5 +1,3 @@
-#![feature(lint_reasons)]
-
 use std::error::Error;
 use std::fs::read_to_string;
 use std::num::ParseIntError;
