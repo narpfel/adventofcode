@@ -8,7 +8,7 @@ let part1 a b =
     for _ = 0 to 40_000_000 do
         a := lehmer_rng modulus 16807 !a;
         b := lehmer_rng modulus 48271 !b;
-        if (Int.logand !a 0xffff) == (Int.logand !b 0xffff) then
+        if (!a land 0xffff) == (!b land 0xffff) then
             result := !result + 1
         else
             ();
@@ -28,7 +28,7 @@ let part2 a b =
         while not (!b mod 8 == 0) do
             b := lehmer_rng modulus 48271 !b
         done;
-        if (Int.logand !a 0xffff) == (Int.logand !b 0xffff) then
+        if (!a land 0xffff) == (!b land 0xffff) then
             result := !result + 1
         else
             ()

@@ -1,6 +1,6 @@
 let modulus = 2147483647
 let lehmer_rng m a x = (a * x) mod m
-let lsbs = Int.logand 0xffff
+let lsbs n = (n land 0xffff)
 
 let generator a x = Seq.iterate (lehmer_rng modulus a) x |> Seq.drop 1
 
