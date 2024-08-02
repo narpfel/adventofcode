@@ -26,12 +26,12 @@ let part2 a b =
         done;
         b := lehmer_rng modulus 48271 !b;
         while not (!b mod 8 == 0) do
-            b := lehmer_rng modulus 48271 !b;
+            b := lehmer_rng modulus 48271 !b
         done;
         if (Int.logand !a 0xffff) == (Int.logand !b 0xffff) then
             result := !result + 1
         else
-            ();
+            ()
     done;
     !result
 
