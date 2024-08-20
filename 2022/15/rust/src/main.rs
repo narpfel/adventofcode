@@ -154,14 +154,7 @@ fn part_1(coords: &Coords, target_y: i64) -> i64 {
         - i64::try_from(
             coords
                 .iter()
-                .filter_map(|&(_, (x, y))| {
-                    if y == target_y && blocked.contains(x) {
-                        Some(())
-                    }
-                    else {
-                        None
-                    }
-                })
+                .filter_map(|&(_, (x, y))| (y == target_y && blocked.contains(x)).then_some(x))
                 .collect::<HashSet<_>>()
                 .len(),
         )
