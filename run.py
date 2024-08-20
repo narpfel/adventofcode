@@ -97,6 +97,22 @@ class Failed:
         stats.failed += 1
 
 
+@attrs(frozen=True)
+class MultiStep:
+    commands = attrib()
+
+    @classmethod
+    def from_commands(cls, commands):
+        match commands:
+            case MultiStep():
+                return commands
+            case _:
+                return MultiStep([commands])
+
+    def __iter__(self):
+        return iter(self.commands)
+
+
 class Runner:
     def __init__(self, *, build_output, solution_output, languages):
         self.build_output = build_output
@@ -173,12 +189,22 @@ class Runner:
 
         raise FileNotFoundError(f"`{solution_dir}` does not contain a solution.")
 
-    def timed_run(self, command, cwd, output, stderr=STDERR_DEFAULT):
+    def timed_run(self, commands, cwd, output, stderr=STDERR_DEFAULT):
         if stderr is STDERR_DEFAULT:
             stderr = output
+        commands = MultiStep.from_commands(commands)
+
         start_time = time.perf_counter()
-        process = subprocess.run(command, cwd=cwd, check=True, stdout=output, stderr=stderr)
-        return time.perf_counter() - start_time, process.stdout
+
+        stdouts = []
+        for command in commands:
+            process = subprocess.run(command, cwd=cwd, check=True, stdout=output, stderr=stderr)
+            stdouts.append(process.stdout)
+
+        return (
+            time.perf_counter() - start_time,
+            b"\n".join(stdout for stdout in stdouts if stdout is not None),
+        )
 
     def execute(self, build_command, exection_command, cwd):
         if build_command is not None:
@@ -234,11 +260,22 @@ class Runner:
                 cwd=path.parent,
             )
 
+    def run_cmake(self, path):
+        return self.execute(
+            MultiStep([
+                ["cmake", "-B", "build", "-S", ".", "-G", "Ninja"],
+                ["ninja", "-C", "build", "-v"],
+            ]),
+            ["build/solution"],
+            cwd=path.parent,
+        )
+
     RUNNERS = {
         "Makefile": "run_makefile",
         "package.yaml": "run_haskell",
         "Cargo.toml": "run_rust",
         "solution.vim": "run_nvim",
+        "CMakeLists.txt": "run_cmake",
     }
 
 
@@ -252,6 +289,7 @@ RUNNER_TO_LANGUAGE = {
         capture_output=True,
         text=True,
     ).stdout.strip(),
+    "CMakeLists.txt": lambda _: "c++",
 }
 
 
