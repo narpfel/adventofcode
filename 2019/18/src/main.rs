@@ -1,5 +1,3 @@
-#![feature(entry_insert)]
-
 use std::iter::from_fn;
 
 use fnv::FnvHashMap;
