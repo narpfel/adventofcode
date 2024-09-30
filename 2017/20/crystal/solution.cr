@@ -86,7 +86,7 @@ def parse(line, value)
 end
 
 def part1(particles)
-  particles.map_with_index { |i, p| {i, p} }.min_by { |(i, p)| i }.last
+  particles.map_with_index { |p, i| {p, i} }.min_by { |(p, i)| p }.last
 end
 
 def part2(particles)
