@@ -199,7 +199,7 @@ mod fastmod {
             panic!("`d` cannot be `i32::MIN`");
         }
         let d = i64::from(d).unsigned_abs();
-        u64::MAX / d + 1 + if d & (d - 1) == 0 { 1 } else { 0 }
+        u64::MAX / d + 1 + if d.is_power_of_two() { 1 } else { 0 }
     }
 
     pub fn mul_128_u32(lowbits: u64, d: u32) -> u64 {
