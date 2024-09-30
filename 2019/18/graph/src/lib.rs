@@ -452,21 +452,30 @@ pub trait PointOrder: Clone {
 pub struct Unordered;
 
 impl PointOrder for Unordered {
-    type Container<T> = Vec<T> where T: Ord;
+    type Container<T>
+        = Vec<T>
+    where
+        T: Ord;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Ordered;
 
 impl PointOrder for Ordered {
-    type Container<T> = BinaryHeap<T> where T: Ord;
+    type Container<T>
+        = BinaryHeap<T>
+    where
+        T: Ord;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ReverseOrdered;
 
 impl PointOrder for ReverseOrdered {
-    type Container<T> = ReverseBinaryHeap<T> where T: Ord;
+    type Container<T>
+        = ReverseBinaryHeap<T>
+    where
+        T: Ord;
 }
 
 pub trait PriorityQueueContainer: Default {
