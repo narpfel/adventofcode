@@ -16,6 +16,8 @@ use std::io::BufReader;
 use std::iter::from_fn;
 use std::marker::PhantomData;
 use std::path::Path;
+use std::sync::LazyLock;
+use std::sync::Mutex;
 
 use fnv::FnvHashMap;
 use fnv::FnvHashSet;
@@ -175,8 +177,9 @@ pub trait World: Clone {
         }
 
         #[thread_local]
-        static mut POOL: Option<Erased> = None;
-        let pool = unsafe { POOL.get_or_insert_with(|| Erased(FnvHashMap::default())) };
+        static POOL: LazyLock<Mutex<Erased>> =
+            LazyLock::new(|| Mutex::new(Erased(FnvHashMap::default())));
+        let mut pool = POOL.try_lock().unwrap();
 
         let mut visited = FnvHashSet::default();
 
