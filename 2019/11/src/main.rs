@@ -52,7 +52,7 @@ struct State<'a> {
     colour: Option<Cell>,
 }
 
-impl<'a> State<'a> {
+impl State<'_> {
     fn new(tiles: &mut HashMap<(i64, i64), Colour>) -> State {
         State {
             tiles,
@@ -63,7 +63,7 @@ impl<'a> State<'a> {
     }
 }
 
-impl<'a> IO for State<'a> {
+impl IO for State<'_> {
     fn next_input(&mut self) -> Option<Cell> {
         Some(
             self.tiles
