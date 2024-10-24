@@ -23,10 +23,10 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ctre)
 
-add_executable(solution solution.cxx)
+add_library(flags)
 target_compile_options(
-    solution
-    PRIVATE
+    flags
+    PUBLIC
         -Wall
         -Wextra
         -pedantic
@@ -35,4 +35,14 @@ target_compile_options(
         -Wsign-conversion
         -fcolor-diagnostics
 )
-target_link_libraries(solution PRIVATE ctre)
+
+add_library(parse_input STATIC)
+target_sources(parse_input
+    PUBLIC
+    FILE_SET cxx_modules TYPE CXX_MODULES FILES
+    parse_input.cxx
+)
+target_link_libraries(parse_input PRIVATE flags ctre)
+
+add_executable(solution solution.cxx)
+target_link_libraries(solution PRIVATE flags parse_input)
