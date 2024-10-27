@@ -77,7 +77,7 @@ def main():
         }
         medicine = tokenize(next(lines))
 
-    print(f"{len(medicine) = }")
+    print(f"len(medicine) = {len(medicine)}")
     print()
     print(
         "Solution (part 1):",
