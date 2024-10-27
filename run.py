@@ -310,7 +310,7 @@ def format_build_time(build_time):
 
 
 def get_year_day():
-    parts = Path(".").resolve().parts
+    parts = list(Path(".").resolve().parts)
     while True:
         try:
             day = int(parts[-1])
