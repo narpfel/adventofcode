@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import argparse
 import datetime
 import os
@@ -8,14 +10,17 @@ import shlex
 import subprocess
 import sys
 import time
+from collections.abc import Callable
+from collections.abc import Iterator
 from contextlib import suppress
 from functools import partial
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from tempfile import TemporaryDirectory
+from typing import Literal
+from typing import Self
 
-from attr import attrib
-from attr import attrs
+from attr import define
 from identify import identify
 
 FG_BOLD = "\x1B[1m"
@@ -24,7 +29,8 @@ FG_GREEN = "\x1B[32m"
 FG_YELLOW = "\x1B[33m"
 RESET = "\x1B[m"
 
-STDERR_DEFAULT = object()
+type StderrDefault = Literal[False]
+STDERR_DEFAULT: Literal[False] = False
 
 RESPONSE_TYPES = [
     (
@@ -52,75 +58,88 @@ RESPONSE_TYPES = [
 ]
 
 
-@attrs
-class Statistics:
-    succeeded = attrib(default=0)
-    build_time = attrib(default=0)
-    execution_time = attrib(default=0)
-    skipped = attrib(default=0)
-    failed = attrib(default=0)
+type Output = int | None
+type Command = MultiStep | list[str | Path]
 
-    def add(self, result):
+
+@define
+class Statistics:
+    succeeded: int = 0
+    build_time: float = 0
+    execution_time: float = 0
+    skipped: int = 0
+    failed: int = 0
+
+    def add(self, result: Result) -> None:
         result.add_to(self)
 
-    def add_to(self, stats):
+    def add_to(self, stats: Self) -> None:
         stats.succeeded += self.succeeded
         stats.build_time += self.build_time
         stats.execution_time += self.execution_time
         stats.skipped += self.skipped
         stats.failed += self.failed
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return any([self.succeeded, self.skipped, self.failed])
 
 
-@attrs(frozen=True)
+@define(frozen=True)
 class Success:
-    build_time = attrib()
-    execution_time = attrib()
+    build_time: float
+    execution_time: float
 
-    def add_to(self, stats):
+    def add_to(self, stats: Statistics) -> None:
         stats.succeeded += 1
         stats.build_time += self.build_time
         stats.execution_time += self.execution_time
 
 
-@attrs(frozen=True)
+@define(frozen=True)
 class Skipped:
-    def add_to(self, stats):
+    def add_to(self, stats: Statistics) -> None:
         stats.skipped += 1
 
 
-@attrs(frozen=True)
+@define(frozen=True)
 class Failed:
-    def add_to(self, stats):
+    def add_to(self, stats: Statistics) -> None:
         stats.failed += 1
 
 
-@attrs(frozen=True)
+type Result = Statistics | Success | Skipped | Failed
+
+
+@define(frozen=True)
 class MultiStep:
-    commands = attrib()
+    commands: list[list[str | Path]]
 
     @classmethod
-    def from_commands(cls, commands):
+    def from_commands(cls, commands: Self | list[str | Path]) -> MultiStep:
         match commands:
             case MultiStep():
                 return commands
             case _:
                 return MultiStep([commands])
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[list[str | Path]]:
         return iter(self.commands)
 
 
 class Runner:
-    def __init__(self, *, build_output, solution_output, languages):
+    def __init__(
+        self,
+        *,
+        build_output: Output,
+        solution_output: Output,
+        languages: re.Pattern[str],
+    ) -> None:
         self.build_output = build_output
         self.solution_output = solution_output
         self.languages = languages
-        self.captured_output = []
+        self.captured_output: list[bytes] = []
 
-    def run_all(self):
+    def run_all(self) -> Statistics:
         stats = Statistics()
         for year_dir in sorted(Path().iterdir()):
             if year_dir.is_dir() and str(year_dir).isdigit():
@@ -133,7 +152,7 @@ class Runner:
                         stats.add(self.run_solution(solution_dir))
         return stats
 
-    def run_solution(self, solution_dir):
+    def run_solution(self, solution_dir: Path) -> Result:
         execution_time_prefix = f"\n{solution_dir}: " if self.solution_output is None else ""
 
         try:
@@ -174,7 +193,10 @@ class Runner:
                 )
                 return Success(build_time=build_time, execution_time=execution_time)
 
-    def find_executor(self, solution_dir):
+    def find_executor(
+        self,
+        solution_dir: Path,
+    ) -> tuple[Callable[[Path], tuple[float, float]], Path]:
         for language_indicator, runner_name in self.RUNNERS.items():
             path = solution_dir / language_indicator
             if path.exists():
@@ -189,10 +211,16 @@ class Runner:
 
         raise FileNotFoundError(f"`{solution_dir}` does not contain a solution.")
 
-    def timed_run(self, commands, cwd, output, stderr=STDERR_DEFAULT):
+    def timed_run(
+        self,
+        commands_param: Command,
+        cwd: Path,
+        output: Output,
+        stderr: Output | StderrDefault = STDERR_DEFAULT,
+    ) -> tuple[float, bytes]:
         if stderr is STDERR_DEFAULT:
             stderr = output
-        commands = MultiStep.from_commands(commands)
+        commands = MultiStep.from_commands(commands_param)
 
         start_time = time.perf_counter()
 
@@ -206,7 +234,12 @@ class Runner:
             b"\n".join(stdout for stdout in stdouts if stdout is not None),
         )
 
-    def execute(self, build_command, exection_command, cwd):
+    def execute(
+        self,
+        build_command: Command | None,
+        exection_command: Command,
+        cwd: Path,
+    ) -> tuple[float, float]:
         if build_command is not None:
             build_time, _ = self.timed_run(build_command, cwd, self.build_output)
         else:
@@ -221,10 +254,10 @@ class Runner:
             self.captured_output.append(output)
         return build_time, execution_time
 
-    def run_executable(self, path):
+    def run_executable(self, path: Path) -> tuple[float, float]:
         return self.execute(None, [path.absolute()], cwd=path.parent)
 
-    def run_haskell(self, path):
+    def run_haskell(self, path: Path) -> tuple[float, float]:
         with TemporaryDirectory() as tmpdir:
             return self.execute(
                 ["stack", "build", "--local-bin-path", tmpdir, "--copy-bins", "solution"],
@@ -232,21 +265,21 @@ class Runner:
                 cwd=path.parent,
             )
 
-    def run_rust(self, path):
+    def run_rust(self, path: Path) -> tuple[float, float]:
         return self.execute(
             ["cargo", "build", "--release"],
             ["./target/release/solution"],
             cwd=path.parent,
         )
 
-    def run_makefile(self, path):
+    def run_makefile(self, path: Path) -> tuple[float, float]:
         return self.execute(
             ["make", "build"],
             ["make", "run"],
             cwd=path.parent,
         )
 
-    def run_nvim(self, path):
+    def run_nvim(self, path: Path) -> tuple[float, float]:
         with NamedTemporaryFile() as tempfile:
             filename = shlex.quote(os.fspath(tempfile.name))
             # Ugly hack because `Runner.execute` does not support pipes
@@ -260,7 +293,7 @@ class Runner:
                 cwd=path.parent,
             )
 
-    def run_cmake(self, path):
+    def run_cmake(self, path: Path) -> tuple[float, float]:
         return self.execute(
             MultiStep([
                 ["cmake", "-B", "build", "-S", ".", "-G", "Ninja"],
@@ -279,7 +312,7 @@ class Runner:
     }
 
 
-RUNNER_TO_LANGUAGE = {
+RUNNER_TO_LANGUAGE: dict[str, Callable[[Path], str]] = {
     "package.yaml": lambda _: "haskell",
     "Cargo.toml": lambda _: "rust",
     "Makefile": lambda path: subprocess.run(
@@ -293,23 +326,23 @@ RUNNER_TO_LANGUAGE = {
 }
 
 
-def language_for(path):
+def language_for(path: Path) -> str:
     if os.access(path, os.X_OK):
-        return identify.parse_shebang_from_file(path)[0]
+        return identify.parse_shebang_from_file(os.fspath(path))[0]
     try:
         return RUNNER_TO_LANGUAGE[path.name](path)
     except subprocess.CalledProcessError:
         return "unknown"
 
 
-def format_build_time(build_time):
+def format_build_time(build_time: float) -> str:
     if build_time < 1:
         return "."
     else:
         return f" (and {build_time} s of build time)."
 
 
-def get_year_day():
+def get_year_day() -> tuple[int, int]:
     parts = list(Path(".").resolve().parts)
     while True:
         try:
@@ -321,14 +354,14 @@ def get_year_day():
             return year, day
 
 
-def read_cookies():
+def read_cookies() -> dict[str, str]:
     return {
         "Cookie": (Path(__file__).parent / ".env").read_text().strip(),
         "User-Agent": "github.com/narpfel",
     }
 
 
-def retrieve_input(year, day):
+def retrieve_input(year: int, day: int) -> str:
     from urllib.request import Request
     from urllib.request import urlopen
     request = Request(
@@ -336,10 +369,12 @@ def retrieve_input(year, day):
         headers=read_cookies(),
     )
     response = urlopen(request)
-    return response.read().decode()
+    input_str = response.read().decode()
+    assert isinstance(input_str, str)
+    return input_str
 
 
-def wait_for_puzzle_unlock(year, day):
+def wait_for_puzzle_unlock(year: int, day: int) -> None:
     unlock_date = datetime.datetime(year, 12, day, 5, 0, tzinfo=datetime.UTC)
     wait_end = unlock_date + datetime.timedelta(seconds=4)
     while True:
@@ -351,7 +386,7 @@ def wait_for_puzzle_unlock(year, day):
         time.sleep(1)
 
 
-def submit_solution(year, day, part, solution):
+def submit_solution(year: int, day: int, part: int, solution: str) -> str:
     from urllib.parse import urlencode
     from urllib.request import Request
     from urllib.request import urlopen
@@ -364,10 +399,12 @@ def submit_solution(year, day, part, solution):
     )
     print(f"submitting {year}/{day} part {part} with {solution!r}")
     response = urlopen(request)
-    return response.read().decode()
+    answer = response.read().decode()
+    assert isinstance(answer, str)
+    return answer
 
 
-def show_submission_result(response_page):
+def show_submission_result(response_page: str) -> None:
     for regex, format_str in RESPONSE_TYPES:
         match = regex.search(response_page)
         if match is not None:
@@ -376,7 +413,7 @@ def show_submission_result(response_page):
     assert False, response_page
 
 
-def main(argv=None):
+def main(argv: list[str] | None = None) -> int | None:
     parser = argparse.ArgumentParser(description="Run solutions.")
     parser.add_argument("-a", "--all", help="Run all solutions.", action="store_true")
     parser.add_argument(
@@ -415,7 +452,7 @@ def main(argv=None):
         except FileExistsError:
             print("using cached input")
         subprocess.check_call(["/usr/bin/less", "input"])
-        return
+        return None
 
     if Path("submit") in args.solutions:
         if len(args.solutions) > 1:
@@ -442,8 +479,8 @@ def main(argv=None):
     total_duration = time.perf_counter() - start_time
     if submit and len(runner.captured_output) == 1:
         year, day = get_year_day()
-        [output] = runner.captured_output
-        output = output.decode("utf-8")
+        [output_bytes] = runner.captured_output
+        output = output_bytes.decode("utf-8")
         print(output)
         lines = output.splitlines()
 
