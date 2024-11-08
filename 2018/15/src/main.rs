@@ -49,9 +49,9 @@ impl Tile {
 
     fn apply_damage(&mut self, damage: usize) -> Result<(), InvalidAttackTarget> {
         match self {
-            Tile::Goblin(hp) | Tile::Elf(hp) => match hp.checked_sub(damage) {
-                Some(new_hp) if new_hp > 0 => *hp = new_hp,
-                _ => *self = Tile::Empty,
+            Tile::Goblin(hp) | Tile::Elf(hp) => match hp.saturating_sub(damage) {
+                0 => *self = Tile::Empty,
+                new_hp => *hp = new_hp,
             },
             _ => return Err(InvalidAttackTarget),
         }
