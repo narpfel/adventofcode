@@ -146,8 +146,8 @@ pub trait World: Clone {
             .filter(move |neighbour| self.is_walkable(neighbour))
     }
 
-    fn walk_cells_breadth_first<'a>(
-        &'a self,
+    fn walk_cells_breadth_first(
+        &self,
         start: &Self::Point,
     ) -> impl Iterator<Item = Vector<Self::Point>>
     where
