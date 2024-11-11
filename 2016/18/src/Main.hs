@@ -17,11 +17,7 @@ step = (Vector.zipWith3 nextState <*> Vector.init <*> Vector.drop 2) . withWalls
     withWalls = Vector.cons True . flip Vector.snoc True
 
 nextState :: Bool -> Bool -> Bool -> Bool
-nextState False False True = False
-nextState True False False = False
-nextState False True True = False
-nextState True True False = False
-nextState _ _ _ = True
+nextState l _ r = l == r
 
 safeTiles :: Int -> Vector Bool -> Int
 safeTiles n
