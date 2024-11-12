@@ -77,10 +77,7 @@ pub fn read_puzzle_input(path: impl AsRef<Path>) -> Result<Memory, Box<dyn Error
 }
 
 pub fn parse(s: &str) -> Result<Memory, ParseIntError> {
-    s.trim()
-        .split(',')
-        .map(|number| number.parse().map_err(Into::into))
-        .collect()
+    s.trim().split(',').map(str::parse).collect()
 }
 
 pub struct Computer<'a, T: IO> {
