@@ -138,11 +138,9 @@ impl<Iter: Iterator<Item = Cell>> State<Iter> {
         self.scaffolding
             .keys()
             .filter(move |&&p| {
-                neighbours(p).chain(once(p)).all(|n| {
-                    self.scaffolding
-                        .get(&n)
-                        .map_or(false, |tile| tile == &Scaffold)
-                })
+                neighbours(p)
+                    .chain(once(p))
+                    .all(|n| self.scaffolding.get(&n) == Some(&Scaffold))
             })
             .copied()
     }

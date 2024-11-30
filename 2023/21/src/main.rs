@@ -55,7 +55,7 @@ fn part_1(garden: &Garden, n: u64) -> u64 {
             }
         })
         .flat_map(|p| p.neighbours())
-        .filter(|p| garden.get(p).map_or(false, |t| t.is_walkable()))
+        .filter(|p| garden.get(p).is_some_and(|tile| tile.is_walkable()))
         .for_each(|p| reachable_neighbours[garden.index(&p)] = true);
     reachable_neighbours.iter().map(|&b| b as u64).sum()
 }

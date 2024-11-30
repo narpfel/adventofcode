@@ -180,7 +180,7 @@ fn simulate_combat(
                 if !point.neighbours().any(|neighbour| {
                     dungeon
                         .get(&neighbour)
-                        .map_or(false, |enemy| unit.is_enemy(&enemy))
+                        .is_some_and(|enemy| unit.is_enemy(&enemy))
                 }) {
                     if let Some(path) = dungeon
                         .iter()
@@ -198,7 +198,7 @@ fn simulate_combat(
                 }
                 if let Some(enemy_point) = point
                     .neighbours()
-                    .filter(|p| dungeon.get(p).map_or(false, |enemy| unit.is_enemy(&enemy)))
+                    .filter(|p| dungeon.get(p).is_some_and(|enemy| unit.is_enemy(&enemy)))
                     .min_by_key(|p| (dungeon.get(p).unwrap().health(), *p))
                 {
                     let enemy = dungeon.get_mut(enemy_point).unwrap();

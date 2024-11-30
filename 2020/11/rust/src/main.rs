@@ -45,7 +45,7 @@ fn diagonal_for<'a>(
 }
 
 fn next_visible_is_alive(mut xs: impl Iterator<Item = i8>) -> u8 {
-    xs.find(|&x| x != 0).map_or(false, |x| x == 1) as u8
+    (xs.find(|&x| x != 0) == Some(1)) as u8
 }
 
 fn generation_part2(cells: &[Vec<bool>], chairs: &[Vec<bool>]) -> Vec<Vec<bool>> {

@@ -71,7 +71,7 @@ pub trait World: Clone {
     }
 
     fn is_walkable(&self, p: &Self::Point) -> bool {
-        self.get(p).as_ref().map_or(false, Tile::is_walkable)
+        self.get(p).as_ref().is_some_and(Tile::is_walkable)
     }
 
     fn distance(&self, start: &Self::Point, end: &Self::Point) -> Distance {
@@ -116,7 +116,7 @@ pub trait World: Clone {
                 let distance = distance + self.cost(&point);
                 if distance_prev
                     .get(&neighbour)
-                    .map_or(true, |(d, _)| d > &distance)
+                    .is_none_or(|(d, _)| d > &distance)
                 {
                     distance_prev.insert(neighbour.clone(), (distance, Some(point.clone())));
                     next_points.push(distance, neighbour);
@@ -420,7 +420,7 @@ where
                 let distance = distance + self.cost(&point);
                 if distance_prev[self.index(&neighbour)]
                     .as_ref()
-                    .map_or(true, |(d, _)| d > &distance)
+                    .is_none_or(|(d, _)| d > &distance)
                 {
                     distance_prev[self.index(&neighbour)] = Some((distance, Some(point.clone())));
                     next_points.push(distance, neighbour);

@@ -247,7 +247,7 @@ impl State {
         while let Some((point, neighbour_tile)) = queue.pop_front() {
             let tile = self.hull.get(&point);
             if neighbour_tile.map(|tile| tile == Empty).unwrap_or(false)
-                && !tile.map_or(false, Tile::is_known)
+                && !tile.is_some_and(Tile::is_known)
             {
                 return Some(point);
             }

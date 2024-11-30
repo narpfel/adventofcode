@@ -74,7 +74,7 @@ impl<S: Slipperiness> Forest<S> {
                         };
                         if distance_prev
                             .get(&neighbour)
-                            .map_or(true, |(d, _)| d > &distance)
+                            .is_none_or(|(d, _)| d > &distance)
                         {
                             distance_prev.insert(neighbour, (distance, Some(point)));
                             next_points.push(Reverse((distance, neighbour)));
