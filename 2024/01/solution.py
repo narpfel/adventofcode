@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from collections import Counter
+
 EXPECTED_PART_1 = 11
 EXPECTED_PART_2 = 31
 
@@ -16,7 +18,8 @@ def part_1(location_id_lists):
 
 def part_2(location_id_lists):
     lhs, rhs = location_id_lists
-    return sum(x * rhs.count(x) for x in lhs)
+    rhs = Counter(rhs)
+    return sum(x * rhs[x] for x in lhs)
 
 
 def test_part_1():
