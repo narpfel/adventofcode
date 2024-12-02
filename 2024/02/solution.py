@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from more_itertools import windowed
+from itertools import pairwise
 
 EXPECTED_PART_1 = 2
 EXPECTED_PART_2 = 4
@@ -12,16 +12,16 @@ def read_input(filename):
 
 
 def all_increasing(numbers):
-    return all(a < b for a, b in windowed(numbers, 2))
+    return all(a < b for a, b in pairwise(numbers))
 
 
 def all_decreasing(numbers):
-    return all(a > b for a, b in windowed(numbers, 2))
+    return all(a > b for a, b in pairwise(numbers))
 
 
 def part_1(lines):
     return sum(
-        all(abs(a - b) <= 3 for a, b in windowed(line, 2))
+        all(abs(a - b) <= 3 for a, b in pairwise(line))
         and (all_decreasing(line) or all_increasing(line))
         for line in lines
     )
