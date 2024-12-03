@@ -409,9 +409,10 @@ def main(argv=None):
             parser.error("can only get input for one problem")
         year, day = get_year_day()
         wait_for_puzzle_unlock(year, day)
+        puzzle_input = retrieve_input(year, day)
         try:
             with open("input", "x", encoding="utf-8") as input_file:
-                input_file.write(retrieve_input(year, day))
+                input_file.write(puzzle_input)
         except FileExistsError:
             print("using cached input")
         subprocess.check_call(["/usr/bin/less", "input"])
