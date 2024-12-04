@@ -52,7 +52,8 @@ def count_x_mas(lines):
     ]
 
     return sum(
-        lines[y][x-1:x+2] in ("MAS", "SAM") and transposed_lines[x][y-1:y+2] in ("MAS", "SAM")
+        lines[y].startswith(("MAS", "SAM"), x - 1)
+        and transposed_lines[x].startswith(("MAS", "SAM"), y - 1)
         for y, x in a_positions
     )
 
