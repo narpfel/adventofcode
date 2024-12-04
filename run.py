@@ -114,11 +114,12 @@ class MultiStep:
 
 
 class Runner:
-    def __init__(self, *, build_output, solution_output, languages):
+    def __init__(self, *, build_output, solution_output, languages, check):
         self.build_output = build_output
         self.solution_output = solution_output
         self.languages = languages
-        self.captured_output = []
+        self.captured_output = {}
+        self.check = check
 
     def run_all(self):
         stats = Statistics()
@@ -218,7 +219,14 @@ class Runner:
             stderr=None,
         )
         if output is not None:
-            self.captured_output.append(output)
+            if cwd in self.captured_output:
+                if output != self.captured_output[cwd]:
+                    print(
+                        f"\n{FG_BOLD}{FG_RED}solution executed twice but "
+                        f"did not produce deterministic output{RESET}\n",
+                    )
+            else:
+                self.captured_output[cwd] = output
         return build_time, execution_time
 
     def run_executable(self, path):
@@ -309,16 +317,23 @@ def format_build_time(build_time):
         return f" (and {build_time} s of build time)."
 
 
-def get_year_day():
-    parts = list(Path(".").resolve().parts)
+def get_puzzle_base_dir(path=Path(".")):
+    # the base dir’s last two `parts` are the year and the day
+    parts = list(path.resolve().parts)
     while True:
         try:
-            day = int(parts[-1])
+            int(parts[-1])
         except ValueError:
             parts.pop()
         else:
-            year = int(parts[-2])
-            return year, day
+            int(parts[-2])
+            return Path(*parts)
+
+
+def get_year_day(path=Path(".")):
+    base_dir = get_puzzle_base_dir(path)
+    *_, year, day = base_dir.parts
+    return int(year), int(day)
 
 
 def read_cookies():
@@ -376,6 +391,73 @@ def show_submission_result(response_page):
     assert False, response_page
 
 
+def print_expected_and_actual(expected_output, output):
+    print(f"{FG_BOLD}Expected:{RESET}")
+    sys.stdout.buffer.write(expected_output)
+    print(f"{FG_BOLD}Actual:{RESET}")
+    sys.stdout.buffer.write(output)
+
+
+def ask_if_output_is_okay(base_dir, year, day, output):
+    from urllib.request import Request
+    from urllib.request import urlopen
+
+    import lxml.etree
+
+    request = Request(
+        url=f"https://adventofcode.com/{year}/day/{day}",
+        headers=read_cookies(),
+    )
+    response = urlopen(request)
+    parser = lxml.etree.HTMLParser()
+    root = lxml.etree.parse(response, parser)
+    part_1, part_2 = root.xpath('//p[starts-with(text(), "Your puzzle answer was")]/code')
+    expected_output = f"{part_1.text}\n{part_2.text}\n".encode()
+    if output == expected_output:
+        answer = input(
+            f"{FG_BOLD}{year}/{day:02}:{RESET} output {FG_BOLD}{FG_GREEN}matches{RESET} expected "
+            "output parsed from adventofcode.com, accept? [Y/n] ",
+        )
+        is_okay = True
+        if answer.lower() in ("", "y"):
+            to_commit = output
+            which = "actual"
+        else:
+            to_commit = None
+            which = None
+    else:
+        print(
+            f"{year}/{day:02}: output {FG_BOLD}{FG_RED}does not match{RESET} expected output "
+            "parsed from adventofcode.com.",
+        )
+        print_expected_and_actual(expected_output, output)
+        answer = input(
+            f"Accept [{FG_BOLD}e{RESET}]xpected/"
+            f"[{FG_BOLD}a{RESET}]ctual/[{FG_BOLD}N{RESET}]o output? ",
+        )
+        match answer.lower():
+            case "e":
+                is_okay = True
+                to_commit = expected_output
+                which = "expected"
+            case "a":
+                is_okay = True
+                to_commit = output
+                which = "actual"
+            case "" | "n" | _:
+                is_okay = False
+                to_commit = None
+                which = None
+
+    if to_commit is None:
+        print(f"{FG_BOLD}{FG_YELLOW}not committing any output{RESET}")
+    else:
+        print(f"{FG_BOLD}{FG_YELLOW}committing {which} output...{RESET}")
+        (base_dir / ".aoc-expected").write_bytes(to_commit)
+
+    return is_okay, expected_output
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Run solutions.")
     parser.add_argument("-a", "--all", help="Run all solutions.", action="store_true")
@@ -401,6 +483,11 @@ def main(argv=None):
         help="Filter to languages matching the given regular expression",
         default=re.compile(""),
         type=partial(re.compile, flags=re.I),
+    )
+    parser.add_argument(
+        "-c", "--check",
+        help="Check if solution produces expected output",
+        action="store_true",
     )
     args = parser.parse_args(argv)
 
@@ -428,10 +515,14 @@ def main(argv=None):
         capture_output = args.time
         submit = False
 
+    if args.check:
+        capture_output = subprocess.PIPE
+
     runner = Runner(
         build_output=args.time if args.time is not None else args.build_output,
         solution_output=capture_output,
         languages=args.languages,
+        check=args.check,
     )
     start_time = time.perf_counter()
     if args.all:
@@ -443,7 +534,7 @@ def main(argv=None):
     total_duration = time.perf_counter() - start_time
     if submit and len(runner.captured_output) == 1:
         year, day = get_year_day()
-        [output] = runner.captured_output
+        [output] = runner.captured_output.values()
         output = output.decode("utf-8")
         print(output)
         lines = output.splitlines()
@@ -471,6 +562,26 @@ def main(argv=None):
             )
         if stats.skipped:
             print(f"{FG_YELLOW}{stats.skipped} solutions were skipped.{RESET}", file=sys.stderr)
+
+    if args.check:
+        print(f"\n\n{FG_BOLD}{FG_YELLOW}Checking solutions...{RESET}")
+        for solution, output in runner.captured_output.items():
+            base_dir = get_puzzle_base_dir(solution)
+            year, day = get_year_day(solution)
+            print(f"{FG_BOLD}{solution}: {RESET}", end="")
+            try:
+                expected_output = (base_dir / ".aoc-expected").read_bytes()
+            except FileNotFoundError:
+                print(f"{FG_BOLD}{FG_YELLOW}no expected output found for {year}/{day:02}{RESET}")
+                is_okay, expected_output = ask_if_output_is_okay(base_dir, year, day, output)
+            else:
+                is_okay = expected_output == output
+
+            if is_okay:
+                print(f"{FG_BOLD}{FG_GREEN}Okay!{RESET}")
+            else:
+                print(f"{FG_BOLD}{FG_RED}Incorrect!{RESET}")
+                print_expected_and_actual(expected_output, output)
 
     return stats.failed
 
