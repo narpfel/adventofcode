@@ -10,10 +10,11 @@ EXPECTED_PART_2 = 123
 def read_input(filename):
     with open(filename) as lines:
         orderings, updates = lines.read().split("\n\n")
-        return (
-            frozenset(tuple(int(s) for s in line.split("|")) for line in orderings.splitlines()),
-            [[int(s) for s in line.split(",")] for line in updates.splitlines()],
-        )
+
+    return (
+        frozenset(tuple(int(s) for s in line.split("|")) for line in orderings.splitlines()),
+        [[int(s) for s in line.split(",")] for line in updates.splitlines()],
+    )
 
 
 def part_1(puzzle_input):
