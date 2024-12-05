@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from functools import cmp_to_key
+from functools import partial
 from itertools import pairwise
 
 EXPECTED_PART_1 = 143
@@ -26,9 +27,18 @@ def part_1(puzzle_input):
     )
 
 
+def comparison_key(orderings, a, b):
+    if (a, b) in orderings:
+        return 1
+    elif (b, a) in orderings:
+        return -1
+    else:
+        raise AssertionError(f"{a} and {b} are not ordered")
+
+
 def part_2(puzzle_input):
     orderings, updates = puzzle_input
-    key = cmp_to_key(lambda a, b: 1 if (a, b) in orderings else -1)
+    key = cmp_to_key(partial(comparison_key, orderings))
     return sum(
         sorted(update, key=key)[len(update) // 2]
         for update in updates
