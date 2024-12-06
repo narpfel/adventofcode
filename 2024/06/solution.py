@@ -3,6 +3,7 @@
 from itertools import cycle
 
 EXPECTED_PART_1 = 41
+EXPECTED_PART_2 = 6
 
 UP = (0, -1)
 RIGHT = (1, 0)
@@ -58,14 +59,37 @@ def part_1(puzzle_input):
     return len({(x, y) for (x, y, _) in find_path(tiles, x, y)})
 
 
+def has_loop(puzzle_input, nx, ny):
+    tiles, x, y = parse_input(puzzle_input)
+    tiles[nx, ny] = "#"
+    try:
+        find_path(tiles, x, y)
+    except HasLoop:
+        return True
+    else:
+        return False
+
+
+def part_2(puzzle_input):
+    tiles, x, y = parse_input(puzzle_input)
+    path = {(x, y) for (x, y, _) in find_path(tiles, x, y)}
+    return sum(has_loop(puzzle_input, x, y) for x, y in path if tiles[x, y] == ".")
+
+
 def test_part_1():
     puzzle_input = read_input("input_test")
     assert part_1(puzzle_input) == EXPECTED_PART_1
 
 
+def test_part_2():
+    puzzle_input = read_input("input_test")
+    assert part_2(puzzle_input) == EXPECTED_PART_2
+
+
 def main():
     puzzle_input = read_input("input")
     print(part_1(puzzle_input))
+    print(part_2(puzzle_input))
 
 
 if __name__ == "__main__":
