@@ -43,44 +43,66 @@ fn move_(x: usize, y: usize, (dx, dy): (isize, isize)) -> (usize, usize) {
     (x.wrapping_add_signed(dx), y.wrapping_add_signed(dy))
 }
 
-type Path = FnvHashSet<(u8, u8, (i8, i8))>;
+type Path = FnvHashSet<(usize, usize)>;
 
 #[derive(Debug, Clone, Copy)]
 struct HasLoop;
 
-fn find_path(tiles: Vec<Vec<Tile>>, start: (usize, usize)) -> Result<Path, HasLoop> {
-    let mut directions = DIRECTIONS.into_iter().cycle();
-    let mut direction = directions.next().unwrap();
-    let mut visited = FnvHashSet::default();
-    visited.reserve(10_000);
+fn find_path(
+    tiles: Vec<Vec<Tile>>,
+    start: (usize, usize),
+) -> Result<impl FnOnce() -> Path, HasLoop> {
+    let y_len = tiles.len();
+    let x_len = tiles[0].len();
+
+    #[inline(never)]
+    fn assert_dimensions_fit_u8(y_len: usize, x_len: usize) {
+        assert!(y_len < u8::MAX.into());
+        assert!(x_len < u8::MAX.into());
+    }
+    assert_dimensions_fit_u8(y_len, x_len);
+
+    let mut directions = DIRECTIONS.into_iter().enumerate().cycle();
+    let (mut direction_index, mut direction) = directions.next().unwrap();
+    let mut visited = vec![false; y_len * x_len * DIRECTIONS.len()];
     let (mut x, mut y) = start;
     loop {
-        let inserted = visited.insert((x as u8, y as u8, (direction.0 as i8, direction.1 as i8)));
-        if !inserted {
-            return Err(HasLoop);
+        match visited.get_mut(
+            x as u8 as usize * y_len * DIRECTIONS.len()
+                + y as u8 as usize * DIRECTIONS.len()
+                + direction_index,
+        ) {
+            Some(was_here @ false) => *was_here = true,
+            Some(true) => return Err(HasLoop),
+            None => unreachable!(),
         }
 
         let (mut nx, mut ny) = move_(x, y, direction);
         (x, y) = loop {
             match tiles.get(ny).and_then(|line| line.get(nx)) {
                 Some(Tile::Blocked) => {
-                    direction = directions.next().unwrap();
+                    (direction_index, direction) = directions.next().unwrap();
                     (nx, ny) = move_(x, y, direction);
                 }
                 Some(_) => break (nx, ny),
-                None => return Ok(visited),
+                None =>
+                    return Ok(move || {
+                        visited
+                            .iter()
+                            .enumerate()
+                            .filter(|(_, was_visited)| **was_visited)
+                            .map(|(i, _)| {
+                                (i / (y_len * DIRECTIONS.len()), i / DIRECTIONS.len() % y_len)
+                            })
+                            .collect()
+                    }),
             }
         };
     }
 }
 
 fn part_1(tiles: Vec<Vec<Tile>>, start: (usize, usize)) -> usize {
-    find_path(tiles, start)
-        .unwrap()
-        .iter()
-        .map(|(x, y, _)| (x, y))
-        .collect::<FnvHashSet<_>>()
-        .len()
+    find_path(tiles, start).unwrap()().len()
 }
 
 fn has_loop(
@@ -94,16 +116,9 @@ fn has_loop(
 }
 
 fn part_2(tiles: Vec<Vec<Tile>>, start: (usize, usize)) -> usize {
-    find_path(tiles.clone(), start)
-        .unwrap()
-        .into_iter()
-        .map(|(x, y, _)| (x, y))
-        .collect::<FnvHashSet<_>>()
+    find_path(tiles.clone(), start).unwrap()()
         .into_par_iter()
-        .filter(|&(x, y)| {
-            tiles[usize::from(y)][usize::from(x)] == Tile::Empty
-                && has_loop(tiles.clone(), start, x.into(), y.into())
-        })
+        .filter(|&(x, y)| tiles[y][x] == Tile::Empty && has_loop(tiles.clone(), start, x, y))
         .count()
 }
 
