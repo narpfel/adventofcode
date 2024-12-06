@@ -22,7 +22,7 @@ def parse_input(puzzle_input):
         for x, c in enumerate(line):
             tiles[x, y] = c
     x, y = next((x, y) for ((x, y), c) in tiles.items() if c == "^")
-    return tiles, x, y
+    return tiles, (x, y)
 
 
 class HasLoop(BaseException):
@@ -34,10 +34,11 @@ def move(x, y, direction):
     return x + dx, y + dy
 
 
-def find_path(tiles, x, y):
+def find_path(tiles, start):
     directions = cycle([UP, RIGHT, DOWN, LEFT])
     direction = next(directions)
     visited = set()
+    x, y = start
     while True:
         if (x, y, direction) in visited:
             raise HasLoop
@@ -55,15 +56,15 @@ def find_path(tiles, x, y):
 
 
 def part_1(puzzle_input):
-    tiles, x, y = parse_input(puzzle_input)
-    return len({(x, y) for (x, y, _) in find_path(tiles, x, y)})
+    tiles, start = parse_input(puzzle_input)
+    return len({(x, y) for (x, y, _) in find_path(tiles, start)})
 
 
-def has_loop(puzzle_input, nx, ny):
-    tiles, x, y = parse_input(puzzle_input)
-    tiles[nx, ny] = "#"
+def has_loop(tiles, start, block_x, block_y):
+    tiles = dict(tiles)
+    tiles[block_x, block_y] = "#"
     try:
-        find_path(tiles, x, y)
+        find_path(tiles, start)
     except HasLoop:
         return True
     else:
@@ -71,9 +72,9 @@ def has_loop(puzzle_input, nx, ny):
 
 
 def part_2(puzzle_input):
-    tiles, x, y = parse_input(puzzle_input)
-    path = {(x, y) for (x, y, _) in find_path(tiles, x, y)}
-    return sum(has_loop(puzzle_input, x, y) for x, y in path if tiles[x, y] == ".")
+    tiles, start = parse_input(puzzle_input)
+    path = {(x, y) for (x, y, _) in find_path(dict(tiles), start)}
+    return sum(has_loop(tiles, start, x, y) for x, y in path if tiles[x, y] == ".")
 
 
 def test_part_1():
