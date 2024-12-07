@@ -1,9 +1,11 @@
 #!/usr/bin/env pypy3
 
+import math
 from operator import add
 from operator import mul
 
 EXPECTED_PART_1 = 3749
+EXPECTED_PART_2 = 11387
 
 
 def read_input(filename):
@@ -39,14 +41,29 @@ def part_1(puzzle_input):
     return calculate_total_calibration_result(puzzle_input, [add, mul])
 
 
+def concat(x, y):
+    y_digit_count = int(math.log10(y)) + 1
+    return x * 10**y_digit_count + y
+
+
+def part_2(puzzle_input):
+    return calculate_total_calibration_result(puzzle_input, [add, mul, concat])
+
+
 def test_part_1():
     puzzle_input = read_input("input_test")
     assert part_1(puzzle_input) == EXPECTED_PART_1
 
 
+def test_part_2():
+    puzzle_input = read_input("input_test")
+    assert part_2(puzzle_input) == EXPECTED_PART_2
+
+
 def main():
     puzzle_input = list(read_input("input"))
     print(part_1(puzzle_input))
+    print(part_2(puzzle_input))
 
 
 if __name__ == "__main__":
