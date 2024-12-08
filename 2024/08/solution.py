@@ -4,6 +4,7 @@ from collections import defaultdict
 from itertools import combinations
 
 EXPECTED_PART_1 = 14
+EXPECTED_PART_2 = 34
 
 
 def read_input(filename):
@@ -18,15 +19,25 @@ def read_input(filename):
     return antenna_locations, len(lines[0]), len(lines)
 
 
-def part_1(puzzle_input):
+def solve(puzzle_input, *, offsets):
     antenna_locations, max_x, max_y = puzzle_input
     antinode_locations = set()
     for antenna_locations_for_type in antenna_locations.values():
         for (x, y), (X, Y) in combinations(antenna_locations_for_type, r=2):
             dx, dy = X - x, Y - y
-            antinode_locations.add((x - dx, y - dy))
-            antinode_locations.add((X + dx, Y + dy))
+            for i in offsets:
+                antinode_locations.add((x - dx * i, y - dy * i))
+                antinode_locations.add((X + dx * i, Y + dy * i))
     return sum(x in range(max_x) and y in range(max_y) for x, y in antinode_locations)
+
+
+def part_1(puzzle_input):
+    return solve(puzzle_input, offsets=[1])
+
+
+def part_2(puzzle_input):
+    _, max_x, max_y = puzzle_input
+    return solve(puzzle_input, offsets=range(max(max_x, max_y)))
 
 
 def test_part_1():
@@ -34,9 +45,15 @@ def test_part_1():
     assert part_1(puzzle_input) == EXPECTED_PART_1
 
 
+def test_part_2():
+    puzzle_input = read_input("input_test")
+    assert part_2(puzzle_input) == EXPECTED_PART_2
+
+
 def main():
     puzzle_input = read_input("input")
     print(part_1(puzzle_input))
+    print(part_2(puzzle_input))
 
 
 if __name__ == "__main__":
