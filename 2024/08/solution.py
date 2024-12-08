@@ -20,15 +20,22 @@ def read_input(filename):
 
 
 def solve(puzzle_input, *, offsets):
+    def add_nodes_with_offsets(x, y, dx, dy):
+        for i in offsets:
+            nx = x - dx * i
+            ny = y - dy * i
+            if nx not in range(max_x) or ny not in range(max_y):
+                break
+            antinode_locations.add((nx, ny))
+
     antenna_locations, max_x, max_y = puzzle_input
     antinode_locations = set()
     for antenna_locations_for_type in antenna_locations.values():
         for (x, y), (X, Y) in combinations(antenna_locations_for_type, r=2):
             dx, dy = X - x, Y - y
-            for i in offsets:
-                antinode_locations.add((x - dx * i, y - dy * i))
-                antinode_locations.add((X + dx * i, Y + dy * i))
-    return sum(x in range(max_x) and y in range(max_y) for x, y in antinode_locations)
+            add_nodes_with_offsets(x, y, dx, dy)
+            add_nodes_with_offsets(X, Y, -dx, -dy)
+    return len(antinode_locations)
 
 
 def part_1(puzzle_input):
