@@ -56,24 +56,14 @@ fn find_path(
     tiles: Array2<Tile>,
     start: (usize, usize),
 ) -> Result<impl FnOnce() -> Path + use<'_>, HasLoop> {
-    let (x_len, y_len) = tiles.dim();
-
-    #[inline(never)]
-    fn assert_dimensions_fit_u8(y_len: usize, x_len: usize) {
-        assert!(y_len < u8::MAX.into());
-        assert!(x_len < u8::MAX.into());
-    }
-    assert_dimensions_fit_u8(y_len, x_len);
+    let (_, y_len) = tiles.dim();
 
     let mut directions = DIRECTIONS.into_iter().enumerate().cycle();
     let (mut direction_index, mut direction) = directions.next().unwrap();
     let (mut x, mut y) = start;
     loop {
-        match visited.get_mut(
-            x as u8 as usize * y_len * DIRECTIONS.len()
-                + y as u8 as usize * DIRECTIONS.len()
-                + direction_index,
-        ) {
+        match visited.get_mut(x * y_len * DIRECTIONS.len() + y * DIRECTIONS.len() + direction_index)
+        {
             Some(was_here @ false) => *was_here = true,
             Some(true) => return Err(HasLoop),
             None => unreachable!(),
