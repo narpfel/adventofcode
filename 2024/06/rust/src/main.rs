@@ -1,15 +1,18 @@
 use std::io;
 
 use fnv::FnvHashSet;
+use ndarray::Array2;
+use ndarray::Axis;
 use rayon::iter::IntoParallelIterator as _;
 use rayon::iter::ParallelIterator as _;
 
 const DIRECTIONS: [(isize, isize); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 enum Tile {
     Start,
     Blocked,
+    #[default]
     Empty,
 }
 
@@ -26,17 +29,17 @@ impl TryFrom<char> for Tile {
     }
 }
 
-fn parse_input(filename: impl AsRef<std::path::Path>) -> io::Result<Vec<Vec<Tile>>> {
+fn parse_input(filename: impl AsRef<std::path::Path>) -> io::Result<Array2<Tile>> {
     let input = std::fs::read_to_string(filename)?;
-    Ok(input
-        .lines()
-        .map(|line| {
-            line.trim()
-                .chars()
-                .map(|c| Tile::try_from(c).unwrap())
-                .collect()
-        })
-        .collect())
+    let lines = input.lines().map(str::trim).collect::<Vec<_>>();
+    let shape = [lines[0].len(), lines.len()];
+    let mut result = Array2::default(shape);
+    for (y, line) in lines.into_iter().enumerate() {
+        for (x, c) in line.chars().enumerate() {
+            result[[x, y]] = Tile::try_from(c).unwrap();
+        }
+    }
+    Ok(result)
 }
 
 fn move_(x: usize, y: usize, (dx, dy): (isize, isize)) -> (usize, usize) {
@@ -50,11 +53,10 @@ struct HasLoop;
 
 fn find_path(
     visited: &mut [bool],
-    tiles: Vec<Vec<Tile>>,
+    tiles: Array2<Tile>,
     start: (usize, usize),
 ) -> Result<impl FnOnce() -> Path + use<'_>, HasLoop> {
-    let y_len = tiles.len();
-    let x_len = tiles[0].len();
+    let (x_len, y_len) = tiles.dim();
 
     #[inline(never)]
     fn assert_dimensions_fit_u8(y_len: usize, x_len: usize) {
@@ -79,7 +81,7 @@ fn find_path(
 
         let (mut nx, mut ny) = move_(x, y, direction);
         (x, y) = loop {
-            match tiles.get(ny).and_then(|line| line.get(nx)) {
+            match tiles.get([nx, ny]) {
                 Some(Tile::Blocked) => {
                     (direction_index, direction) = directions.next().unwrap();
                     (nx, ny) = move_(x, y, direction);
@@ -101,9 +103,8 @@ fn find_path(
     }
 }
 
-fn part_1(tiles: Vec<Vec<Tile>>, start: (usize, usize)) -> usize {
-    let y_len = tiles.len();
-    let x_len = tiles[0].len();
+fn part_1(tiles: Array2<Tile>, start: (usize, usize)) -> usize {
+    let (x_len, y_len) = tiles.dim();
     find_path(
         &mut vec![false; x_len * y_len * DIRECTIONS.len()],
         tiles,
@@ -115,18 +116,17 @@ fn part_1(tiles: Vec<Vec<Tile>>, start: (usize, usize)) -> usize {
 
 fn has_loop(
     visited: &mut [bool],
-    mut tiles: Vec<Vec<Tile>>,
+    mut tiles: Array2<Tile>,
     start: (usize, usize),
     block_x: usize,
     block_y: usize,
 ) -> bool {
-    tiles[block_y][block_x] = Tile::Blocked;
+    tiles[[block_x, block_y]] = Tile::Blocked;
     find_path(visited, tiles, start).is_err()
 }
 
-fn part_2(tiles: Vec<Vec<Tile>>, start: (usize, usize)) -> usize {
-    let y_len = tiles.len();
-    let x_len = tiles[0].len();
+fn part_2(tiles: Array2<Tile>, start: (usize, usize)) -> usize {
+    let (x_len, y_len) = tiles.dim();
     find_path(
         &mut vec![false; x_len * y_len * DIRECTIONS.len()],
         tiles.clone(),
@@ -138,7 +138,7 @@ fn part_2(tiles: Vec<Vec<Tile>>, start: (usize, usize)) -> usize {
         || vec![false; x_len * y_len * DIRECTIONS.len()],
         |visited, (x, y)| {
             visited.fill(false);
-            tiles[y][x] == Tile::Empty
+            tiles[[x, y]] == Tile::Empty
                 && has_loop(visited.as_mut_slice(), tiles.clone(), start, x, y)
         },
     )
@@ -149,7 +149,7 @@ fn part_2(tiles: Vec<Vec<Tile>>, start: (usize, usize)) -> usize {
 fn main() -> io::Result<()> {
     let tiles = parse_input("input")?;
     let start = tiles
-        .iter()
+        .axis_iter(Axis(1))
         .enumerate()
         .find_map(|(y, line)| {
             line.iter()
