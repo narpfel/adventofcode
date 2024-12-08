@@ -49,9 +49,10 @@ type Path = FnvHashSet<(usize, usize)>;
 struct HasLoop;
 
 fn find_path(
+    visited: &mut [bool],
     tiles: Vec<Vec<Tile>>,
     start: (usize, usize),
-) -> Result<impl FnOnce() -> Path, HasLoop> {
+) -> Result<impl FnOnce() -> Path + use<'_>, HasLoop> {
     let y_len = tiles.len();
     let x_len = tiles[0].len();
 
@@ -64,7 +65,6 @@ fn find_path(
 
     let mut directions = DIRECTIONS.into_iter().enumerate().cycle();
     let (mut direction_index, mut direction) = directions.next().unwrap();
-    let mut visited = vec![false; y_len * x_len * DIRECTIONS.len()];
     let (mut x, mut y) = start;
     loop {
         match visited.get_mut(
@@ -102,24 +102,48 @@ fn find_path(
 }
 
 fn part_1(tiles: Vec<Vec<Tile>>, start: (usize, usize)) -> usize {
-    find_path(tiles, start).unwrap()().len()
+    let y_len = tiles.len();
+    let x_len = tiles[0].len();
+    find_path(
+        &mut vec![false; x_len * y_len * DIRECTIONS.len()],
+        tiles,
+        start,
+    )
+    .unwrap()()
+    .len()
 }
 
 fn has_loop(
+    visited: &mut [bool],
     mut tiles: Vec<Vec<Tile>>,
     start: (usize, usize),
     block_x: usize,
     block_y: usize,
 ) -> bool {
     tiles[block_y][block_x] = Tile::Blocked;
-    find_path(tiles, start).is_err()
+    find_path(visited, tiles, start).is_err()
 }
 
 fn part_2(tiles: Vec<Vec<Tile>>, start: (usize, usize)) -> usize {
-    find_path(tiles.clone(), start).unwrap()()
-        .into_par_iter()
-        .filter(|&(x, y)| tiles[y][x] == Tile::Empty && has_loop(tiles.clone(), start, x, y))
-        .count()
+    let y_len = tiles.len();
+    let x_len = tiles[0].len();
+    find_path(
+        &mut vec![false; x_len * y_len * DIRECTIONS.len()],
+        tiles.clone(),
+        start,
+    )
+    .unwrap()()
+    .into_par_iter()
+    .map_init(
+        || vec![false; x_len * y_len * DIRECTIONS.len()],
+        |visited, (x, y)| {
+            visited.fill(false);
+            tiles[y][x] == Tile::Empty
+                && has_loop(visited.as_mut_slice(), tiles.clone(), start, x, y)
+        },
+    )
+    .filter(|&has_loop| has_loop)
+    .count()
 }
 
 fn main() -> io::Result<()> {
