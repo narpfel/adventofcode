@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 EXPECTED_PART_1 = 36
+EXPECTED_PART_2 = 81
 
 
 def read_input(filename):
@@ -36,14 +37,25 @@ def part_1(puzzle_input):
     return sum(len(set(find_path(x, y, height_map, 0))) for x, y in zeros)
 
 
+def part_2(puzzle_input):
+    height_map, zeros = puzzle_input
+    return sum(1 for x, y in zeros for _ in find_path(x, y, height_map, 0))
+
+
 def test_part_1():
     puzzle_input = read_input("input_test")
     assert part_1(puzzle_input) == EXPECTED_PART_1
 
 
+def test_part_2():
+    puzzle_input = read_input("input_test")
+    assert part_2(puzzle_input) == EXPECTED_PART_2
+
+
 def main():
     puzzle_input = read_input("input")
     print(part_1(puzzle_input))
+    print(part_2(puzzle_input))
 
 
 if __name__ == "__main__":
