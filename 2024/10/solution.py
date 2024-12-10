@@ -6,40 +6,48 @@ EXPECTED_PART_2 = 81
 
 def read_input(filename):
     with open(filename) as lines:
-        height_map = {
+        return {
             (x, y): 100 if c == "." else int(c)
             for y, line in enumerate(lines)
             for x, c in enumerate(line.strip())
         }
 
-    zeros = [(x, y) for (x, y), height in height_map.items() if height == 0]
-    return height_map, zeros
-
 
 def neighbours(x, y):
-    yield x - 1, y
-    yield x + 1, y
-    yield x, y - 1
-    yield x, y + 1
+    return [
+        (x - 1, y),
+        (x + 1, y),
+        (x, y - 1),
+        (x, y + 1),
+    ]
 
 
-def find_path(x, y, height_map, height):
-    if height == 9:
-        yield (x, y)
-    else:
-        for nx, ny in neighbours(x, y):
-            if height_map.get((nx, ny)) == height + 1:
-                yield from find_path(nx, ny, height_map, height + 1)
+def find_end_points(start_point, height_map):
+    points = [start_point]
+    for height in range(9):
+        new_points = []
+        for x, y in points:
+            for neighbour in neighbours(x, y):
+                if height_map.get(neighbour) == height + 1:
+                    new_points.append(neighbour)
+        points = new_points
+    return points
 
 
-def part_1(puzzle_input):
-    height_map, zeros = puzzle_input
-    return sum(len(set(find_path(x, y, height_map, 0))) for x, y in zeros)
+def solve(height_map, *, collect_end_points):
+    return sum(
+        len(collect_end_points(find_end_points(point, height_map)))
+        for (point, height) in height_map.items()
+        if height == 0
+    )
 
 
-def part_2(puzzle_input):
-    height_map, zeros = puzzle_input
-    return sum(1 for x, y in zeros for _ in find_path(x, y, height_map, 0))
+def part_1(height_map):
+    return solve(height_map, collect_end_points=set)
+
+
+def part_2(height_map):
+    return solve(height_map, collect_end_points=lambda end_points: end_points)
 
 
 def test_part_1():
