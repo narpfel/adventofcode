@@ -34,7 +34,7 @@ def checksum(blocks)
 end
 
 def part_1(blocks)
-  blocks = blocks.dup
+  checksum = 0_i64
   i = 0
   j = -1
   while i < (blocks.size + j + 1)
@@ -43,13 +43,15 @@ def part_1(blocks)
     end
 
     if blocks[i].is_a? Empty
-      blocks.swap(i, j)
+      checksum += blocks[j].to_i64 * i.to_i64
       j -= 1
+    else
+      checksum += blocks[i].to_i64 * i.to_i64
     end
     i += 1
   end
 
-  checksum blocks
+  checksum
 end
 
 def fill_next_empty_by_length(next_empty_by_length, absent, empties, start_index)
