@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from functools import cache
+
 EXPECTED_PART_1 = 55312
 
 
@@ -8,21 +10,30 @@ def read_input(filename):
         return [int(number) for number in lines.read().split()]
 
 
+@cache
+def blink(stone, n):
+    if n == 0:
+        return 1
+    elif stone == 0:
+        return blink(1, n - 1)
+    else:
+        s = str(stone)
+        if len(s) % 2 == 0:
+            return blink(int(s[:len(s) // 2]), n - 1) + blink(int(s[len(s) // 2:]), n - 1)
+        else:
+            return blink(stone * 2024, n - 1)
+
+
+def solve(stones, *, blinks):
+    return sum(blink(stone, blinks) for stone in stones)
+
+
 def part_1(stones):
-    for _ in range(25):
-        new_stones = []
-        for stone in stones:
-            if stone == 0:
-                new_stones.append(1)
-            else:
-                s = str(stone)
-                if len(s) % 2 == 0:
-                    new_stones.append(int(s[:len(s) // 2]))
-                    new_stones.append(int(s[len(s) // 2:]))
-                else:
-                    new_stones.append(stone * 2024)
-        stones = new_stones
-    return len(stones)
+    return solve(stones, blinks=25)
+
+
+def part_2(stones):
+    return solve(stones, blinks=75)
 
 
 def test_part_1():
@@ -33,6 +44,7 @@ def test_part_1():
 def main():
     stones = read_input("input")
     print(part_1(stones))
+    print(part_2(stones))
 
 
 if __name__ == "__main__":
