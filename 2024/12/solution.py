@@ -2,6 +2,8 @@
 
 EXPECTED_PART_1 = 1930
 
+DIRECTIONS = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+
 
 def neighbours(x, y):
     yield x - 1, y
@@ -64,14 +66,109 @@ def part_1(puzzle_input):
     )
 
 
+def border_tiles(garden, region):
+    return {
+        plot
+        for plot in region
+        if any(neighbour not in region for neighbour in neighbours(*plot))
+    }
+
+
+def move(p, δp):
+    x, y = p
+    δx, δy = δp
+    return x + δx, y + δy
+
+
+def direction(index):
+    return DIRECTIONS[index % 4]
+
+
+def left(index):
+    return direction(index - 1)
+
+
+def forward(index):
+    return direction(index)
+
+
+def right(index):
+    return direction(index + 1)
+
+
+def side_count(garden, region):
+    border = border_tiles(garden, region)
+    result = 0
+    while border:
+        start = min(border, key=lambda p: (p[1], p[0]))
+        p = start
+        direction = 0
+        while True:
+            border.discard(p)
+
+            if move(p, left(direction)) in border:
+                result += 1
+                direction -= 1
+            elif move(p, forward(direction)) in border:
+                result += p == start
+            elif move(p, right(direction)) in border:
+                result += 1
+                direction += 1
+            else:
+                break
+
+            p = move(p, forward(direction))
+
+            if p == start:
+                break
+
+    return result
+
+
+def part_2(puzzle_input):
+    garden, regions = puzzle_input
+
+    scale = 3
+    garden = {
+        (scale * x + dx, scale * y + dy): t
+        for (x, y), t in garden.items()
+        for dx in range(scale)
+        for dy in range(scale)
+    }
+
+    regions = {
+        frozenset(
+            (scale * x + dx, scale * y + dy)
+            for x, y in region
+            for dx in range(scale)
+            for dy in range(scale)
+        )
+        for region in regions
+    }
+
+    return sum(
+        len(region) * side_count(garden, region) // (scale ** 2)
+        for region in regions
+    )
+
+
 def test_part_1():
     puzzle_input = read_input("input_test")
     assert part_1(puzzle_input) == EXPECTED_PART_1
 
 
+def test_part_2():
+    assert part_2(read_input("input_test")) == 1206
+    assert part_2(read_input("input_test_2")) == 80
+    assert part_2(read_input("input_test_3")) == 436
+    assert part_2(read_input("input_test_4")) == 236
+    assert part_2(read_input("input_test_5")) == 368
+
+
 def main():
     puzzle_input = read_input("input")
     print(part_1(puzzle_input))
+    print(part_2(puzzle_input))
 
 
 if __name__ == "__main__":
