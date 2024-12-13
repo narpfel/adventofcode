@@ -9,8 +9,8 @@ machine(machine(Ax, Ay, Bx, By, Px, Py)) -->
     "Button B: X+", integer(Bx), ", Y+", integer(By), eol,
     "Prize: X=", integer(Px), ", Y=", integer(Py), eol.
 
-machines([Machine | Machines]) --> machine(Machine), blanks, machines(Machines).
-machines([]) --> [].
+machines([Machine | Machines]) --> machine(Machine), eol, machines(Machines).
+machines([]) --> eos.
 
 cost(Offset, machine(Ax, Ay, Bx, By, Px, Py), Cost) :-
     [N, M] ins 0..sup,
