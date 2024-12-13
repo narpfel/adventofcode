@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 import re
-
-import z3
+from functools import partial
 
 EXPECTED_PART_1 = 480
 
@@ -22,38 +21,34 @@ def read_input(filename):
             )
 
 
-def part_1(machines):
-    return sum(
-        min(
-            (
-                3 * n + m
-                for n in range(101)
-                for m in range(101)
-                if n * ax + m * bx == px and n * ay + m * by == py
-            ),
-            default=0,
-        )
-        for (ax, ay), (bx, by), (px, py) in machines
-    )
-
-
-def model_machine(machine):
-    n = z3.Int("n")
-    m = z3.Int("m")
+def calculate_cost(machine, *, offset):
     (ax, ay), (bx, by), (px, py) = machine
-    opt = z3.Optimize()
-    opt.add(n * ax + m * bx == A_LOT + px)
-    opt.add(n * ay + m * by == A_LOT + py)
-    opt.minimize(3 * n + m)
-    if opt.check() == z3.sat:
-        model = opt.model()
-        return 3 * model[n].as_long() + model[m].as_long()
-    else:
-        return None
+    px += offset
+    py += offset
+    numerator = ax * py - ay * px
+    denominator = ax * by - ay * bx
+    if numerator % denominator == 0:
+        button_b_presses = numerator // denominator
+        numerator = px - button_b_presses * bx
+        if numerator % ax == 0:
+            button_a_presses = numerator // ax
+            assert button_a_presses > 0
+            assert button_b_presses > 0
+            return 3 * button_a_presses + button_b_presses
+
+    return None
+
+
+def calculate_total_cost(machines, *, offset):
+    return sum(filter(None, map(partial(calculate_cost, offset=offset), machines)))
+
+
+def part_1(machines):
+    return calculate_total_cost(machines, offset=0)
 
 
 def part_2(machines):
-    return sum(filter(None, map(model_machine, machines)))
+    return calculate_total_cost(machines, offset=A_LOT)
 
 
 def test_part_1():
@@ -62,8 +57,9 @@ def test_part_1():
 
 
 def main():
-    print(part_1(read_input("input")))
-    print(part_2(read_input("input")))
+    machines = list(read_input("input"))
+    print(part_1(machines))
+    print(part_2(machines))
 
 
 if __name__ == "__main__":
