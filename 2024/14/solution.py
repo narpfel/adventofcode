@@ -2,6 +2,7 @@
 
 import re
 from collections import Counter
+from itertools import count
 from itertools import product
 from math import prod
 
@@ -45,6 +46,18 @@ def part_1(robots, *, size_x=101, size_y=103):
     )
 
 
+def part_2(robots, size_x=101, size_y=103):
+    # determined manually
+    horizontal_alignment_offset = 31
+    vertical_alignment_offset = 68
+    for i in count(max(horizontal_alignment_offset, vertical_alignment_offset) + 1):
+        if (
+            (i - horizontal_alignment_offset) % size_y == 0
+            and (i - vertical_alignment_offset) % size_x == 0
+        ):
+            return i
+
+
 def test_part_1():
     puzzle_input = read_input("input_test")
     assert part_1(puzzle_input, size_x=11, size_y=7) == EXPECTED_PART_1
@@ -52,6 +65,7 @@ def test_part_1():
 
 def main():
     print(part_1(read_input("input")))
+    print(part_2(read_input("input")))
 
 
 if __name__ == "__main__":
