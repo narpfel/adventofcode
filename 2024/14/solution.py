@@ -2,9 +2,12 @@
 
 import re
 from collections import Counter
+from functools import reduce
 from itertools import count
 from itertools import product
 from math import prod
+from operator import iand
+from operator import ior
 
 EXPECTED_PART_1 = 12
 
@@ -56,31 +59,35 @@ def part_1(robots, *, size_x=101, size_y=103):
 
 
 def part_2(robots, size_x=101, size_y=103):
-    horizontal_center = range(28, 61)
-    vertical_center = range(28, 58)
-
-    robots_in_horizontal_center = {}
-    robots_in_vertical_center = {}
+    max_horizontal_correlation_at = 0, 0
+    max_vertical_correlation_at = 0, 0
     for i, robots_after_step in enumerate(robots):
-        if i in range(size_y):
-            robots_in_horizontal_center[i] = sum(
-                y in horizontal_center
-                for (_, y), _ in robots_after_step
-            )
         if i in range(size_x):
-            robots_in_vertical_center[i] = sum(
-                x in vertical_center
-                for (x, _), _ in robots_after_step
-            )
+            max_vertical_correlation_at = max(max_vertical_correlation_at, (
+                len(reduce(ior, (
+                    reduce(iand, (
+                        {(x, y + dy) for (x, y), _ in robots_after_step}
+                        for dy in (0, dy)
+                    ))
+                    for dy in (-1, 1)
+                ))),
+                i,
+            ))
+        if i in range(size_y):
+            max_horizontal_correlation_at = max(max_horizontal_correlation_at, (
+                len(reduce(ior, (
+                    reduce(iand, (
+                        {(x + dx, y) for (x, y), _ in robots_after_step}
+                        for dx in (0, dx)
+                    ))
+                    for dx in (-1, 1)
+                ))),
+                i,
+            ))
 
-    horizontal_alignment_offset = max(
-        robots_in_horizontal_center,
-        key=lambda i: robots_in_horizontal_center[i],
-    )
-    vertical_alignment_offset = max(
-        robots_in_vertical_center,
-        key=lambda i: robots_in_vertical_center[i],
-    )
+    _, horizontal_alignment_offset = max_horizontal_correlation_at
+    _, vertical_alignment_offset = max_vertical_correlation_at
+
     for i in count(max(horizontal_alignment_offset, vertical_alignment_offset) + 1):
         if (
             (i - horizontal_alignment_offset) % size_y == 0

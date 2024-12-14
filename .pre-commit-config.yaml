@@ -27,6 +27,7 @@ repos:
     rev: v3.1.0
     hooks:
       - id: add-trailing-comma
+        exclude: '^2024/14/solution\.py$'
   - repo: https://github.com/pycqa/flake8
     rev: 7.1.1
     hooks:
