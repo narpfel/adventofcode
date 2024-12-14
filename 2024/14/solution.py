@@ -28,17 +28,26 @@ def get_quadrants(size_x, size_y):
     yield product(range(size_x // 2 + 1, size_x), range(size_y // 2 + 1, size_y))
 
 
-def part_1(robots, *, size_x=101, size_y=103):
-    for _ in range(100):
-        robots = [
-            (
-                ((x + vx) % size_x, (y + vy) % size_y),
-                (vx, vy),
-            )
-            for (x, y), (vx, vy) in robots
-        ]
+def step(robots, size_x, size_y):
+    return [
+        (
+            ((x + vx) % size_x, (y + vy) % size_y),
+            (vx, vy),
+        )
+        for (x, y), (vx, vy) in robots
+    ]
 
-    robot_positions = Counter(p for p, _ in robots)
+
+def predict_robot_motion(steps, robots, *, size_x, size_y):
+    robots = list(robots)
+    yield robots
+    for _ in range(steps):
+        robots = step(robots, size_x, size_y)
+        yield robots
+
+
+def part_1(robots, *, size_x=101, size_y=103):
+    robot_positions = Counter(p for p, _ in robots[100])
 
     return prod(
         sum(robot_positions[p] for p in quadrant)
@@ -47,9 +56,31 @@ def part_1(robots, *, size_x=101, size_y=103):
 
 
 def part_2(robots, size_x=101, size_y=103):
-    # determined manually
-    horizontal_alignment_offset = 31
-    vertical_alignment_offset = 68
+    horizontal_center = range(28, 61)
+    vertical_center = range(28, 58)
+
+    robots_in_horizontal_center = {}
+    robots_in_vertical_center = {}
+    for i, robots_after_step in enumerate(robots):
+        if i in range(size_y):
+            robots_in_horizontal_center[i] = sum(
+                y in horizontal_center
+                for (_, y), _ in robots_after_step
+            )
+        if i in range(size_x):
+            robots_in_vertical_center[i] = sum(
+                x in vertical_center
+                for (x, _), _ in robots_after_step
+            )
+
+    horizontal_alignment_offset = max(
+        robots_in_horizontal_center,
+        key=lambda i: robots_in_horizontal_center[i],
+    )
+    vertical_alignment_offset = max(
+        robots_in_vertical_center,
+        key=lambda i: robots_in_vertical_center[i],
+    )
     for i in count(max(horizontal_alignment_offset, vertical_alignment_offset) + 1):
         if (
             (i - horizontal_alignment_offset) % size_y == 0
@@ -60,12 +91,15 @@ def part_2(robots, size_x=101, size_y=103):
 
 def test_part_1():
     puzzle_input = read_input("input_test")
-    assert part_1(puzzle_input, size_x=11, size_y=7) == EXPECTED_PART_1
+    robots = list(predict_robot_motion(100, puzzle_input, size_x=11, size_y=7))
+    assert part_1(robots, size_x=11, size_y=7) == EXPECTED_PART_1
 
 
 def main():
-    print(part_1(read_input("input")))
-    print(part_2(read_input("input")))
+    initial_robots = read_input("input")
+    robots = list(predict_robot_motion(103, initial_robots, size_x=101, size_y=103))
+    print(part_1(robots))
+    print(part_2(robots))
 
 
 if __name__ == "__main__":
