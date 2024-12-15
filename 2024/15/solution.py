@@ -8,10 +8,11 @@ def read_input(filename):
     with open(filename) as lines:
         warehouse, moves = lines.read().split("\n\n")
 
-    tiles = {}
-    for y, line in enumerate(warehouse.splitlines()):
-        for x, c in enumerate(line.strip()):
-            tiles[x, y] = c
+    tiles = {
+        (x, y): c
+        for y, line in enumerate(warehouse.splitlines())
+        for x, c in enumerate(line.strip())
+    }
 
     return tiles, [move for move in moves if move in "<>^v"]
 
