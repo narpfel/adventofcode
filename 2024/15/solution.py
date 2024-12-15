@@ -58,7 +58,33 @@ def part_1(puzzle_input):
     )
 
 
-class Box:
+class Tile:
+    def undo(self):
+        pass
+
+    def commit(self):
+        pass
+
+    def try_move(self, move, why):
+        raise NotImplementedError
+
+
+class Empty(Tile):
+    def try_move(self, move, why):
+        return True
+
+
+class Wall(Tile):
+    def try_move(self, move, why):
+        return False
+
+
+class Robot(Tile):
+    def try_move(self, move, why):
+        return True
+
+
+class Box(Tile):
     def __init__(self, tiles, x, y):
         self.tiles = tiles
         self.position = x, y
@@ -88,8 +114,8 @@ class Box:
         if self.pending_position is None:
             return
         x, y = self.pending_position
-        self.tiles[self.position] = "."
-        self.tiles[self.x + 1, self.y] = "."
+        self.tiles[self.position] = Empty()
+        self.tiles[self.x + 1, self.y] = Empty()
         self.tiles[x, y] = self
         self.tiles[x + 1, y] = self
         self.position = self.pending_position
@@ -98,10 +124,12 @@ class Box:
 
     def try_move(self, move, why):
         assert self.pending_move is None or self.pending_move == move
+        self.pending_move = move
 
         if why is not None:
             why.connected.append(self)
 
+        assert self.pending_position is None or self.pending_position == step(self.position, move)
         self.pending_position = step(self.position, move)
 
         if move in "^v":
@@ -111,46 +139,35 @@ class Box:
 
     def try_move_up_down(self, move):
         x, y = self.pending_position
-        match (self.tiles[x, y], self.tiles[x + 1, y]):
-            case ("#", _) | (_, "#"):
-                return False
-            case (".", "."):
-                return True
-            case (Box() as box, ".") | (".", Box() as box):
-                return box.try_move(move, self)
-            case (Box() as left_box, Box() as right_box):
-                if left_box is right_box:
-                    return left_box.try_move(move, self)
-                else:
-                    return left_box.try_move(move, self) and right_box.try_move(move, self)
+        left_tile = self.tiles[x, y]
+        right_tile = self.tiles[x + 1, y]
+        if left_tile is right_tile:
+            return left_tile.try_move(move, self)
+        else:
+            return left_tile.try_move(move, self) and right_tile.try_move(move, self)
 
     def try_move_left_right(self, move):
         return self._try_move_left_right_at(move, self.pending_position)
 
     def _try_move_left_right_at(self, move, at):
-        match self.tiles[at]:
-            case "#":
-                return False
-            case ".":
-                return True
-            case Box() as box:
-                if box is self:
-                    return self._try_move_left_right_at(move, step(self.pending_position, move))
-                else:
-                    return box.try_move(move, self)
+        tile = self.tiles[at]
+        if tile is self:
+            return self._try_move_left_right_at(move, step(self.pending_position, move))
+        else:
+            return tile.try_move(move, self)
 
 
 def widen(tiles, tile, x, y):
     match tile:
         case "#":
-            return "##"
+            return Wall(), Wall()
         case "O":
             box = Box(tiles, 2 * x, y)
             return box, box
         case ".":
-            return ".."
+            return Empty(), Empty()
         case "@":
-            return "@."
+            return Robot(), Empty()
 
 
 def part_2(puzzle_input):
@@ -160,27 +177,18 @@ def part_2(puzzle_input):
     for (x, y), tile in items:
         tiles[2 * x, y], tiles[2 * x + 1, y] = widen(tiles, tile, x, y)
 
-    position = next(p for p, tile in tiles.items() if tile == "@")
+    position = next(p for p, tile in tiles.items() if isinstance(tile, Robot))
 
     for move in moves:
         target_position = step(position, move)
-
-        match tiles[target_position]:
-            case "#":
-                pass
-            case ".":
-                tiles[position] = "."
-                tiles[target_position] = "@"
-                position = target_position
-            case Box() as box:
-                if box.try_move(move, None):
-                    x, y = box.position
-                    box.commit()
-                    tiles[position] = "."
-                    tiles[target_position] = "@"
-                    position = target_position
-                else:
-                    box.undo()
+        tile = tiles[target_position]
+        if tile.try_move(move, None):
+            tile.commit()
+            tiles[position] = Empty()
+            tiles[target_position] = Robot()
+            position = target_position
+        else:
+            tile.undo()
 
     return sum(
         100 * y + x
