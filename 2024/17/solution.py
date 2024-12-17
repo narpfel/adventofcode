@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
+import z3
+
 EXPECTED_PART_1 = "4,6,3,5,6,3,5,2,1,0"
+EXPECTED_PART_2 = 117440
 
 
 def read_input(filename):
@@ -65,14 +68,43 @@ def part_1(puzzle_input):
     return ",".join(map(str, output))
 
 
+def part_2(puzzle_input):
+    _, program = puzzle_input
+    solver = z3.Optimize()
+    a = z3.BitVec("a", 64)
+    registers = [a, 0, 0]
+
+    output = []
+    while len(output) < len(program):
+        # FIXME: This only works because there is a single `jnz` at the end of
+        # the program. A more sophisticated abstract interpreter is needed for
+        # more complex programs.
+        interpret(0, registers, program, output)
+
+    solver.add(registers[0] == 0)
+    solver.minimize(a)
+
+    for actual, expected in zip(output, program, strict=True):
+        solver.add(actual == expected)
+
+    assert solver.check() == z3.sat
+    return solver.model()[a].as_long()
+
+
 def test_part_1():
     puzzle_input = read_input("input_test")
     assert part_1(puzzle_input) == EXPECTED_PART_1
 
 
+def test_part_2():
+    puzzle_input = read_input("input_test_2")
+    assert part_2(puzzle_input) == EXPECTED_PART_2
+
+
 def main():
     puzzle_input = read_input("input")
     print(part_1(puzzle_input))
+    print(part_2(puzzle_input))
 
 
 if __name__ == "__main__":
