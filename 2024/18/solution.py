@@ -1,9 +1,10 @@
-#!/usr/bin/env python3
+#!/usr/bin/env pypy3
 
 from heapq import heappop
 from heapq import heappush
 
 EXPECTED_PART_1 = 22
+EXPECTED_PART_2 = "6,1"
 
 DIRECTIONS = [(1, 0), (0, 1), (-1, 0), (0, -1)]
 
@@ -17,6 +18,10 @@ def move(p, δp):
     x, y = p
     δx, δy = δp
     return x + δx, y + δy
+
+
+class Unreachable(Exception):
+    pass
 
 
 def part_1(falling_bytes, count=1024, size=70):
@@ -40,7 +45,15 @@ def part_1(falling_bytes, count=1024, size=70):
             if new_p not in blocked and x in range(size + 1) and y in range(size + 1):
                 heappush(q, (d + 1, new_p))
 
-    assert False, "unreachable"
+    raise Unreachable
+
+
+def part_2(falling_bytes, count=1024, size=70):
+    for i in range(count, len(falling_bytes)):
+        try:
+            part_1(falling_bytes, i, size)
+        except Unreachable:
+            return ",".join(map(str, falling_bytes[i - 1]))
 
 
 def test_part_1():
@@ -48,9 +61,15 @@ def test_part_1():
     assert part_1(puzzle_input, count=12, size=6) == EXPECTED_PART_1
 
 
+def test_part_2():
+    puzzle_input = read_input("input_test")
+    assert part_2(puzzle_input, count=12, size=6) == EXPECTED_PART_2
+
+
 def main():
     falling_bytes = read_input("input")
     print(part_1(falling_bytes))
+    print(part_2(falling_bytes))
 
 
 if __name__ == "__main__":
