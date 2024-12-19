@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import bisect
 from heapq import heappop
 from heapq import heappush
 
@@ -20,53 +21,45 @@ def move(p, δp):
     return x + δx, y + δy
 
 
-class Unreachable(Exception):
+class Unreachable(BaseException):
     pass
 
 
-def find_path(falling_bytes, count=1024, size=70):
+def part_1(falling_bytes, count=1024, size=70):
     blocked = set(falling_bytes[:count])
     start = 0, 0
     end = size, size
 
-    q = [(0, start, None)]
-    visited = {}
+    q = [(0, start)]
+    seen = set()
     while q:
-        d, p, prev = heappop(q)
-        if p in visited:
+        d, p = heappop(q)
+        if p in seen:
             continue
-        visited[p] = prev
+        seen.add(p)
 
         if p == end:
-            path = {end}
-            while True:
-                p = visited[p]
-                if p is None:
-                    break
-                path.add(p)
-            return d, path
+            return d
 
         for direction in DIRECTIONS:
             new_p = x, y = move(p, direction)
             if new_p not in blocked and x in range(size + 1) and y in range(size + 1):
-                heappush(q, (d + 1, new_p, p))
+                heappush(q, (d + 1, new_p))
 
     raise Unreachable
 
 
-def part_1(falling_bytes, count=1024, size=70):
-    return find_path(falling_bytes, count, size)[0]
-
-
 def part_2(falling_bytes, count=1024, size=70):
-    _, path = find_path(falling_bytes, count, size)
+    def is_unreachable(i):
+        try:
+            part_1(falling_bytes, i, size)
+        except Unreachable:
+            return True
+        else:
+            return False
 
-    for i in range(count, len(falling_bytes)):
-        if falling_bytes[i - 1] in path:
-            try:
-                _, path = find_path(falling_bytes, i, size)
-            except Unreachable:
-                return ",".join(map(str, falling_bytes[i - 1]))
+    result = bisect.bisect(range(count, len(falling_bytes)), False, key=is_unreachable)
+    return ",".join(map(str, falling_bytes[count + result - 1]))
 
 
 def test_part_1():
