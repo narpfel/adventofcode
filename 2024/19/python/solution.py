@@ -8,30 +8,30 @@ EXPECTED_PART_2 = 16
 
 def read_input(filename):
     with open(filename) as lines:
-        patterns, towels = lines.read().split("\n\n")
-        return tuple(patterns.strip().split(", ")), towels.strip().splitlines()
+        patterns, designs = lines.read().split("\n\n")
+        return tuple(patterns.strip().split(", ")), designs.strip().splitlines()
 
 
 @cache
-def count_possibilities(patterns, towel):
-    if not towel:
+def count_possibilities(patterns, design):
+    if not design:
         return 1
     else:
         return sum(
-            count_possibilities(patterns, towel.removeprefix(pattern))
+            count_possibilities(patterns, design.removeprefix(pattern))
             for pattern in patterns
-            if towel.startswith(pattern)
+            if design.startswith(pattern)
         )
 
 
 def part_1(puzzle_input):
-    patterns, towels = puzzle_input
-    return sum(count_possibilities(patterns, towel) != 0 for towel in towels)
+    patterns, designs = puzzle_input
+    return sum(count_possibilities(patterns, design) != 0 for design in designs)
 
 
 def part_2(puzzle_input):
-    patterns, towels = puzzle_input
-    return sum(count_possibilities(patterns, towel) for towel in towels)
+    patterns, designs = puzzle_input
+    return sum(count_possibilities(patterns, design) for design in designs)
 
 
 def test_part_1():
