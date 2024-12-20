@@ -54,12 +54,6 @@ def find_path(racetrack):
     assert False, "unreachable"
 
 
-def manhattan_distance(p1, p2):
-    x1, y1 = p1
-    x2, y2 = p2
-    return abs(x1 - x2) + abs(y1 - y2)
-
-
 def solve(path, max_cheat_length):
     visited_points = {p: i for i, p in enumerate(path)}
     large_savings_count = 0
