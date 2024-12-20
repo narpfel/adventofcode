@@ -61,14 +61,18 @@ def manhattan_distance(p1, p2):
 
 
 def solve(path, max_cheat_length):
-    savings = []
+    visited_points = {p: i for i, p in enumerate(path)}
+    large_savings_count = 0
     for i, cheat_start in enumerate(path):
-        for j, cheat_end in enumerate(path[i + 100:], i + 100):
-            distance = manhattan_distance(cheat_start, cheat_end)
-            if distance <= max_cheat_length:
-                savings.append(j - i - distance)
+        for dy in range(-max_cheat_length, max_cheat_length + 1):
+            x_range = max_cheat_length - abs(dy)
+            for dx in range(-x_range, x_range + 1):
+                cheat_end = move(cheat_start, (dx, dy))
+                j = visited_points.get(cheat_end)
+                if j is not None:
+                    large_savings_count += (j - i - (abs(dx) + abs(dy))) >= 100
 
-    return sum(saving >= 100 for saving in savings)
+    return large_savings_count
 
 
 def part_1(path):
