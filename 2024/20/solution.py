@@ -40,6 +40,10 @@ def find_path(racetrack):
                     break
                 path.append(p)
             path.reverse()
+
+            walkable_tiles = {p for p, tile in racetrack.items() if tile in "SE."}
+            assert walkable_tiles == set(path)
+
             return path
 
         for d in DIRECTIONS:
@@ -50,26 +54,36 @@ def find_path(racetrack):
     assert False, "unreachable"
 
 
-def part_1(racetrack):
-    path = find_path(racetrack)
+def manhattan_distance(p1, p2):
+    x1, y1 = p1
+    x2, y2 = p2
+    return abs(x1 - x2) + abs(y1 - y2)
 
+
+def solve(path, max_cheat_length):
     savings = []
     for i, cheat_start in enumerate(path):
-        for cheat_d in DIRECTIONS:
-            cheat_end = move(move(cheat_start, cheat_d), cheat_d)
-            try:
-                j = path.index(cheat_end)
-            except ValueError:
-                pass
-            else:
-                savings.append(j - i - 2)
+        for j, cheat_end in enumerate(path[i + 100:], i + 100):
+            distance = manhattan_distance(cheat_start, cheat_end)
+            if distance <= max_cheat_length:
+                savings.append(j - i - distance)
 
     return sum(saving >= 100 for saving in savings)
 
 
+def part_1(path):
+    return solve(path, max_cheat_length=2)
+
+
+def part_2(path):
+    return solve(path, max_cheat_length=20)
+
+
 def main():
     racetrack = read_input("input")
-    print(part_1(racetrack))
+    path = find_path(racetrack)
+    print(part_1(path))
+    print(part_2(path))
 
 
 if __name__ == "__main__":
