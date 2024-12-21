@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+from collections import Counter
 from itertools import pairwise
+from itertools import product
 
 EXPECTED_PART_1 = 126384
 
@@ -125,14 +127,46 @@ def part_1(codes):
     return result
 
 
+DIRECTIONAL_KEYPAD_MOVES = {
+    (start, end): list(pairwise("A" + get_moves_for_directional(start, end)))
+    for start, end in product(DIRECTIONAL_KEY_POSITION, repeat=2)
+}
+
+
+def count_directional_moves(moves):
+    move_counts = Counter()
+    for move, count in moves.items():
+        for move in DIRECTIONAL_KEYPAD_MOVES[move]:
+            move_counts[move] += count
+    return move_counts
+
+
+def part_2(codes, directional_keyboard_count=26):
+    result = 0
+    for code in codes:
+        numeric_part = int(code.removesuffix("A"))
+        moves = "".join(get_moves_for_numeric(start, end) for start, end in pairwise("A" + code))
+        moves = Counter(pairwise("A" + moves))
+        for _ in range(directional_keyboard_count - 1):
+            moves = count_directional_moves(moves)
+        result += numeric_part * moves.total()
+    return result
+
+
 def test_part_1():
     puzzle_input = read_input("input_test")
     assert part_1(puzzle_input) == EXPECTED_PART_1
 
 
+def test_part_2():
+    puzzle_input = read_input("input_test")
+    assert part_2(puzzle_input, directional_keyboard_count=3) == EXPECTED_PART_1
+
+
 def main():
     codes = read_input("input")
     print(part_1(codes))
+    print(part_2(codes))
 
 
 if __name__ == "__main__":
