@@ -1,7 +1,6 @@
 #!/usr/bin/env pypy3
 
 from collections import Counter
-from collections import deque
 
 EXPECTED_PART_1 = 37327623
 EXPECTED_PART_2 = 23
@@ -37,16 +36,18 @@ def part_1(secret_numbers):
 def part_2(secret_numbers):
     total_bananas = Counter()
     for secret in secret_numbers:
-        changes = deque(maxlen=4)
+        changes = 0
         bananas_by_sequence = {}
-        for _ in range(2000):
+        for i in range(2000):
             new_secret = next_secret_number(secret)
-            changes.append((new_secret % 10) - (secret % 10))
+            change = (new_secret % 10) - (secret % 10)
+            # pack the last 4 changes into a single integer to speed up hashing
+            changes *= 20
+            changes += change + 10
+            changes %= 20 ** 4
             secret = new_secret
-            if len(changes) == 4:
-                change_sequence = tuple(changes)
-                if change_sequence not in bananas_by_sequence:
-                    bananas_by_sequence[change_sequence] = secret % 10
+            if i >= 3 and changes not in bananas_by_sequence:
+                bananas_by_sequence[changes] = secret % 10
         total_bananas.update(bananas_by_sequence)
     return max(total_bananas.values())
 
