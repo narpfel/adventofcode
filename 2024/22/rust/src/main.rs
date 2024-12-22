@@ -36,6 +36,7 @@ fn part_2(secret_numbers: &[u64]) -> u64 {
         .map(|mut secret| {
             let mut changes = 0;
             let mut bananas_by_sequence = FxHashMap::default();
+            bananas_by_sequence.reserve(2000);
             for i in 0..2000 {
                 let new_secret = next_secret_number(secret);
                 let change = (new_secret % 10).cast_signed() - (secret % 10).cast_signed();
