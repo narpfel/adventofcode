@@ -108,9 +108,8 @@ def part_2(wires, *, check):
 
         x_bits = 2 ** xs_len - 1
 
-        solver = z3.Solver()
-
         for i in range(zs_len):
+            solver = z3.Solver()
             solver.add(
                 z3.Not(
                     z3.Implies(
