@@ -49,7 +49,6 @@ interpret(Program, Pc, Registers, NewOutputs, [A | As]) :-
     nth0(Pc, Program, Instr),
     OperandPc #= Pc + 1,
     nth0(OperandPc, Program, Operand),
-    !,
     run(Instr, Operand, Pc, PcUpdate, Registers, NewRegisters, Output),
     [A | _] = NewRegisters,
     (Output = [Value] -> NewOutputs = [Value | Outputs]; NewOutputs = Outputs),
@@ -63,6 +62,7 @@ main :-
     atomic_list_concat(Output, ',', Part1),
     write(Part1), nl,
     interpret(Program, 0, [Part2, 0, 0], Program, As),
+    last(As, LastA), ground(LastA),
     reverse(As, ReverseAs),
     labeling([min(Part2)], ReverseAs),
     write(Part2), nl.
