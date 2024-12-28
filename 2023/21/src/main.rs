@@ -150,7 +150,7 @@ impl InfiniteGarden {
                     .neighbours(point)
                     .filter(|&neighbour| !visited[index(neighbour)])
                     .map(|p| self.canonicalise_point(&p))
-                    .map(|p| (p, distance + self.cost(&p)));
+                    .map(|p| (p, distance + self.cost(&point, &p)));
                 next_points.extend(neighbours);
             }
         }

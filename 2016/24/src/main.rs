@@ -4,6 +4,7 @@ use std::iter::empty;
 use std::iter::once;
 
 use graph::CartesianPoint as Point;
+use graph::FxHashMap;
 use graph::ReadExt;
 use graph::World;
 use itertools::Itertools;
@@ -67,7 +68,7 @@ fn solve(
 }
 
 fn main() {
-    let maze = HashMap::from_file("input").unwrap();
+    let maze = FxHashMap::from_file("input").unwrap();
     println!("{}", solve(&maze, empty()));
     println!(
         "{}",

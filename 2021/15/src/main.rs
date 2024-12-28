@@ -44,7 +44,7 @@ impl World for Cave {
         World::iter(&self.risk_levels)
     }
 
-    fn cost(&self, p: &Self::Point) -> u64 {
+    fn cost(&self, _from: &Self::Point, p: &Self::Point) -> u64 {
         self.risk_levels[p].risk_level
     }
 }

@@ -216,7 +216,7 @@ where
         World::iter(&self.blocks).map(|(p, t)| (P::from(p), t))
     }
 
-    fn cost(&self, p: &Self::Point) -> u64 {
+    fn cost(&self, _from: &Self::Point, p: &Self::Point) -> u64 {
         self.get(p).unwrap().cost
     }
 
@@ -240,7 +240,7 @@ where
                 .neighbours(point.clone())
                 .filter(|neighbour| self.is_walkable(neighbour))
             {
-                let distance = distance + self.cost(&neighbour);
+                let distance = distance + self.cost(&point, &neighbour);
 
                 let bitset = &mut seen[self.index(&neighbour)][neighbour.direction()];
                 if (*bitset & (1 << neighbour.repeat())) == 0 {

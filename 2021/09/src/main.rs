@@ -1,7 +1,7 @@
 use std::cmp::Reverse;
-use std::collections::HashMap;
 
 use graph::CartesianPoint as Point;
+use graph::FxHashMap;
 use graph::ReadExt;
 use graph::Tile as _;
 use graph::World;
@@ -29,7 +29,7 @@ impl TryFrom<char> for Tile {
 }
 
 fn main() {
-    let height_map: HashMap<Point, Tile, _> = HashMap::from_file("input").unwrap();
+    let height_map: FxHashMap<Point, Tile> = FxHashMap::from_file("input").unwrap();
     let low_points: Vec<_> = height_map
         .iter()
         .filter_map(|(&point, &tile)| {

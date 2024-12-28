@@ -1,4 +1,5 @@
 #![feature(associated_type_defaults)]
+#![feature(array_windows)]
 #![feature(thread_local)]
 
 use std::any::TypeId;
@@ -23,6 +24,7 @@ use fnv::FnvHashMap;
 use fnv::FnvHashSet;
 use im_rc::vector::RRBPool;
 use im_rc::Vector;
+pub use rustc_hash::FxHashMap;
 
 // TODO: Formulate in terms of edges and vertices. Maybe use some kind of
 // adjacency matrix/hash map?
@@ -84,10 +86,11 @@ pub trait World: Clone {
         is_at_end: impl FnMut(&Self::Point) -> bool,
     ) -> Distance {
         // Don’t include start point
-        Distance::from(
-            self.path_with(start, is_at_end)
-                .map(|path| path.iter().skip(1).map(|p| self.cost(p)).sum()),
-        )
+        Distance::from(self.path_with(start, is_at_end).map(|path| {
+            path.array_windows()
+                .map(|[from, to]| self.cost(from, to))
+                .sum()
+        }))
     }
 
     fn path(&self, start: &Self::Point, end: &Self::Point) -> Option<Vec<Self::Point>> {
@@ -113,7 +116,7 @@ pub trait World: Clone {
                 if !self.is_walkable(&neighbour) {
                     continue;
                 }
-                let distance = distance + self.cost(&point);
+                let distance = distance + self.cost(&point, &neighbour);
                 if distance_prev
                     .get(&neighbour)
                     .is_none_or(|(d, _)| d > &distance)
@@ -209,7 +212,7 @@ pub trait World: Clone {
         })
     }
 
-    fn cost(&self, _: &Self::Point) -> u64 {
+    fn cost(&self, _from: &Self::Point, _to: &Self::Point) -> u64 {
         1
     }
 
@@ -258,10 +261,11 @@ pub trait ReadExt: World {
         <Self::Tile as TryFrom<char>>::Error: Debug;
 }
 
-impl<Point, Tile> ReadExt for FnvHashMap<Point, Tile>
+impl<Point, Tile, State> ReadExt for HashMap<Point, Tile, State>
 where
     Point: self::Point + Eq + Hash + Cartesian,
     Tile: self::Tile + TryFrom<char>,
+    State: BuildHasher + Default + Clone,
 {
     fn from_file(path: impl AsRef<Path>) -> Result<Self, io::Error>
     where
@@ -423,7 +427,7 @@ where
                 if !self.is_walkable(&neighbour) {
                     continue;
                 }
-                let distance = distance + self.cost(&point);
+                let distance = distance + self.cost(&point, &neighbour);
                 if distance_prev[self.index(&neighbour)]
                     .as_ref()
                     .is_none_or(|(d, _)| d > &distance)

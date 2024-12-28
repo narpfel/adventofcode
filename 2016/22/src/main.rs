@@ -3,6 +3,7 @@ use std::hash::BuildHasher;
 use std::hash::Hash;
 
 use graph::CartesianPoint as Point;
+use graph::FxHashMap;
 use graph::ReadExt;
 use graph::World;
 
@@ -48,7 +49,7 @@ where
 }
 
 fn main() {
-    let mut grid = HashMap::from_file("grid").unwrap();
+    let mut grid = FxHashMap::from_file("grid").unwrap();
     let goal = grid.find(&Tile::Goal).unwrap();
     let goal_path = grid.path(&goal, &Point(0, 0)).unwrap();
 

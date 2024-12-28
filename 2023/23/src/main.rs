@@ -70,7 +70,7 @@ impl<S: Slipperiness> Forest<S> {
                             Distance::infinity()
                         }
                         else {
-                            distance.map(|d| d + self.cost(&point))
+                            distance.map(|d| d + self.cost(&point, &neighbour))
                         };
                         if distance_prev
                             .get(&neighbour)
