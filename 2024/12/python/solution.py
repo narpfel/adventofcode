@@ -6,16 +6,20 @@ DIRECTIONS = [(1, 0), (0, 1), (-1, 0), (0, -1)]
 
 
 def neighbours(x, y):
-    yield x - 1, y
-    yield x + 1, y
-    yield x, y - 1
-    yield x, y + 1
+    return [
+        (x - 1, y),
+        (x + 1, y),
+        (x, y - 1),
+        (x, y + 1),
+    ]
 
 
 def neighbours_in(garden, x, y):
-    for neighbour in neighbours(x, y):
-        if neighbour in garden:
-            yield neighbour
+    return [
+        neighbour
+        for neighbour in neighbours(x, y)
+        if neighbour in garden
+    ]
 
 
 def find_region_containing(garden, x, y):
@@ -67,10 +71,16 @@ def part_1(puzzle_input):
 
 
 def border_tiles(garden, region):
+    scale = 3
     return {
-        plot
-        for plot in region
-        if any(neighbour not in region for neighbour in neighbours(*plot))
+        (x * scale + dx, y * scale + dy)
+        for x, y in region
+        for dx in range(scale)
+        for dy in range(scale)
+        if any(
+            (nx // scale, ny // scale) not in region
+            for nx, ny in neighbours(x * scale + dx, y * scale + dy)
+        )
     }
 
 
@@ -127,27 +137,8 @@ def side_count(garden, region):
 
 def part_2(puzzle_input):
     garden, regions = puzzle_input
-
-    scale = 3
-    garden = {
-        (scale * x + dx, scale * y + dy): t
-        for (x, y), t in garden.items()
-        for dx in range(scale)
-        for dy in range(scale)
-    }
-
-    regions = {
-        frozenset(
-            (scale * x + dx, scale * y + dy)
-            for x, y in region
-            for dx in range(scale)
-            for dy in range(scale)
-        )
-        for region in regions
-    }
-
     return sum(
-        len(region) * side_count(garden, region) // (scale ** 2)
+        len(region) * side_count(garden, region)
         for region in regions
     )
 
