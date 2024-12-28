@@ -659,12 +659,7 @@ pub struct CartesianPoint(pub usize, pub usize);
 
 impl CartesianPoint {
     pub fn wrapping_neighbours(self) -> impl Iterator<Item = Self> {
-        [
-            self + (-1, 0),
-            self + (1, 0),
-            self + (0, -1),
-            self + (0, 1),
-        ].into_iter()
+        [self + (-1, 0), self + (1, 0), self + (0, -1), self + (0, 1)].into_iter()
     }
 
     pub fn is_direct_neighbour(self, CartesianPoint(x2, y2): CartesianPoint) -> bool {
