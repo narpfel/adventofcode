@@ -395,7 +395,9 @@ where
     type Tile = Tile;
 
     fn get(&self, p: &Self::Point) -> Option<Self::Tile> {
-        if p.to_xy().0 >= self.width {
+        let (width, height) = self.size().to_xy();
+        let (x, y) = p.to_xy();
+        if x >= width || y >= height {
             None
         }
         else {
