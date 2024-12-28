@@ -711,7 +711,6 @@ impl Cartesian for CartesianPoint {
 impl std::ops::Add<(isize, isize)> for CartesianPoint {
     type Output = Self;
 
-    #[inline]
     fn add(self, (dx, dy): (isize, isize)) -> Self::Output {
         let Self(x, y) = self;
         Self(x.wrapping_add_signed(dx), y.wrapping_add_signed(dy))
