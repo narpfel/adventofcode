@@ -378,6 +378,10 @@ where
     pub fn size(&self) -> Point {
         Point::from_xy((self.width, self.len() / self.width))
     }
+
+    pub fn points(&self) -> impl Iterator<Item = Point> + use<'_, Point, Tile, PointOrder> {
+        self.iter().map(|(p, _)| p)
+    }
 }
 
 impl<Point, Tile, PointOrder> World for RectangularWorld<Point, Tile, PointOrder>
@@ -654,6 +658,15 @@ pub trait Cartesian {
 pub struct CartesianPoint(pub usize, pub usize);
 
 impl CartesianPoint {
+    pub fn wrapping_neighbours(self) -> impl Iterator<Item = Self> {
+        [
+            self + (-1, 0),
+            self + (1, 0),
+            self + (0, -1),
+            self + (0, 1),
+        ].into_iter()
+    }
+
     pub fn is_direct_neighbour(self, CartesianPoint(x2, y2): CartesianPoint) -> bool {
         let CartesianPoint(x1, y1) = self;
         if x1 == x2 {
@@ -692,6 +705,22 @@ impl Cartesian for CartesianPoint {
 
     fn to_xy(&self) -> (usize, usize) {
         (self.0, self.1)
+    }
+}
+
+impl std::ops::Add<(isize, isize)> for CartesianPoint {
+    type Output = Self;
+
+    #[inline]
+    fn add(self, (dx, dy): (isize, isize)) -> Self::Output {
+        let Self(x, y) = self;
+        Self(x.wrapping_add_signed(dx), y.wrapping_add_signed(dy))
+    }
+}
+
+impl std::ops::AddAssign<(isize, isize)> for CartesianPoint {
+    fn add_assign(&mut self, rhs: (isize, isize)) {
+        *self = *self + rhs;
     }
 }
 
@@ -768,5 +797,11 @@ pub struct Unreachable;
 impl Tile for bool {
     fn is_walkable(&self) -> bool {
         *self
+    }
+}
+
+impl Tile for u8 {
+    fn is_walkable(&self) -> bool {
+        true
     }
 }
