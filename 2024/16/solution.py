@@ -2,7 +2,6 @@
 
 from heapq import heappop
 from heapq import heappush
-from itertools import chain
 
 EXPECTED_PART_1 = 11048
 EXPECTED_PART_2 = 64
@@ -52,8 +51,7 @@ def part_2(maze, max_cost):
     start = next(p for p, t in maze.items() if t == "S")
     end = next(p for p, t in maze.items() if t == "E")
 
-    points = {(p, d): (max_cost, set()) for p in maze for d in range(4)}
-    points[start] = max_cost, {start}
+    points = {(start, 0): (max_cost, [(start, 0)])}
 
     q = [(0, start, 0, (start, 0))]
     while q:
@@ -61,14 +59,13 @@ def part_2(maze, max_cost):
         if cost > max_cost:
             break
 
-        known_minimal_cost, points_in_path = points[p, d]
+        known_minimal_cost, points_in_path = points.setdefault((p, d), (max_cost, []))
         if known_minimal_cost < cost:
             pass
         elif known_minimal_cost == cost:
-            points_in_path.update(points[prev][1])
-            points_in_path.add(p)
+            points_in_path.append(prev)
         else:
-            points[p, d] = cost, {p, *points[prev][1]}
+            points[p, d] = cost, [prev]
             prev = p, d
 
             for additional_cost, δd in ((1, 0), (1001, -1), (1001, 1)):
@@ -77,7 +74,15 @@ def part_2(maze, max_cost):
                 if maze.get(new_p) in "SE.":
                     heappush(q, (cost + additional_cost, new_p, new_d, prev))
 
-    return len(set(chain.from_iterable(points[end, d][1] for d in range(4))))
+    points_on_any_path = set()
+    todo = [(end, d) for d in range(4)]
+    while todo:
+        p, d = todo.pop()
+        points_on_any_path.add((p, d))
+        for p, d in points.get((p, d), (0, ()))[1]:
+            if (p, d) not in points_on_any_path:
+                todo.append((p, d))
+    return len({p for p, _ in points_on_any_path})
 
 
 def test_part_1():
