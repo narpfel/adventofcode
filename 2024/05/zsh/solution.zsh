@@ -3,7 +3,7 @@
 for eq in "==" "!="; do
     grep , input \
         | tr ',' '|' \
-        | xargs -I '{}' \
+        | xargs --max-procs=$(nproc) -I '{}' \
             zsh -c '
                 sorted=$( \
                     grep '"'"'|'"'"' input \
