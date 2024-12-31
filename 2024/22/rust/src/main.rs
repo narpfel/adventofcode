@@ -3,10 +3,6 @@
 
 use std::error::Error;
 
-use rayon::iter::IntoParallelRefIterator as _;
-use rayon::iter::ParallelIterator as _;
-use rustc_hash::FxHashMap;
-
 const PRUNE_MODULUS: u64 = 16777216;
 
 fn next_secret_number(mut n: u64) -> u64 {
@@ -30,34 +26,36 @@ fn part_1(secret_numbers: &[u64]) -> u64 {
 }
 
 fn part_2(secret_numbers: &[u64]) -> u64 {
-    let total_bananas = secret_numbers
-        .par_iter()
+    secret_numbers
+        .iter()
         .copied()
-        .map(|mut secret| {
-            let mut changes = 0;
-            let mut bananas_by_sequence = FxHashMap::default();
-            bananas_by_sequence.reserve(2000);
-            for i in 0..2000 {
-                let new_secret = next_secret_number(secret);
-                let change = (new_secret % 10).cast_signed() - (secret % 10).cast_signed();
-                changes *= 20;
-                changes += change + 10;
-                changes %= const { 20_i64.pow(4) };
-                secret = new_secret;
-                if i >= 3 {
-                    bananas_by_sequence.entry(changes).or_insert(secret % 10);
+        .enumerate()
+        .fold(
+            vec![(0, usize::MAX); 19_usize.pow(4)],
+            |mut bananas_by_sequence, (monkey, mut secret)| {
+                let mut changes = 0;
+                for i in 0..2000 {
+                    let new_secret = next_secret_number(secret);
+                    let change = (new_secret % 10).cast_signed() - (secret % 10).cast_signed();
+                    changes *= 19;
+                    changes += change + 9;
+                    changes %= const { 19_i64.pow(4) };
+                    secret = new_secret;
+                    if i >= 3 {
+                        let (bananas, index) = &mut bananas_by_sequence[changes as usize];
+                        if *index != monkey {
+                            *index = monkey;
+                            *bananas += secret % 10;
+                        }
+                    }
                 }
-            }
-            bananas_by_sequence
-        })
-        .reduce_with(|mut total_bananas, bananas_by_sequence| {
-            for (&sequence, &bananas) in &bananas_by_sequence {
-                *total_bananas.entry(sequence).or_default() += bananas;
-            }
-            total_bananas
-        })
-        .unwrap();
-    *total_bananas.values().max().unwrap()
+                bananas_by_sequence
+            },
+        )
+        .into_iter()
+        .map(|(bananas, _)| bananas)
+        .max()
+        .unwrap()
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
