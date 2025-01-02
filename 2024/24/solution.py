@@ -1,19 +1,83 @@
 #!/usr/bin/env python3
 
 import re
-import sys
+from collections import deque
 from functools import partial
 from itertools import chain
 from operator import and_
 from operator import or_
 from operator import xor
 
+import z3
+
 EXPECTED_PART_1 = 2024
 
 
 class Wire:
     def __init__(self, name, input):
+        self.name = name
+        self._input = None
+        self.outputs = []
         self.input = input
+
+    @property
+    def input(self):
+        return self._input
+
+    @input.setter
+    def input(self, value):
+        match self._input:
+            case LogicFunction():
+                self._input.x.outputs.remove(self)
+                self._input.y.outputs.remove(self)
+
+        self._input = value
+
+        match value:
+            case LogicFunction():
+                value.x.outputs.append(self)
+                value.y.outputs.append(self)
+
+    @property
+    def transitive_inputs(self):
+        try:
+            yield self.input.x
+        except AttributeError:
+            pass
+        else:
+            yield from self.input.x.transitive_inputs
+
+        try:
+            yield self.input.y
+        except AttributeError:
+            pass
+        else:
+            yield from self.input.y.transitive_inputs
+
+    @property
+    def direct_neighbours(self):
+        yield from self.outputs
+
+        try:
+            yield self.input.x
+        except AttributeError:
+            pass
+
+        try:
+            yield self.input.y
+        except AttributeError:
+            pass
+
+    @property
+    def surroundings(self):
+        seen = set()
+        todo = deque()
+        todo.append(self)
+        while todo:
+            wire = todo.popleft()
+            yield wire
+            seen.add(wire)
+            todo.extend(neighbour for neighbour in wire.direct_neighbours if neighbour not in seen)
 
     def __call__(self):
         try:
@@ -25,14 +89,20 @@ class Wire:
                 return self.input
 
 
-def logic_function(operator, x, y):
-    return operator(x(), y())
+class LogicFunction:
+    def __init__(self, operator, x, y):
+        self.operator = operator
+        self.x = x
+        self.y = y
+
+    def __call__(self):
+        return self.operator(self.x(), self.y())
 
 
 LOGIC_FUNCTIONS = {
-    "AND": partial(logic_function, and_),
-    "OR": partial(logic_function, or_),
-    "XOR": partial(logic_function, xor),
+    "AND": partial(LogicFunction, and_),
+    "OR": partial(LogicFunction, or_),
+    "XOR": partial(LogicFunction, xor),
 }
 
 INSTRUCTION = re.compile(r"((?P<lhs>\w*) (?P<op>\w*) (?P<rhs>\w*)) -> (?P<destination>\w*)")
@@ -54,8 +124,7 @@ def read_input(filename):
 
     for line in instructions.splitlines():
         match = INSTRUCTION.match(line)
-        wires[match["destination"]].input = partial(
-            LOGIC_FUNCTIONS[match["op"]],
+        wires[match["destination"]].input = LOGIC_FUNCTIONS[match["op"]](
             wires[match["lhs"]],
             wires[match["rhs"]],
         )
@@ -68,59 +137,74 @@ def part_1(wires):
     return int("".join(str(wires[wire]()) for wire in zs), 2)
 
 
-def part_2(wires, *, check):
-    # solved semi-manually using a `dot` plot of the addition circuit and `z3`
-    # to indicate the location of the first wrong output bit
-    #
-    # swaps:
-    # srp, jcf (is: z05, must: frn) <-> kbj, qjq (is: frn, must: z05)
-    # x16, y16 (is: wnf, must: vtj) <-> x16, y16 (is: vtj, must: wnf)
-    # x21, y21 (is: z21, must: gmq) <-> fqr, mjj (is: gmq, must: z21)
-    # jhv, bkq (is: z39, must: wtt) <-> jhv, bkq (is: wtt, must: z39)
+def swap(wires, lhs, rhs):
+    wires[lhs].input, wires[rhs].input = wires[rhs].input, wires[lhs].input
 
-    swaps = [
-        ("z05", "frn"),
-        ("wnf", "vtj"),
-        ("z21", "gmq"),
-        ("z39", "wtt"),
-    ]
-    for lhs, rhs in swaps:
-        wires[lhs].input, wires[rhs].input = wires[rhs].input, wires[lhs].input
 
-    if check:
-        import z3
+class Correct(BaseException):
+    pass
 
-        xs = [wire for wire in wires if wire.startswith("x")]
-        ys = [wire for wire in wires if wire.startswith("y")]
-        zs = [wire for wire in wires if wire.startswith("z")]
-        xs_len = len(xs)
-        ys_len = len(ys)
-        assert xs_len == ys_len
-        zs_len = len(zs)
-        assert zs_len == xs_len + 1
 
-        x, y, z = z3.BitVecs("x y z", zs_len)
+def check_adder(wires, x, y, z, xs_len, zs_len, start_bit):
+    x_bits = 2 ** xs_len - 1
 
-        for input_number, input_names in zip([x, y], [xs, ys]):
-            for name in input_names:
-                place = int(name[1:])
-                wires[name].input = (input_number >> place) & 1
-
-        x_bits = 2 ** xs_len - 1
-
-        for i in range(zs_len):
-            solver = z3.Solver()
-            solver.add(
-                z3.Not(
-                    z3.Implies(
-                        z == (x & x_bits) + (y & x_bits),
-                        ((z >> i) & 1) == wires[f"z{i:02}"](),
-                    ),
+    for i in range(start_bit, zs_len):
+        solver = z3.Solver()
+        solver.add(
+            z3.Not(
+                z3.Implies(
+                    z == (x & x_bits) + (y & x_bits),
+                    z3.Extract(i, i, z) == wires[f"z{i:02}"](),
                 ),
-            )
-            if solver.check() == z3.sat:
-                print(f"counter-example in bit {i}: ", solver.model())
-                raise AssertionError(f"swaps are incorrect, error in {i}th bit")
+            ),
+        )
+        if solver.check() == z3.sat:
+            return i
+
+    raise Correct
+
+
+def part_2(wires):
+    xs, ys, zs = ([wire for wire in wires if wire.startswith(letter)] for letter in "xyz")
+    xs_len = len(xs)
+    assert xs_len == len(ys)
+    zs_len = len(zs)
+    assert zs_len == xs_len + 1
+
+    x, y, z = z3.BitVecs("x y z", zs_len)
+
+    for input_number, input_names in zip([x, y], [xs, ys]):
+        for name in input_names:
+            place = int(name[1:])
+            wires[name].input = z3.Extract(place, place, input_number)
+
+    swaps = []
+    start_bit = max_okay_bit = check_adder(wires, x, y, z, xs_len, zs_len, start_bit=0)
+    try:
+        while True:
+            seen = []
+            for wire in wires[f"z{max_okay_bit:02}"].surroundings:
+                should_break = False
+                for other in seen:
+                    if wire in other.transitive_inputs or other in wire.transitive_inputs:
+                        continue
+                    swaps.append((wire.name, other.name))
+                    swap(wires, wire.name, other.name)
+                    result = check_adder(wires, x, y, z, xs_len, zs_len, max(0, start_bit - 1))
+                    if result > max_okay_bit:
+                        start_bit = max_okay_bit
+                        max_okay_bit = result
+                        should_break = True
+                        break
+                    swaps.pop()
+                    swap(wires, wire.name, other.name)
+                seen.append(wire)
+                if should_break:
+                    break
+            else:
+                assert False
+    except Correct:
+        pass
 
     return ",".join(sorted(chain.from_iterable(swaps)))
 
@@ -131,8 +215,9 @@ def test_part_1():
 
 
 def main():
-    print(part_1(read_input("input")))
-    print(part_2(read_input("input"), check="--check" in sys.argv))
+    wires = read_input("input")
+    print(part_1(wires))
+    print(part_2(wires))
 
 
 if __name__ == "__main__":
