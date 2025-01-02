@@ -80,13 +80,7 @@ class Wire:
             todo.extend(neighbour for neighbour in wire.direct_neighbours if neighbour not in seen)
 
     def __call__(self):
-        try:
-            return int(self.input)
-        except TypeError:
-            try:
-                return self.input()
-            except TypeError:
-                return self.input
+        return self.input.get()
 
 
 class LogicFunction:
@@ -95,7 +89,7 @@ class LogicFunction:
         self.x = x
         self.y = y
 
-    def __call__(self):
+    def get(self):
         return self.operator(self.x(), self.y())
 
 
@@ -105,6 +99,25 @@ LOGIC_FUNCTIONS = {
     "XOR": partial(LogicFunction, xor),
 }
 
+
+class InputValue:
+    def __init__(self):
+        self.value = 0
+        self.bit_getter = lambda value, bit: (value >> bit) & 1
+
+    def get_bit(self, bit):
+        return self.bit_getter(self.value, bit)
+
+
+class Input:
+    def __init__(self, value, bit):
+        self.value = value
+        self.bit = bit
+
+    def get(self):
+        return self.value.get_bit(self.bit)
+
+
 INSTRUCTION = re.compile(r"((?P<lhs>\w*) (?P<op>\w*) (?P<rhs>\w*)) -> (?P<destination>\w*)")
 
 WIRE_NAME = re.compile(r"[a-z0-9]{3}")
@@ -112,15 +125,11 @@ WIRE_NAME = re.compile(r"[a-z0-9]{3}")
 
 def read_input(filename):
     with open(filename) as lines:
-        inputs, instructions = lines.read().strip().split("\n\n")
+        inputs_lines, instructions = lines.read().strip().split("\n\n")
 
     wires = {}
     for name in WIRE_NAME.findall(instructions):
         wires[name] = Wire(name, None)
-
-    for input_line in inputs.splitlines():
-        name, _, value = input_line.partition(": ")
-        wires[name].input = int(value)
 
     for line in instructions.splitlines():
         match = INSTRUCTION.match(line)
@@ -129,7 +138,16 @@ def read_input(filename):
             wires[match["rhs"]],
         )
 
-    return wires
+    inputs = dict(x=InputValue(), y=InputValue())
+
+    for input_line in inputs_lines.splitlines():
+        name, _, bit_value = input_line.partition(": ")
+        bit = int(name[1:])
+        input_value = inputs[name[0]]
+        input_value.value |= int(bit_value) << bit
+        wires[name].input = Input(input_value, bit)
+
+    return wires, inputs
 
 
 def part_1(wires):
@@ -164,7 +182,7 @@ def check_adder(wires, x, y, z, xs_len, zs_len, start_bit):
     raise Correct
 
 
-def part_2(wires):
+def part_2(wires, inputs):
     xs, ys, zs = ([wire for wire in wires if wire.startswith(letter)] for letter in "xyz")
     xs_len = len(xs)
     assert xs_len == len(ys)
@@ -173,10 +191,9 @@ def part_2(wires):
 
     x, y, z = z3.BitVecs("x y z", zs_len)
 
-    for input_number, input_names in zip([x, y], [xs, ys]):
-        for name in input_names:
-            place = int(name[1:])
-            wires[name].input = z3.Extract(place, place, input_number)
+    for (bit_vec, input_value) in [(x, inputs["x"]), (y, inputs["y"])]:
+        input_value.value = bit_vec
+        input_value.bit_getter = lambda value, bit: z3.Extract(bit, bit, value)
 
     swaps = []
     start_bit = max_okay_bit = check_adder(wires, x, y, z, xs_len, zs_len, start_bit=0)
@@ -215,9 +232,9 @@ def test_part_1():
 
 
 def main():
-    wires = read_input("input")
+    wires, inputs = read_input("input")
     print(part_1(wires))
-    print(part_2(wires))
+    print(part_2(wires, inputs))
 
 
 if __name__ == "__main__":
