@@ -182,6 +182,15 @@ def check_adder(wires, x, y, z, xs_len, zs_len, start_bit):
     raise Correct
 
 
+def lazy_combinations(iterable):
+    seen = set()
+    for value in iterable:
+        if value not in seen:
+            for other in seen:
+                yield value, other
+            seen.add(value)
+
+
 def part_2(wires, inputs):
     xs, ys, zs = ([wire for wire in wires if wire.startswith(letter)] for letter in "xyz")
     xs_len = len(xs)
@@ -196,28 +205,21 @@ def part_2(wires, inputs):
         input_value.bit_getter = lambda value, bit: z3.Extract(bit, bit, value)
 
     swaps = []
-    start_bit = max_okay_bit = check_adder(wires, x, y, z, xs_len, zs_len, start_bit=0)
+    start_bit = first_error_bit = check_adder(wires, x, y, z, xs_len, zs_len, start_bit=0)
     try:
         while True:
-            seen = []
-            for wire in wires[f"z{max_okay_bit:02}"].surroundings:
-                should_break = False
-                for other in seen:
-                    if wire in other.transitive_inputs or other in wire.transitive_inputs:
-                        continue
-                    swaps.append((wire.name, other.name))
-                    swap(wires, wire.name, other.name)
-                    result = check_adder(wires, x, y, z, xs_len, zs_len, max(0, start_bit - 1))
-                    if result > max_okay_bit:
-                        start_bit = max_okay_bit
-                        max_okay_bit = result
-                        should_break = True
-                        break
-                    swaps.pop()
-                    swap(wires, wire.name, other.name)
-                seen.append(wire)
-                if should_break:
+            for wire, other in lazy_combinations(wires[f"z{first_error_bit:02}"].surroundings):
+                if wire in other.transitive_inputs or other in wire.transitive_inputs:
+                    continue
+                swaps.append((wire.name, other.name))
+                swap(wires, wire.name, other.name)
+                error_bit = check_adder(wires, x, y, z, xs_len, zs_len, max(0, start_bit - 1))
+                if error_bit > first_error_bit:
+                    start_bit = first_error_bit
+                    first_error_bit = error_bit
                     break
+                swaps.pop()
+                swap(wires, wire.name, other.name)
             else:
                 assert False
     except Correct:
