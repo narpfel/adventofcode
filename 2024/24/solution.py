@@ -2,15 +2,25 @@
 
 import re
 from collections import deque
+from functools import cache
 from functools import partial
 from itertools import chain
 from operator import and_
 from operator import or_
 from operator import xor
 
-import z3
-
 EXPECTED_PART_1 = 2024
+
+INSTRUCTION = re.compile(r"((?P<lhs>\w*) (?P<op>\w*) (?P<rhs>\w*)) -> (?P<destination>\w*)")
+WIRE_NAME = re.compile(r"[a-z0-9]{3}")
+
+# unsure if this works for all inputs
+TEST_CASES = [
+    (0xffff_ffff_ffff_ffff, 1),
+    (0xffff_ffff_ffff_ffff, 0),
+    (1, 0xffff_ffff_ffff_ffff),
+    (0, 0xffff_ffff_ffff_ffff),
+]
 
 
 class Wire:
@@ -79,6 +89,7 @@ class Wire:
             seen.add(wire)
             todo.extend(neighbour for neighbour in wire.direct_neighbours if neighbour not in seen)
 
+    @cache
     def __call__(self):
         return self.input.get()
 
@@ -103,10 +114,9 @@ LOGIC_FUNCTIONS = {
 class InputValue:
     def __init__(self):
         self.value = 0
-        self.bit_getter = lambda value, bit: (value >> bit) & 1
 
     def get_bit(self, bit):
-        return self.bit_getter(self.value, bit)
+        return (self.value >> bit) & 1
 
 
 class Input:
@@ -116,11 +126,6 @@ class Input:
 
     def get(self):
         return self.value.get_bit(self.bit)
-
-
-INSTRUCTION = re.compile(r"((?P<lhs>\w*) (?P<op>\w*) (?P<rhs>\w*)) -> (?P<destination>\w*)")
-
-WIRE_NAME = re.compile(r"[a-z0-9]{3}")
 
 
 def read_input(filename):
@@ -163,23 +168,26 @@ class Correct(BaseException):
     pass
 
 
-def check_adder(wires, x, y, z, xs_len, zs_len, start_bit):
-    x_bits = 2 ** xs_len - 1
+def check_adder(wires, x, y, zs_len):
+    mask = 2 ** (zs_len - 1) - 1
+    first_error_bit = zs_len + 1
 
-    for i in range(start_bit, zs_len):
-        solver = z3.Solver()
-        solver.add(
-            z3.Not(
-                z3.Implies(
-                    z == (x & x_bits) + (y & x_bits),
-                    z3.Extract(i, i, z) == wires[f"z{i:02}"](),
-                ),
-            ),
-        )
-        if solver.check() == z3.sat:
-            return i
+    for (x_value, y_value) in TEST_CASES:
+        Wire.__call__.cache_clear()
+        x.value = x_value & mask
+        y.value = y_value & mask
+        expected_z = x.value + y.value
+        actual_z = part_1(wires)
 
-    raise Correct
+        for i in range(zs_len):
+            if ((expected_z >> i) & 1) != ((actual_z >> i) & 1):
+                first_error_bit = min(i, first_error_bit)
+                break
+
+    if first_error_bit <= zs_len:
+        return first_error_bit
+    else:
+        raise Correct
 
 
 def lazy_combinations(iterable):
@@ -198,14 +206,8 @@ def part_2(wires, inputs):
     zs_len = len(zs)
     assert zs_len == xs_len + 1
 
-    x, y, z = z3.BitVecs("x y z", zs_len)
-
-    for (bit_vec, input_value) in [(x, inputs["x"]), (y, inputs["y"])]:
-        input_value.value = bit_vec
-        input_value.bit_getter = lambda value, bit: z3.Extract(bit, bit, value)
-
     swaps = []
-    start_bit = first_error_bit = check_adder(wires, x, y, z, xs_len, zs_len, start_bit=0)
+    first_error_bit = check_adder(wires, **inputs, zs_len=zs_len)
     try:
         while True:
             for wire, other in lazy_combinations(wires[f"z{first_error_bit:02}"].surroundings):
@@ -213,9 +215,8 @@ def part_2(wires, inputs):
                     continue
                 swaps.append((wire.name, other.name))
                 swap(wires, wire.name, other.name)
-                error_bit = check_adder(wires, x, y, z, xs_len, zs_len, max(0, start_bit - 1))
+                error_bit = check_adder(wires, **inputs, zs_len=zs_len)
                 if error_bit > first_error_bit:
-                    start_bit = first_error_bit
                     first_error_bit = error_bit
                     break
                 swaps.pop()
