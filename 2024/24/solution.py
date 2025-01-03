@@ -227,7 +227,7 @@ def part_2(wires, inputs):
 
 
 def test_part_1():
-    wires = read_input("input_test")
+    wires, _ = read_input("input_test")
     assert part_1(wires) == EXPECTED_PART_1
 
 
