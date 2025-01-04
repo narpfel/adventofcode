@@ -57,8 +57,8 @@ RESPONSE_TYPES = [
 class Statistics:
     build_time = attrib(default=0)
     execution_time = attrib(default=0)
-    skipped = attrib(default=0)
     succeeded_by_language = attrib(factory=Counter)
+    skipped_by_language = attrib(factory=Counter)
     failed_by_language = attrib(factory=Counter)
 
     def add(self, result):
@@ -67,8 +67,8 @@ class Statistics:
     def add_to(self, stats):
         stats.build_time += self.build_time
         stats.execution_time += self.execution_time
-        stats.skipped += self.skipped
         stats.succeeded_by_language += self.succeeded_by_language
+        stats.skipped_by_language += self.skipped_by_language
         stats.failed_by_language += self.failed_by_language
 
     @property
@@ -76,11 +76,15 @@ class Statistics:
         return self.succeeded_by_language.total()
 
     @property
+    def skipped(self):
+        return self.skipped_by_language.total()
+
+    @property
     def failed(self):
         return self.failed_by_language.total()
 
     def __bool__(self):
-        return any([self.succeeded, self.skipped, self.failed])
+        return any([self.succeeded_by_language, self.skipped_by_language, self.failed_by_language])
 
 
 @attrs(frozen=True)
@@ -97,8 +101,10 @@ class Success:
 
 @attrs(frozen=True)
 class Skipped:
+    language = attrib()
+
     def add_to(self, stats):
-        stats.skipped += 1
+        stats.skipped_by_language[self.language] += 1
 
 
 @attrs(frozen=True)
@@ -165,7 +171,7 @@ class Runner:
         else:
             language = language_for(path)
             if self.languages.search(language) is None:
-                return Skipped()
+                return Skipped(language=language)
 
             if self.solution_output is not None:
                 print(
@@ -585,12 +591,19 @@ def main(argv=None):
             print(f"{FG_YELLOW}{stats.skipped} solutions were skipped.{RESET}", file=sys.stderr)
 
         if args.language_statistics:
-            all_languages = stats.succeeded_by_language | stats.failed_by_language
+            all_languages = (
+                stats.succeeded_by_language | stats.skipped_by_language | stats.failed_by_language
+            )
             max_len = max((len(language) for language in all_languages), default=None)
             max_count_len = len(str(max(all_languages.values(), default=None)))
             if max_len is not None:
                 assert max_count_len is not None
                 print(f"\n{FG_BOLD}Language statistics{RESET}")
+
+            if stats.skipped_by_language:
+                print(f"{FG_BOLD}{FG_YELLOW}Skipped{RESET}")
+                for language, count in stats.skipped_by_language.most_common():
+                    print(f"    {FG_BOLD}{language:>{max_len}}{RESET}: {count:{max_count_len}}")
 
             if stats.succeeded_by_language:
                 print(f"{FG_BOLD}{FG_GREEN}Successful{RESET}")
