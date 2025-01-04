@@ -8,6 +8,7 @@ import shlex
 import subprocess
 import sys
 import time
+from collections import Counter
 from contextlib import suppress
 from functools import partial
 from pathlib import Path
@@ -54,21 +55,29 @@ RESPONSE_TYPES = [
 
 @attrs
 class Statistics:
-    succeeded = attrib(default=0)
     build_time = attrib(default=0)
     execution_time = attrib(default=0)
     skipped = attrib(default=0)
-    failed = attrib(default=0)
+    succeeded_by_language = attrib(factory=Counter)
+    failed_by_language = attrib(factory=Counter)
 
     def add(self, result):
         result.add_to(self)
 
     def add_to(self, stats):
-        stats.succeeded += self.succeeded
         stats.build_time += self.build_time
         stats.execution_time += self.execution_time
         stats.skipped += self.skipped
-        stats.failed += self.failed
+        stats.succeeded_by_language += self.succeeded_by_language
+        stats.failed_by_language += self.failed_by_language
+
+    @property
+    def succeeded(self):
+        return self.succeeded_by_language.total()
+
+    @property
+    def failed(self):
+        return self.failed_by_language.total()
 
     def __bool__(self):
         return any([self.succeeded, self.skipped, self.failed])
@@ -78,11 +87,12 @@ class Statistics:
 class Success:
     build_time = attrib()
     execution_time = attrib()
+    language = attrib()
 
     def add_to(self, stats):
-        stats.succeeded += 1
         stats.build_time += self.build_time
         stats.execution_time += self.execution_time
+        stats.succeeded_by_language[self.language] += 1
 
 
 @attrs(frozen=True)
@@ -93,8 +103,10 @@ class Skipped:
 
 @attrs(frozen=True)
 class Failed:
+    language = attrib()
+
     def add_to(self, stats):
-        stats.failed += 1
+        stats.failed_by_language[self.language] += 1
 
 
 @attrs(frozen=True)
@@ -167,13 +179,17 @@ class Runner:
                 build_time, execution_time = runner(path)
             except subprocess.CalledProcessError:
                 print(f"{FG_BOLD}{FG_RED}failed!{RESET}", file=sys.stderr)
-                return Failed()
+                return Failed(language=language)
             else:
                 print(
                     f"{execution_time_prefix}{execution_time} s{format_build_time(build_time)}",
                     file=sys.stderr,
                 )
-                return Success(build_time=build_time, execution_time=execution_time)
+                return Success(
+                    build_time=build_time,
+                    execution_time=execution_time,
+                    language=language,
+                )
 
     def find_executor(self, solution_dir):
         for language_indicator, runner_name in self.RUNNERS.items():
@@ -489,6 +505,11 @@ def main(argv=None):
         help="Check if solution produces expected output",
         action="store_true",
     )
+    parser.add_argument(
+        "-s", "--language-statistics",
+        help="Count successful solutions by language",
+        action="store_true",
+    )
     args = parser.parse_args(argv)
 
     if Path("get") in args.solutions:
@@ -562,6 +583,24 @@ def main(argv=None):
             )
         if stats.skipped:
             print(f"{FG_YELLOW}{stats.skipped} solutions were skipped.{RESET}", file=sys.stderr)
+
+        if args.language_statistics:
+            all_languages = stats.succeeded_by_language | stats.failed_by_language
+            max_len = max((len(language) for language in all_languages), default=None)
+            max_count_len = len(str(max(all_languages.values(), default=None)))
+            if max_len is not None:
+                assert max_count_len is not None
+                print(f"\n{FG_BOLD}Language statistics{RESET}")
+
+            if stats.succeeded_by_language:
+                print(f"{FG_BOLD}{FG_GREEN}Successful{RESET}")
+                for language, count in stats.succeeded_by_language.most_common():
+                    print(f"    {FG_BOLD}{language:>{max_len}}{RESET}: {count:{max_count_len}}")
+
+            if stats.failed_by_language:
+                print(f"{FG_BOLD}{FG_RED}Failed{RESET}")
+                for language, count in stats.failed_by_language.most_common():
+                    print(f"    {FG_BOLD}{language:>{max_len}}{RESET}: {count:{max_count_len}}")
 
     if args.check:
         print(f"\n\n{FG_BOLD}{FG_YELLOW}Checking solutions...{RESET}")
