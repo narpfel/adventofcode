@@ -16,19 +16,18 @@ def read_input(filename):
         return connections
 
 
-def bron_kerbosch(connections, r, p, x):
+def bron_kerbosch(connections, r, p):
     yield r
     while p:
         v = next(iter(p))
-        yield from bron_kerbosch(connections, r | {v}, p & connections[v], x & connections[v])
+        yield from bron_kerbosch(connections, r | {v}, p & connections[v])
         p.discard(v)
-        x.add(v)
 
 
 def solve(connections):
     part_1_result = 0
     longest_clique = set()
-    for clique in bron_kerbosch(connections, frozenset(), set(connections), set()):
+    for clique in bron_kerbosch(connections, frozenset(), set(connections)):
         if len(clique) == 3 and any(c.startswith("t") for c in clique):
             part_1_result += 1
         longest_clique = max(longest_clique, clique, key=len)
