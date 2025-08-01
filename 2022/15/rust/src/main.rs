@@ -1,5 +1,3 @@
-#![feature(array_chunks)]
-
 use std::collections::HashSet;
 use std::error::Error;
 use std::fs::File;
@@ -79,26 +77,35 @@ where
         let mut values = std::mem::take(&mut self.0);
         let last = values.pop().unwrap();
         self.0.push(values[0].clone());
-        let mut chunks = values[1..].array_chunks();
-        for [x, y] in &mut chunks {
+        let (chunks, []) = values[1..].as_chunks()
+        else {
+            unreachable!()
+        };
+        for [x, y] in chunks {
             if y != &x.succ() {
                 self.0.push(x.clone());
                 self.0.push(y.clone());
             }
         }
-        assert!(chunks.remainder().is_empty());
         self.0.push(last);
     }
 }
 
 impl Sparse<i64> {
     fn length(&self) -> i64 {
-        self.0.array_chunks().map(|[lo, hi]| hi - (lo - 1)).sum()
+        self.0
+            .as_chunks()
+            .0
+            .iter()
+            .map(|[lo, hi]| hi - (lo - 1))
+            .sum()
     }
 
     fn contains(&self, value: i64) -> bool {
         self.0
-            .array_chunks()
+            .as_chunks()
+            .0
+            .iter()
             .any(|[lo, hi]| (lo..=hi).contains(&&value))
     }
 }
