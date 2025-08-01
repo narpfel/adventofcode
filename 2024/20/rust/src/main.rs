@@ -1,6 +1,3 @@
-#![feature(integer_sign_cast)]
-#![feature(let_chains)]
-
 use std::io;
 
 use graph::CartesianPoint;

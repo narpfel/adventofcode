@@ -1,6 +1,3 @@
-#![feature(hash_extract_if)]
-#![feature(integer_sign_cast)]
-
 use std::io;
 use std::iter::from_fn;
 use std::path::Path;

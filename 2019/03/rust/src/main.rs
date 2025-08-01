@@ -50,7 +50,7 @@ fn manhattan_distance(p: Point) -> u64 {
 
 fn track(steps: impl Iterator<Item = (Direction, usize)>) -> HashMap<Point, (u64, usize)> {
     steps
-        .flat_map(|(direction, length)| std::iter::repeat(direction).take(length))
+        .flat_map(|(direction, length)| std::iter::repeat_n(direction, length))
         .scan((0, 0), |point, direction| {
             move_(point, direction);
             Some(*point)

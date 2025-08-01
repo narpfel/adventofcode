@@ -53,7 +53,7 @@ struct State<'a> {
 }
 
 impl State<'_> {
-    fn new(tiles: &mut HashMap<(i64, i64), Colour>) -> State {
+    fn new(tiles: &mut HashMap<(i64, i64), Colour>) -> State<'_> {
         State {
             tiles,
             position: (0, 0),

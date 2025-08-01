@@ -1,4 +1,3 @@
-#![feature(integer_sign_cast)]
 #![feature(iterator_try_collect)]
 
 use std::error::Error;

@@ -67,7 +67,7 @@ fn read_input(path: impl AsRef<Path>) -> io::Result<(usize, Vec<bool>, Vec<bool>
                     })
                 })
                 .collect_tuple()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "no parse"))
+                .ok_or_else(|| io::Error::other("no parse"))
         })
         .collect::<io::Result<Vec<(_, _)>>>()?;
 

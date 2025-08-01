@@ -279,9 +279,8 @@ where
             for (x, c) in line?.chars().enumerate() {
                 maze.insert(
                     Point::from_xy((x, y)),
-                    c.try_into().map_err(|err| {
-                        io::Error::new(io::ErrorKind::Other, format!("invalid char: {c} ({err:?})"))
-                    })?,
+                    c.try_into()
+                        .map_err(|err| io::Error::other(format!("invalid char: {c} ({err:?})")))?,
                 );
             }
         }

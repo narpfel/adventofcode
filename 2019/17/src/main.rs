@@ -193,9 +193,6 @@ impl<Iter: Iterator<Item = Cell>> State<Iter> {
             main: &mut Vec<Function>,
             functions: &mut [Vec<Step>; 3],
         ) -> Option<(Vec<Function>, [Vec<Step>; 3])> {
-            // FIXME: Is this a false positive? Regardless, a `match` wouldn’t make the
-            // code more readable here.
-            #[expect(clippy::comparison_chain)]
             if i == steps.len() {
                 return Some((main.clone(), functions.clone()));
             }

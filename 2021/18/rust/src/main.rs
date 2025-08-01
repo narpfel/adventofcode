@@ -49,7 +49,7 @@ fn reduce_step_split(mut number: Number) -> (bool, Number) {
         let (x, level) = number[i];
         if x >= 10 {
             number[i] = (x / 2, level + 1);
-            number.insert(i + 1, ((x + 1) / 2, level + 1));
+            number.insert(i + 1, (x.div_ceil(2), level + 1));
             return (true, number);
         }
     }

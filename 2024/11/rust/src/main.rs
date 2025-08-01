@@ -15,7 +15,7 @@ fn blink(cache: &mut FxHashMap<(u64, usize), u64>, stone: u64, n: usize) -> u64 
                 }
                 else {
                     let digit_count = stone.ilog10() + 1;
-                    if digit_count % 2 == 0 {
+                    if digit_count.is_multiple_of(2) {
                         let half = 10_u64.pow(digit_count / 2);
                         blink(cache, stone / half, n - 1) + blink(cache, stone % half, n - 1)
                     }

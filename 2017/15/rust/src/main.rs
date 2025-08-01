@@ -32,17 +32,13 @@ fn part1(a: u64, b: u64) -> usize {
     solve(40_000_000, a, |_| true, b, |_| true)
 }
 
-fn is_multiple_of(a: u64, b: u64) -> bool {
-    (b % a) == 0
-}
-
 fn part2(a: u64, b: u64) -> usize {
     solve(
         5_000_000,
         a,
-        |&x| is_multiple_of(4, x),
+        |x| x.is_multiple_of(4),
         b,
-        |&x| is_multiple_of(8, x),
+        |x| x.is_multiple_of(8),
     )
 }
 

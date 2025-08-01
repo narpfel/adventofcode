@@ -47,7 +47,7 @@ fn part_1(garden: &Garden, n: u64) -> u64 {
         .walk_cells_breadth_first(&start)
         .filter_map(|path| {
             let len = (path.len() as u64).saturating_sub(1);
-            if len < n && len % 2 == 0 {
+            if len < n && len.is_multiple_of(2) {
                 path.last().cloned()
             }
             else {

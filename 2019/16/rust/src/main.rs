@@ -28,7 +28,7 @@ fn fft_part2(xs: &[u8]) -> Vec<u8> {
 fn pattern(i: usize) -> impl Iterator<Item = i8> {
     [0, 1, 0, -1]
         .iter()
-        .flat_map(move |x| std::iter::repeat(x).take(i))
+        .flat_map(move |x| std::iter::repeat_n(x, i))
         .cycle()
         .skip(1)
         .cloned()
@@ -85,7 +85,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", solve(0, &input, fft));
 
     let offset = input.iter().take(7).into_decimal() as usize;
-    let repeated_input: Vec<_> = std::iter::repeat(input).take(10_000).flatten().collect();
+    let repeated_input: Vec<_> = std::iter::repeat_n(input, 10_000).flatten().collect();
 
     if offset < repeated_input.len() / 2 {
         panic!(
