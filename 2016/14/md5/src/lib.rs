@@ -1,5 +1,3 @@
-#![feature(array_chunks)]
-
 use std::io::Cursor;
 use std::io::Seek;
 use std::io::SeekFrom;
@@ -44,7 +42,8 @@ fn pad<'a>(
 
 struct Chunks<'a> {
     chunk_count: Wrapping<u64>,
-    chunks: std::slice::ArrayChunks<'a, u8, CHUNKSIZE>,
+    chunks: &'a [[u8; CHUNKSIZE]],
+    remainder: &'a [u8],
     last_chunk: Option<&'a [u8; CHUNKSIZE]>,
     buffer: Option<&'a mut [u8; 2 * CHUNKSIZE]>,
 }
@@ -55,23 +54,26 @@ impl<'a> Iterator for Chunks<'a> {
     #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         self.chunks
-            .next()
+            .split_off_first()
             .inspect(|_| self.chunk_count += Wrapping(1))
             .or_else(
                 #[cold]
                 || {
                     let buffer = self.buffer.take()?;
-                    let chunk = self.chunks.remainder();
-                    let mut padded_chunks = pad(
+                    let chunk = self.remainder;
+                    let (mut padded_chunks, []) = pad(
                         chunk,
                         Wrapping(CHUNKSIZE as u64) * self.chunk_count
                             + Wrapping(chunk.len() as u64),
                         buffer,
                     )
                     .ok()?
-                    .array_chunks();
-                    let first_chunk = padded_chunks.next();
-                    self.last_chunk = padded_chunks.next();
+                    .as_chunks()
+                    else {
+                        unreachable!()
+                    };
+                    let first_chunk = padded_chunks.split_off_first();
+                    self.last_chunk = padded_chunks.split_off_first();
                     first_chunk
                 },
             )
@@ -83,9 +85,11 @@ impl<'a> Iterator for Chunks<'a> {
 }
 
 fn chunks<'a>(bytes: &'a [u8], buffer: &'a mut [u8; 2 * CHUNKSIZE]) -> Chunks<'a> {
+    let (chunks, remainder) = bytes.as_chunks();
     Chunks {
         chunk_count: Wrapping(0),
-        chunks: bytes.array_chunks(),
+        chunks,
+        remainder,
         last_chunk: None,
         buffer: Some(buffer),
     }
