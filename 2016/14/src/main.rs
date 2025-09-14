@@ -21,6 +21,7 @@ fn key_stretched(s: &str, count: usize) -> [u8; DIGEST_CHAR_LENGTH] {
     let mut s = s.as_bytes();
     let mut buffer = [0; DIGEST_CHAR_LENGTH];
     for _ in 0..count {
+        assert!(s.len() <= DIGEST_CHAR_LENGTH);
         buffer = format_digest(md5(s));
         s = &buffer[..];
     }
