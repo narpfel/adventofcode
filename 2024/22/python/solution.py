@@ -32,7 +32,8 @@ def part_1(secret_numbers):
 
 
 def part_2(secret_numbers):
-    bananas_by_sequence = [(0, -1)] * 20 ** 4
+    bananas_by_sequence = [0] * 20 ** 4
+    monkey_by_sequence = [-1] * 20 ** 4
     for monkey, secret in enumerate(secret_numbers):
         changes = 0
         for i in range(2000):
@@ -44,10 +45,11 @@ def part_2(secret_numbers):
             changes %= 20 ** 4
             secret = new_secret
             if i >= 3:
-                bananas, index = bananas_by_sequence[changes]
+                index = monkey_by_sequence[changes]
                 if index != monkey:
-                    bananas_by_sequence[changes] = bananas + secret % 10, monkey
-    return max(bananas for bananas, _ in bananas_by_sequence)
+                    bananas_by_sequence[changes] += secret % 10
+                    monkey_by_sequence[changes] = monkey
+    return max(bananas_by_sequence)
 
 
 def test_part_1():
