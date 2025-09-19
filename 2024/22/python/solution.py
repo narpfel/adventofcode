@@ -1,7 +1,5 @@
 #!/usr/bin/env pypy3
 
-from collections import Counter
-
 EXPECTED_PART_1 = 37327623
 EXPECTED_PART_2 = 23
 
@@ -34,10 +32,9 @@ def part_1(secret_numbers):
 
 
 def part_2(secret_numbers):
-    total_bananas = Counter()
-    for secret in secret_numbers:
+    bananas_by_sequence = [(0, None)] * 20 ** 4
+    for monkey, secret in enumerate(secret_numbers):
         changes = 0
-        bananas_by_sequence = {}
         for i in range(2000):
             new_secret = next_secret_number(secret)
             change = (new_secret % 10) - (secret % 10)
@@ -46,10 +43,11 @@ def part_2(secret_numbers):
             changes += change + 10
             changes %= 20 ** 4
             secret = new_secret
-            if i >= 3 and changes not in bananas_by_sequence:
-                bananas_by_sequence[changes] = secret % 10
-        total_bananas.update(bananas_by_sequence)
-    return max(total_bananas.values())
+            if i >= 3:
+                bananas, index = bananas_by_sequence[changes]
+                if index != monkey:
+                    bananas_by_sequence[changes] = bananas + secret % 10, monkey
+    return max(bananas for bananas, _ in bananas_by_sequence)
 
 
 def test_part_1():
