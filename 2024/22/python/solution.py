@@ -32,7 +32,7 @@ def part_1(secret_numbers):
 
 
 def part_2(secret_numbers):
-    bananas_by_sequence = [(0, None)] * 20 ** 4
+    bananas_by_sequence = [(0, -1)] * 20 ** 4
     for monkey, secret in enumerate(secret_numbers):
         changes = 0
         for i in range(2000):
