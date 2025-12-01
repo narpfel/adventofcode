@@ -21,15 +21,18 @@ def part_1(rotations):
 
 def part_2(rotations):
     position = 50
-    was_zero = 0
+    was_zero_count = 0
     for rotation in rotations:
-        direction = -1 if rotation < 0 else 1
-        for _ in range(abs(rotation)):
-            position += direction
-            position %= 100
-            if position == 0:
-                was_zero += 1
-    return was_zero
+        old_position = position
+        zero_crossings, position = divmod(position + rotation, 100)
+        was_zero_count += abs(zero_crossings)
+        if old_position != 0 and position == 0 and rotation < 0:
+            # e. g. 50 -> L50 -> 0; the `divmod` doesn’t count this
+            was_zero_count += 1
+        elif old_position == 0 and rotation < 0:
+            # e. g. 0 -> L1 -> 99; the 0 was counted during the last rotation
+            was_zero_count -= 1
+    return was_zero_count
 
 
 def test_part_1():
