@@ -3,6 +3,7 @@
 import re
 
 EXPECTED_PART_1 = 1227775554
+EXPECTED_PART_2 = 4174379265
 
 
 def read_input(filename):
@@ -27,14 +28,24 @@ def part_1(ranges):
     return sum_invalid_ids(ranges, r"(.+)\1")
 
 
+def part_2(ranges):
+    return sum_invalid_ids(ranges, r"(.+)\1+")
+
+
 def test_part_1():
     puzzle_input = read_input("input_test")
     assert part_1(puzzle_input) == EXPECTED_PART_1
 
 
+def test_part_2():
+    puzzle_input = read_input("input_test")
+    assert part_2(puzzle_input) == EXPECTED_PART_2
+
+
 def main():
     ranges = read_input("input")
     print(part_1(ranges))
+    print(part_2(ranges))
 
 
 if __name__ == "__main__":
