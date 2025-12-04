@@ -6,12 +6,12 @@ EXPECTED_PART_2 = 43
 
 def read_input(filename):
     with open(filename) as lines:
-        tiles = set()
-        for y, line in enumerate(lines):
-            for x, c in enumerate(line.strip()):
-                if c == "@":
-                    tiles.add((x, y))
-        return tiles
+        return {
+            (x, y)
+            for y, line in enumerate(lines)
+            for x, c in enumerate(line.strip())
+            if c == "@"
+        }
 
 
 def neighbours(x, y):
