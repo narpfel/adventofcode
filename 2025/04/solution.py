@@ -40,11 +40,9 @@ def part_2(tiles):
     while True:
         removable = list(accessible(tiles))
         if not removable:
-            break
+            return removed_tiles_count
         removed_tiles_count += len(removable)
-        for tile in removable:
-            tiles.remove(tile)
-    return removed_tiles_count
+        tiles.difference_update(removable)
 
 
 def test_part_1():
