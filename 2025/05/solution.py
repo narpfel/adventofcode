@@ -12,24 +12,19 @@ EXPECTED_PART_2 = 14
 def read_input(filename):
     with open(filename) as lines:
         ranges, ids = lines.read().strip().split("\n\n")
-        return (
-            [tuple(map(int, range.split("-"))) for range in ranges.splitlines()],
-            list(map(int, ids.splitlines())),
-        )
+        combined_ranges = []
+        for line in ranges.splitlines():
+            lo, hi = line.split("-")
+            sparse.insert(combined_ranges, (int(lo), int(hi)))
+        return (combined_ranges, list(map(int, ids.splitlines())))
 
 
 def part_1(ranges, ids):
-    return sum(
-        any(id in range(lo, hi + 1) for lo, hi in ranges)
-        for id in ids
-    )
+    return sum(sparse.contains(ranges, id) for id in ids)
 
 
 def part_2(ranges):
-    combined_ranges = []
-    for lo, hi in ranges:
-        sparse.insert(combined_ranges, (lo, hi))
-    return sparse.length(combined_ranges)
+    return sparse.length(ranges)
 
 
 def test_part_1():
