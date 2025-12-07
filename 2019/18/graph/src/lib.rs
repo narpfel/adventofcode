@@ -1,5 +1,4 @@
 #![feature(associated_type_defaults)]
-#![feature(array_windows)]
 #![feature(thread_local)]
 
 use std::any::TypeId;
