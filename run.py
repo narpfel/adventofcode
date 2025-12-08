@@ -626,7 +626,10 @@ def main(argv=None):
                 print(f"{FG_BOLD}{FG_YELLOW}no expected output found for {year}/{day:02}{RESET}")
                 is_okay, expected_output = ask_if_output_is_okay(base_dir, year, day, output)
             else:
-                is_okay = expected_output == output
+                is_okay = (
+                    expected_output == output
+                    or expected_output == b"\n".join(output.split(b" "))
+                )
 
             if is_okay:
                 print(f"{FG_BOLD}{FG_GREEN}Okay!{RESET}")
