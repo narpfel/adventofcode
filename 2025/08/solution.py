@@ -2,7 +2,6 @@
 
 import math
 from itertools import combinations
-from itertools import count
 
 EXPECTED_PART_1 = 40
 EXPECTED_PART_2 = 25272
@@ -21,12 +20,10 @@ def solve(junction_boxes, *, to_connect):
     distances = sorted(
         ((p1, p2) for p1, p2 in combinations(junction_boxes, r=2)),
         key=distance_squared,
-        reverse=True,
     )
     circuits = {p: {p} for p in junction_boxes}
 
-    for i in count(1):
-        p1, p2 = distances.pop()
+    for i, (p1, p2) in enumerate(distances, 1):
         connected_circuit = circuits[p1] | circuits[p2]
         for p in connected_circuit:
             circuits[p] = connected_circuit
