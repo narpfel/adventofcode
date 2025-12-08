@@ -83,4 +83,4 @@ repos:
         files: "Cargo.toml$"
         always_run: true
 
-exclude: '2021/08/python_golf/solution\.py$|input(_test.*)?$'
+exclude: 'python_golf/solution\.py$|input(_test.*)?$'
