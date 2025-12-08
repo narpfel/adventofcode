@@ -24,14 +24,17 @@ def solve(junction_boxes, *, to_connect):
     circuits = {p: {p} for p in junction_boxes}
 
     for i, (p1, p2) in enumerate(distances, 1):
-        connected_circuit = circuits[p1] | circuits[p2]
-        for p in connected_circuit:
-            circuits[p] = connected_circuit
+        c1 = circuits[p1]
+        c2 = circuits[p2]
+        if c1 is not c2:
+            connected_circuit = c1 | c2
+            for p in connected_circuit:
+                circuits[p] = connected_circuit
+            if len(next(iter(circuits.values()))) == len(junction_boxes):
+                return part_1, p1[0] * p2[0]  # noqa: F821 (false positive)
         if i == to_connect:
             sizes = sorted(len(c) for c in {frozenset(c) for c in circuits.values()})
-            part_1 = math.prod(sizes[-3:])
-        if len(next(iter(circuits.values()))) == len(junction_boxes):
-            return part_1, p1[0] * p2[0]
+            part_1 = math.prod(sizes[-3:])  # noqa: F841 (false positive)
 
 
 def test_part_1():
