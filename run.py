@@ -480,6 +480,10 @@ def ask_if_output_is_okay(base_dir, year, day, output):
     return is_okay, expected_output
 
 
+def is_final_day(year, day):
+    return day == 25 or (year >= 2025 and day == 12)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Run solutions.")
     parser.add_argument("-a", "--all", help="Run all solutions.", action="store_true")
@@ -567,7 +571,7 @@ def main(argv=None):
 
         if len(lines) == 1:
             show_submission_result(submit_solution(year, day, part=1, solution=lines[0]))
-            if day == 25:
+            if is_final_day(year, day):
                 submit_solution(year, day, part=2, solution="0")
                 print(f"{FG_BOLD}{FG_GREEN}also submitting part 2...{RESET}")
         elif len(lines) == 2:
