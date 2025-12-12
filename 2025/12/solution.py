@@ -11,29 +11,7 @@ def read_input(filename):
 
 
 def part_1(regions):
-    # rough manual approximation of how the shapes can be packed semi-efficiently:
-    #
-    # 540: 3 shapes in 3x6 => 6 tiles per shape
-    # ###
-    # ###
-    # ###
-    # ###
-    # ###
-    # ###
-    #
-    # 223: 3 shapes in 4x6 => 8 tiles per shape
-    # .###
-    # ######
-    # #####
-    # ######
-    #
-    # shape 1 is approximated with 8 tiles needed
-
-    average_space_needed = [6, 8, 8, 8, 6, 6]
-    return sum(
-        x * y >= sum(avg * amount for avg, amount in zip(average_space_needed, amounts))
-        for (x, y), amounts in regions
-    )
+    return sum(x * y >= 9 * sum(amounts) for (x, y), amounts in regions)
 
 
 def main():
