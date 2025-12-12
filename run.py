@@ -433,8 +433,12 @@ def ask_if_output_is_okay(base_dir, year, day, output):
     response = urlopen(request)
     parser = lxml.etree.HTMLParser()
     root = lxml.etree.parse(response, parser)
-    part_1, part_2 = root.xpath('//p[starts-with(text(), "Your puzzle answer was")]/code')
-    expected_output = f"{part_1.text}\n{part_2.text}\n".encode()
+    solutions = root.xpath('//p[starts-with(text(), "Your puzzle answer was")]/code')
+    if is_final_day(year, day):
+        assert len(solutions) == 1, solutions
+    else:
+        assert len(solutions) == 2, solutions
+    expected_output = "".join(f"{solution.text}\n" for solution in solutions).encode()
     if output == expected_output:
         answer = input(
             f"{FG_BOLD}{year}/{day:02}:{RESET} output {FG_BOLD}{FG_GREEN}matches{RESET} expected "
