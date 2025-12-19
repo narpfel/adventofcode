@@ -1,0 +1,81 @@
+class Node {
+    init(value, prev, next) {
+        this.value = value;
+        this.prev = prev;
+        if (prev) {
+            prev.next = this;
+        }
+        this.next = next;
+        if (next) {
+            next.prev = this;
+        }
+    }
+
+    insert_after(value) {
+        return Node(value, this, this.next);
+    }
+}
+
+fun get_newline(string) {
+    for (var chars = split(string, ""); chars.split != nil; split(chars)) {
+        if (chars.split != "." and chars.split != "S") {
+            return chars.split;
+        }
+    }
+    return nil;
+}
+
+fun set_initial_beam_position(position, first_line) {
+    for (var chars = split(first_line, ""); chars.split != nil; split(chars)) {
+        var c = chars.split;
+        if (c == "S") {
+            position.value = 1;
+        }
+        position = position.insert_after(0);
+    }
+}
+
+fun main() {
+    var input = read_file("input");
+    var nl = get_newline(input);
+
+    var lines = split(input, nl);
+    var first_line = lines.split;
+
+    var beam_positions = Node(0, nil, nil);
+    set_initial_beam_position(beam_positions, first_line);
+
+    var splits = 0;
+    for (split(lines); lines.split != nil; split(lines)) {
+        var position = beam_positions;
+        var new_positions = Node(0, nil, nil);
+        var new_position = new_positions;
+        for (var chars = split(lines.split, ""); chars.split != nil; split(chars)) {
+            var c = chars.split;
+            new_position.insert_after(0);
+            if (c == "^") {
+                if (position.value != 0) {
+                    splits = splits + 1;
+                    new_position.prev.value = new_position.prev.value + position.value;
+                    new_position.next.value = new_position.next.value + position.value;
+                }
+            }
+            else if (c == ".") {
+                new_position.value = new_position.value + position.value;
+            }
+            position = position.next;
+            new_position = new_position.next;
+        }
+        beam_positions = new_positions;
+    }
+
+    var total = 0;
+    for (var it = beam_positions; it != nil; it = it.next) {
+        total = total + it.value;
+    }
+
+    print splits;
+    print total;
+}
+
+main();
