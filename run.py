@@ -624,6 +624,7 @@ def main(argv=None):
 
     if args.check:
         print(f"\n\n{FG_BOLD}{FG_YELLOW}Checking solutions...{RESET}")
+        all_ok = True
         for solution, output in runner.captured_output.items():
             base_dir = get_puzzle_base_dir(solution)
             year, day = get_year_day(solution)
@@ -639,11 +640,14 @@ def main(argv=None):
                     or expected_output == b"\n".join(output.split(b" "))
                 )
 
+            all_ok &= is_okay
             if is_okay:
                 print(f"{FG_BOLD}{FG_GREEN}Okay!{RESET}")
             else:
                 print(f"{FG_BOLD}{FG_RED}Incorrect!{RESET}")
                 print_expected_and_actual(expected_output, output)
+
+        return 0 if all_ok else 1
 
     return stats.failed
 
