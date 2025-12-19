@@ -1,6 +1,7 @@
 #!/usr/bin/env pypy3
 
 from itertools import combinations
+from itertools import count
 from itertools import pairwise
 
 EXPECTED_PART_1 = 50
@@ -57,17 +58,30 @@ def outline_outside(points):
     return outside
 
 
-def rectangle_area(rectangle):
-    (x, y), (X, Y) = rectangle
+def rectangle_area(p1, p2):
+    (x, y), (X, Y) = p1, p2
     return (abs(x - X) + 1) * (abs(y - Y) + 1)
 
 
+def deflate(points):
+    x_deflation = dict(zip(sorted({x for x, _ in points}), count()))
+    y_deflation = dict(zip(sorted({y for _, y in points}), count()))
+    return {(x, y): (x_deflation[x], y_deflation[y]) for x, y in points}
+
+
 def part_2(points):
-    outside = outline_outside(points)
-    for (x, y), (X, Y) in sorted(combinations(points, r=2), key=rectangle_area, reverse=True):
+    deflation = deflate(points)
+    inflation = {tgt: src for src, tgt in deflation.items()}
+    deflated_points = [deflation[p] for p in points]
+    outside = outline_outside(deflated_points)
+    for (x, y), (X, Y) in sorted(
+        combinations(deflated_points, r=2),
+        key=lambda ps: rectangle_area(inflation[ps[0]], inflation[ps[1]]),
+        reverse=True,
+    ):
         corners = [(x, y), (x, Y), (X, Y), (X, y), (x, y)]
         if all(p not in outside for p in outline(corners)):
-            return rectangle_area(((x, y), (X, Y)))
+            return rectangle_area(inflation[x, y], inflation[X, Y])
 
 
 def test_part_1():
