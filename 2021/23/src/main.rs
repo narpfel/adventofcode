@@ -1,5 +1,3 @@
-#![feature(type_alias_impl_trait)]
-
 use std::collections::BTreeMap;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;

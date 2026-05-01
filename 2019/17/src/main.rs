@@ -59,14 +59,14 @@ enum Step {
 impl Step {
     fn len(self) -> usize {
         match self {
-            Step::Go(n) =>
+            Self::Go(n) =>
                 if n >= 10 {
                     2
                 }
                 else {
                     1
                 },
-            _ => 1,
+            Self::TurnLeft | Self::TurnRight => 1,
         }
     }
 }

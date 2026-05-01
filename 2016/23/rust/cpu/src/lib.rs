@@ -149,6 +149,7 @@ impl Cpu {
             Instruction::Cpy(src, ImmOrReg::Reg(dst)) => *self.get_mut(dst) = self.get(src),
             Instruction::Inc(ImmOrReg::Reg(reg)) => *self.get_mut(reg) += 1,
             Instruction::Dec(ImmOrReg::Reg(reg)) => *self.get_mut(reg) -= 1,
+            #[expect(clippy::collapsible_match)]
             Instruction::Jnz(src, offset) =>
                 if self.get(src) != 0 {
                     self.pc += self.get(offset) - 1;
