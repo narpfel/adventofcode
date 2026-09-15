@@ -35,21 +35,19 @@ fn main() {
         elves.0 = (1 + elves.0 + scores[elves.0] as usize) % scores.len();
         elves.1 = (1 + elves.1 + scores[elves.1] as usize) % scores.len();
     }
-    println!(
-        "{}",
-        &scores[INPUT..INPUT + 10]
-            .iter()
-            .map(ToString::to_string)
-            .collect::<Vec<_>>()
-            .join("")
-    );
-    println!(
-        "{}",
-        // We have to search the scores of all recipes because `INPUT_DIGITS` could be present
-        // in the scores generated for part 1.
-        scores
-            .windows(INPUT_DIGITS.len())
-            .position(|xs| xs == INPUT_DIGITS)
-            .unwrap()
-    );
+
+    let part_1 = scores[INPUT..INPUT + 10]
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>()
+        .join("");
+    println!("{part_1}");
+
+    // We have to search the scores of all recipes because `INPUT_DIGITS` could be present
+    // in the scores generated for part 1.
+    let part_2 = scores
+        .windows(INPUT_DIGITS.len())
+        .position(|xs| xs == INPUT_DIGITS)
+        .unwrap();
+    println!("{part_2}");
 }
