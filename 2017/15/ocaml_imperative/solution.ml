@@ -10,8 +10,6 @@ let part1 a b =
         b := lehmer_rng modulus 48271 !b;
         if (!a land 0xffff) == (!b land 0xffff) then
             result := !result + 1
-        else
-            ();
     done;
     !result
 
@@ -30,8 +28,6 @@ let part2 a b =
         done;
         if (!a land 0xffff) == (!b land 0xffff) then
             result := !result + 1
-        else
-            ()
     done;
     !result
 
