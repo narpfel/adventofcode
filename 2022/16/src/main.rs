@@ -1,5 +1,3 @@
-#![feature(debug_closure_helpers)]
-
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
