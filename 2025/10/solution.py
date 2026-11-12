@@ -55,12 +55,12 @@ def configure_joltage_levels(machine):
         solver.add(count >= 0)
 
     for i, joltage in enumerate(machine.joltage_requirements):
-        conntected_buttons = (
+        connected_buttons = (
             buttons[k]
             for k, connections in enumerate(machine.button_connections)
             if i in connections
         )
-        solver.add(joltage == z3.Sum(conntected_buttons))
+        solver.add(joltage == z3.Sum(connected_buttons))
 
     result = z3.Sum(buttons)
     solver.minimize(result)
